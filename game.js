@@ -49,7 +49,9 @@ let trainT=10;
 const DEF={v:2,cash:120,debt:20000,day:1,min:18*60,open:false,served:0,servedTotal:0,rel:{},q:{},flags:{},up:{stools:3,burners:1,sign:0,menu:['shoyu','tea']},talkedDay:{},asked:{},notes:[],track:null,P:null};
 let S;try{const raw=localStorage.getItem('neonLadle2');if(raw)S=Object.assign(structuredClone(DEF),JSON.parse(raw));else{const v1=JSON.parse(localStorage.getItem('neonLadle')||'null');S=structuredClone(DEF);
   if(v1){for(const k of['cash','debt','day','servedTotal','rel','q','flags','up'])if(v1[k]!==undefined)S[k]=v1[k];S.flags.fromV1=1;}}}catch(e){S=structuredClone(DEF);}
-S.open=false;let saveWarned=0;const save=()=>{try{localStorage.setItem('neonLadle2',JSON.stringify(S));}catch(e){if(!saveWarned++)setTimeout(()=>toast&&toast('Could not save (storage full or private mode)'),0);}};
+S.open=false;let saveWarned=0,WIPING=false;const save=()=>{if(WIPING)return;try{localStorage.setItem('neonLadle2',JSON.stringify(S));}catch(e){if(!saveWarned++)setTimeout(()=>toast&&toast('Could not save (storage full or private mode)'),0);}};
+// R9: full reset. WIPING blocks the 5 s autosave and the pagehide/hidden save, which used to re-write S right after the wipe (reset respawned you where you were)
+const wipeSave=()=>{WIPING=true;try{for(const k of Object.keys(localStorage))if(/^(neonLadle|nl)/.test(k)&&k!=='nlSettings'&&k!=='nlAudio2')localStorage.removeItem(k);}catch(e){}try{sessionStorage.clear();}catch(e){}const go=()=>location.replace(location.pathname+'?fresh='+Date.now());try{indexedDB.databases?indexedDB.databases().then(ds=>Promise.all(ds.filter(d=>/ladle|nl/i.test(d.name||'')).map(d=>new Promise(r=>{const q=indexedDB.deleteDatabase(d.name);q.onsuccess=q.onerror=q.onblocked=r;})))).then(go,go):go();}catch(e){go();}};window.__wipe=wipeSave;
 addEventListener('pagehide',()=>save());document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
 // ================= UI helpers =================
 function toast(t){const d=document.createElement('div');d.className='toast';d.innerHTML=t;$('toasts').appendChild(d);setTimeout(()=>d.remove(),3600);}
@@ -370,7 +372,7 @@ function openMenu(t){$('menu').classList.remove('hide');document.querySelectorAl
   M.innerHTML=h;const bind=(id,k,f)=>$(id).oninput=e=>{SET[k]=e.target.value/100*(f||1);saveSet();applyVol();Input.lookSens=SET.sens;};bind('vMaster','master');bind('vRain','rain');bind('vAmb','amb');bind('oSens','sens',2);
   $('oView').onclick=()=>{Input.emit('toggleView');openMenu('o');};$('gq').onclick=()=>{SET.low=SET.low?0:1;saveSet();location.reload();};
   $('oScale').onclick=()=>{const o=[1,.85,.7,.55];SET.scale=o[(o.indexOf(SET.scale)+1)%o.length]||1;saveSet();resize();openMenu('o');};
-  $('wipe').onclick=()=>{if(confirm('Erase your save?')){localStorage.removeItem('neonLadle2');location.reload();}};return;}
+  $('wipe').onclick=()=>{if(confirm('Erase your save?'))wipeSave();};return;}
  M.innerHTML=h;}
 // ================= audio (procedural, three buses) =================
 let audio=null;
