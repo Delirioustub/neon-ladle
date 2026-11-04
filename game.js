@@ -29,7 +29,7 @@ const cam=new THREE.PerspectiveCamera(66,2,.08,220);scene.add(cam);
 const hemi=new THREE.HemisphereLight(0x5a4a9a,0x120818,.6);scene.add(hemi);
 const moon=new THREE.DirectionalLight(0x6a7aff,.35);moon.position.set(-10,30,10);scene.add(moon);
 const fill=new THREE.PointLight(0xb8a8ff,2.2,8,1.3);scene.add(fill);
-const cand=[];const W=buildWorld(scene,cand);const CITY=buildCity(scene,cand);W.walk.push(...CITY.walk);Object.assign(W.districts,CITY.districts);dressCity(W.districts,cand);const LP=makeLightPool(scene,cand,SET.low?10:18);
+const cand=[];const W=buildWorld(scene,cand);const CITY=buildCity(scene,cand);W.walk.push(...CITY.walk);CITY.block.push(...W.block);Object.assign(W.districts,CITY.districts);dressCity(W.districts,cand,Object.values(CITY.apts||{}).map(a=>a.door).concat((CITY.doors||[]).map(d=>Array.isArray(d)?d:[d.x,d.z]).filter(d=>d&&isFinite(d[0]))),CITY.block);const LP=makeLightPool(scene,cand,SET.low?10:18);
 const cubeRT=new THREE.WebGLCubeRenderTarget(256,{type:THREE.HalfFloatType});const cubeCam=new THREE.CubeCamera(.5,120,cubeRT);scene.add(cubeCam);
 const composer=new EffectComposer(R);composer.addPass(new RenderPass(scene,cam));
 const bloom=new UnrealBloomPass(new THREE.Vector2(512,256),.75,.5,.72);composer.addPass(bloom);composer.addPass(new OutputPass());
@@ -306,11 +306,12 @@ function tickNPCs(dt){for(const k in npcs){const n=npcs[k],o=n.obj;const pl=plac
 const P={x:-3.5,z:-1.5,y:0,yaw:0,pitch:.05,bob:0,sit:null};if(S.P){Object.assign(P,S.P);P.y=P.y||0;P.sit=null;}S.onBike=0;
 function walkable(x,z){const m=.3;const py=P.y||0;if(py<.5&&Math.abs(x)<3.85&&z<-5.55&&z>-6.95)return false;// counter (kitchen behind it is open from both ends)
  if(x>-18.4&&x<-15.6&&z>5.8&&z<7.8)return false;
- if(py<.5)for(const b of CITY.block)if(x>b[0]-m&&x<b[1]+m&&z>b[2]-m&&z<b[3]+m)return false;
+ if(py<.5){const a=bgrid().get(Math.floor(x/WC)*4096+Math.floor(z/WC));if(a)for(const b of a)if(x>b[0]-m&&x<b[1]+m&&z>b[2]-m&&z<b[3]+m)return false;}
  return inWalk(x,z,py)&&inWalk(x+m,z,py)&&inWalk(x-m,z,py)&&inWalk(x,z+m,py)&&inWalk(x,z-m,py);}
 // R7: walk rects are unioned before the body-radius inset, so seams between adjacent rects never become invisible walls.
 // Rects are bucketed on a 4m grid (rebuilt when W.walk grows) so mobile pays ~a handful of tests per query instead of hundreds.
-let WG=null,WGn=-1;const WC=4;
+let WG=null,WGn=-1;const WC=4;let BG=null,BGn=-1;// R9: solid props bucketed (cell padded by body radius)
+function bgrid(){if(BGn===CITY.block.length)return BG;BG=new Map();BGn=CITY.block.length;for(const b of CITY.block){for(let i=Math.floor((b[0]-.4)/WC);i<=Math.floor((b[1]+.4)/WC);i++)for(let j=Math.floor((b[2]-.4)/WC);j<=Math.floor((b[3]+.4)/WC);j++){const k=i*4096+j;let a=BG.get(k);if(!a)BG.set(k,a=[]);a.push(b);}}return BG;}
 function wgrid(){if(WGn===W.walk.length)return WG;WG=new Map();WGn=W.walk.length;for(const r of W.walk){for(let i=Math.floor(r[0]/WC);i<=Math.floor(r[1]/WC);i++)for(let j=Math.floor(r[2]/WC);j<=Math.floor(r[3]/WC);j++){const k=i*4096+j;let a=WG.get(k);if(!a)WG.set(k,a=[]);a.push(r);}}return WG;}
 function inWalk(x,z,py){const a=wgrid().get(Math.floor(x/WC)*4096+Math.floor(z/WC));if(!a)return false;for(const r of a)if(Math.abs((r[4]||0)-py)<.6&&x>=r[0]&&x<=r[1]&&z>=r[2]&&z<=r[3])return true;return false;}
 let viewTP=SET.view==='tp';Input.on('toggleView',()=>{viewTP=!viewTP;SET.view=viewTP?'tp':'fp';saveSet();});

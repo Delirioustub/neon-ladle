@@ -3,17 +3,19 @@ import * as THREE from 'three';
 import {Batch,signTex,DISTRICTS} from './world.js';
 const VEND=[0xff3fa4,0x3ff0ff,0x5dff9b,0xffe14d,0xff8a3d];
 const SMALL={mid:['RAMEN','OPEN 24H','KARAOKE','TATTOO','PACHINKO','HOTEL','BAR','LOANS','REPAIR','DUMPLINGS','麺','酒','薬','占い'],rich:['ATELIER','SALON','GALLERY','PRIVATE','VAULT','CONCIERGE','宝石'],poor:['CHEAP','FIX','BEDS','GIN','PAWN','BAIT','HOT FOOD','祈り','酒']};
-export function dressCity(Wd,cand){let n=0;
- for(const k in Wd){const cfg=DISTRICTS[k];if(!cfg||cfg.virtual||!Wd[k].G)continue;const G=Wd[k].G;const cls=cfg.cls||'mid';
+export function dressCity(Wd,cand,avoid=[],blocks=[]){let n=0;// R9: props near doors are skipped; solid props push world AABBs into blocks
+ for(const k in Wd){const cfg=DISTRICTS[k];if(!cfg||cfg.virtual||!Wd[k].G)continue;const G=Wd[k].G;const cls=cfg.cls||'mid';G.updateMatrixWorld(true);
+  const solid=(x,z,w,d)=>{const a=new THREE.Vector3(x-w/2,0,z-d/2).applyMatrix4(G.matrixWorld),b=new THREE.Vector3(x+w/2,0,z+d/2).applyMatrix4(G.matrixWorld);blocks.push([Math.min(a.x,b.x),Math.max(a.x,b.x),Math.min(a.z,b.z),Math.max(a.z,b.z)]);};
+  const nearDoor=(x,z)=>{const v=new THREE.Vector3(x,0,z).applyMatrix4(G.matrixWorld);return avoid.some(q=>Math.hypot(q[0]-v.x,q[1]-v.z)<3.2);};
   const B=new Batch(new THREE.MeshLambertMaterial()),Gl=new Batch(new THREE.MeshBasicMaterial({toneMapped:false}));Gl.mat.userData.boost=1.6;
   const hw=cfg.hw,len=cfg.len,inGap=(side,x)=>(cfg.gaps||[]).some(g=>g.side===side&&x>g.a-1.2&&x<g.b+1.2)||(cfg.ladle&&side<0&&Math.abs(x)<6);
   const signs=[];const pal=cls==='rich'?[0xffffff,0x9fe8ff,0xc9b2ff]:cls==='poor'?[0xff4d3d,0xff8a3d,0x5dff9b]:[0xff3fa4,0x3ff0ff,0xffe14d,0x5dff9b,0xb04dff];
   for(const side of[-1,1]){const fz=side*(hw-.05);
-   for(let x=-len/2+3;x<len/2-3;x+=rnd(2.4,4.2)){if(inGap(side,x))continue;const r=Math.random(),zin=fz-side*.32;
+   for(let x=-len/2+3;x<len/2-3;x+=rnd(2.4,4.2)){if(inGap(side,x))continue;const r=nearDoor(x,fz)?.55:Math.random(),zin=fz-side*.32;
     if(r<.12&&cls!=='rich'){// vending machine with lit front
-     B.add(x,.95,zin,.9,1.9,.6,0x1a1a22);Gl.add(x,1.15,zin-side*.31,.78,1.2,.02,pick(VEND));Gl.add(x,.35,zin-side*.31,.5,.12,.02,0xffffff);cand.push(wp(G,x,1.2,zin-side*1));}
-    else if(r<.3&&cls!=='rich'){for(let i=0;i<1+Math.floor(Math.random()*3);i++)B.add(x+rnd(-.5,.5),.22,fz-side*rnd(.25,.6),rnd(.4,.6),rnd(.35,.5),rnd(.4,.6),pick([0x101012,0x16161a,0x1a1c14]));}
-    else if(r<.42){B.add(x,.4,zin+side*.05,.5,.8,.5,cls==='rich'?0x9a96a0:0x2a2a30);if(cls==='rich'){B.add(x,1.1,zin,.6,.7,.6,0x1f4a38);}else Gl.add(x,.82,zin,.4,.04,.4,pick(pal));}
+     B.add(x,.95,zin,.9,1.9,.6,0x1a1a22);solid(x,zin,.9,.6);Gl.add(x,1.15,zin-side*.31,.78,1.2,.02,pick(VEND));Gl.add(x,.35,zin-side*.31,.5,.12,.02,0xffffff);cand.push(wp(G,x,1.2,zin-side*1));}
+    else if(r<.3&&cls!=='rich'){solid(x,fz-side*.45,1.5,.9);for(let i=0;i<1+Math.floor(Math.random()*3);i++)B.add(x+rnd(-.5,.5),.22,fz-side*rnd(.25,.6),rnd(.4,.6),rnd(.35,.5),rnd(.4,.6),pick([0x101012,0x16161a,0x1a1c14]));}
+    else if(r<.42){B.add(x,.4,zin+side*.05,.5,.8,.5,cls==='rich'?0x9a96a0:0x2a2a30);solid(x,zin+side*.05,.5,.5);if(cls==='rich'){B.add(x,1.1,zin,.6,.7,.6,0x1f4a38);}else Gl.add(x,.82,zin,.4,.04,.4,pick(pal));}
     else if(r<.52&&cls!=='rich'){B.add(x,.55,zin,1.3,.06,.04,0x3a3a40);B.add(x-.45,.35,zin,.5,.5,.03,0x222);B.add(x+.45,.35,zin,.5,.5,.03,0x222);}// parked bicycle-ish
     else if(r<.62){Gl.add(x,2.85,fz-side*.06,rnd(.8,1.6),.05,.03,pick(pal));}// neon underline strip
     // wall clutter above street level

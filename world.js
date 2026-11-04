@@ -101,7 +101,7 @@ export const DISTRICTS={
  plaza:{name:'Line 9 Plaza',cx:-22,cz:54,rot:0,len:34,hw:14,kind:'plaza',hmin:18,hmax:40,gaps:[{side:-1,a:-5.2,b:5.2},{side:1,a:-5,b:5}],caps:[-1,1],parent:'avenue',join:[-22,41]},
  canal:{name:'Velvet Canal',cx:58,cz:0,rot:Math.PI/2,len:88,hw:10,kind:'canal',hmin:12,hmax:28,bridges:[-25,0,25],gaps:[{side:-1,a:-8.7,b:8.7}],caps:[-1,1],parent:'main',join:[50,0]}
 };
-export function buildWorld(scene,cand){const out={districts:{},flick:[],vents:[],steamPts:[],walk:[]};
+export function buildWorld(scene,cand){const out={districts:{},flick:[],vents:[],steamPts:[],walk:[],block:[]};
  for(const k in DISTRICTS){if(DISTRICTS[k].cls)continue;seed=7+k.length*131+k.charCodeAt(0);const d=corridor(scene,DISTRICTS[k],cand);out.districts[k]=d;out.flick.push(...d.flick);out.vents.push(...d.vents);out.steamPts.push(...d.steamPts);}
  // walkable rectangles (world AABBs)
  const rect=(x0,x1,z0,z1)=>out.walk.push([Math.min(x0,x1),Math.max(x0,x1),Math.min(z0,z1),Math.max(z0,z1)]);
@@ -132,7 +132,7 @@ export function buildWorld(scene,cand){const out={districts:{},flick:[],vents:[]
  // plaza dressing: lamps, benches, ticket machines, holo billboard, glowing stair edge
  for(const [x,z] of[[-34,46],[-10,46],[-34,60],[-10,60],[-27,53],[-17,53]]){xl.add(x,2.2,z,.14,4.4,.14,0x2a2830);xl.add(x,4.45,z,.9,.08,.9,0x2a2830);xh.add(x,4.35,z,.7,.06,.7,0xffd2a0);addLight(x,3.8,z,0xffc890,4,9);}
  for(const [x,z] of[[-30,53],[-14,53]]){xl.add(x,.45,z,2.4,.1,.6,0x4a3a30);xl.add(x,.22,z,.1,.44,.5,0x333);}
- for(const x of[-28.5,-27.3,-16.7,-15.5]){xl.add(x,.9,66.9,.8,1.8,.5,0x3a3a48);xg.add(x,1.2,66.63,.6,.5,.02,0x1a4a60);xh.add(x,.6,66.63,.3,.05,.02,0x3ff0ff);}addLight(-28,1.5,65.5,0x3ff0ff,3,6);addLight(-16,1.5,65.5,0x3ff0ff,3,6);
+ for(const x of[-28.5,-27.3,-16.7,-15.5]){out.block.push([x-.4,x+.4,66.65,67.15]);xl.add(x,.9,66.9,.8,1.8,.5,0x3a3a48);xg.add(x,1.2,66.63,.6,.5,.02,0x1a4a60);xh.add(x,.6,66.63,.3,.05,.02,0x3ff0ff);}addLight(-28,1.5,65.5,0x3ff0ff,3,6);addLight(-16,1.5,65.5,0x3ff0ff,3,6);
  xh.add(-22,.06,67.4,7,.03,.04,0x1fa8b8);xh.add(-25.9,1.6,67.8,.05,3.2,.05,0x1fa8b8);xh.add(-18.1,1.6,67.8,.05,3.2,.05,0x1fa8b8);xh.add(-22,3.2,67.8,7.9,.05,.05,0x1fa8b8);addLight(-22,2.5,65.8,0x3ff0ff,4,10,1);
  sign('ORRIN MUTUAL · YOUR FUTURE, FINANCED',0xb04dff,-22,11.5,49,1.1,{fs:56,li:8,ld:16});addLight(-22,8,46,0xb04dff,6,14);
  // station platform room (behind the gate)
