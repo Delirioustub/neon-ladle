@@ -43,12 +43,12 @@ function retargetAll(b,tgtRoot){if(CLIPS[b])return CLIPS[b];
  return CLIPS[b]=out;}
 // ---------- materials ----------
 const RIM=new THREE.Color(0x8a6cff);
-function skinMat(src,tint,str,rimC,metal,neckH){const m=new THREE.MeshStandardMaterial({map:src.map||null,normalMap:null,color:src.color?src.color.clone():0xffffff,roughness:metal?.35:.78,metalness:metal?.55:0,emissive:0x000000});
- m.onBeforeCompile=s=>{s.uniforms.tintC={value:new THREE.Color(tint)};s.uniforms.tintS={value:str};s.uniforms.rimC={value:rimC||RIM};s.uniforms.rimS={value:.5};s.uniforms.neckH={value:neckH??1e9};s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying float vH;').replace('#include <begin_vertex>','#include <begin_vertex>\nvH=position.y;');
-  s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nuniform vec3 tintC;uniform float tintS;uniform float neckH;varying float vH;uniform vec3 rimC;uniform float rimS;')
+function skinMat(src,tint,str,rimC,metal,neckH,X){X=X||{};const m=new THREE.MeshStandardMaterial({map:src.map||null,normalMap:null,color:src.color?src.color.clone():0xffffff,roughness:metal?.35:.78,metalness:metal?.55:0,emissive:0x000000});
+ m.onBeforeCompile=s=>{s.uniforms.tintC={value:new THREE.Color(tint)};s.uniforms.tintS={value:str};s.uniforms.rimC={value:rimC||RIM};s.uniforms.rimS={value:.5};s.uniforms.neckH={value:neckH??1e9};s.uniforms.nC={value:new THREE.Color(X.nC||0)};s.uniforms.nF={value:new THREE.Vector4(...(X.nF||[0,0,0,0]))};s.uniforms.nG={value:new THREE.Vector4(...(X.nG||[0,0,0,0]))};s.uniforms.bb={value:new THREE.Vector4(...(X.bb||[0,1,1,0]))};s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying float vH;varying vec3 vP;varying vec3 vON;').replace('#include <begin_vertex>','#include <begin_vertex>\nvH=position.y;vP=position;vON=normalize(objectNormal);');
+  s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nuniform vec3 tintC;uniform float tintS;uniform float neckH;varying float vH;varying vec3 vP;varying vec3 vON;uniform vec3 nC;uniform vec4 nF;uniform vec4 nG;uniform vec4 bb;uniform vec3 rimC;uniform float rimS;')
   .replace('#include <map_fragment>','#include <map_fragment>\n{vec3 c=diffuseColor.rgb;float mx=max(c.r,max(c.g,c.b)),mn=min(c.r,min(c.g,c.b));float sat=(mx-mn)/(mx+.001);float skin=smoothstep(.02,.08,c.r-c.g)*smoothstep(-.01,.03,c.g-c.b)*smoothstep(.04,.12,c.r)*(1.-smoothstep(.62,.8,sat));float l=dot(c,vec3(.3,.59,.11));vec3 t=tintC*l*2.4;diffuseColor.rgb=mix(c,mix(c,t,tintS),(1.-skin)*(1.-smoothstep(neckH-.04*abs(neckH),neckH,vH)));}')
-  .replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n{float r=1.0-saturate(dot(normalize(vNormal),normalize(vViewPosition)));totalEmissiveRadiance+=rimC*rimS*r*r*r;}');};
- m.customProgramCacheKey=()=>'g3tint';return m;}
+  .replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n{float r=1.0-saturate(dot(normalize(vNormal),normalize(vViewPosition)));totalEmissiveRadiance+=rimC*rimS*r*r*r;}\n{float h=max(bb.y-bb.x,1e-4);float t=(vH-bb.x)/h;float w=fwidth(t)*1.2+.002;float m=0.;m+=nF.x*smoothstep(.955,.985,abs(vON.x))*step(.08,t);m+=nF.y*(1.-smoothstep(.0,w+.012,abs(t-.975)));m+=nF.z*(1.-smoothstep(.0,w+.01,abs(t-.035)));m+=nF.w*(1.-smoothstep(.0,w+.012,abs(t-.62)))*step(0.,vON.z);float nh=(neckH-bb.x)/h;m+=nG.x*(1.-smoothstep(.0,w+.01,abs(t-nh+.02)));if(nG.y>0.){float hh=max(1.-nh,.05);float u=(t-nh)/hh;float ax=abs(vP.x)/max(bb.z,1e-4);float lw=fwidth(ax)*1.5+.02;float s1=(1.-smoothstep(0.,lw,abs(ax-.5)))*step(.08,u)*step(u,.55)*step(0.,vON.z);float s2=(1.-smoothstep(0.,fwidth(u)*1.5+.015,abs(u-.06)));float s3=(1.-smoothstep(0.,fwidth(u)*1.5+.012,abs(u-.9)))*step(.2,ax);m+=nG.y*(s1+s2+s3);}totalEmissiveRadiance+=nC*min(m,1.)*2.2;}');};
+ m.customProgramCacheKey=()=>'g3tint2';if(X.col!=null){m.color=new THREE.Color(X.col);m.map=null;}if(X.metal!=null){m.metalness=X.metal;m.roughness=X.rough??.3;}if(X.eye){m.map=null;m.color=new THREE.Color(0);m.emissive=new THREE.Color(X.eye).multiplyScalar(2.2);}return m;}
 const glowM=c=>new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(2.4),toneMapped:false});
 const stdM=(c,r=.6,m=.2)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
 // ---------- body pick ----------
@@ -65,7 +65,14 @@ export function makeG3(look,hi){const b=bodyFor(look);const lib=(hi&&LIB.hi[b])|
  const h=hash(look),cls=look.gang||look.cls||'mid',pal=TRIM[cls]||TRIM.mid,trim=look.trim??(look.glow?.color??pal[h%pal.length]);
  const tint=look.top??0x8a8a8a,str=look.tintS??(b==='android'||b==='cyborg'?.35:cls==='rich'?.35:cls==='poor'?.45:.55);
  let sk=null;root.traverse(o=>{if(o.isSkinnedMesh&&!sk)sk=o;});sk.skeleton.pose();root.updateMatrixWorld(true);const nb=bonesOf(root).neck;
-root.traverse(o=>{if(o.isMesh){o.material=skinMat(Array.isArray(o.material)?o.material[0]:o.material,cls==='poor'?new THREE.Color(tint).lerp(new THREE.Color(0x6a5a48),.4).getHex():tint,str,new THREE.Color(trim).multiplyScalar(.45),b==='android'||b==='cyborg',nb?o.worldToLocal(nb.getWorldPosition(new THREE.Vector3())).y:null);o.castShadow=false;}});
+const syn=b==='android'||b==='cyborg'||!!look.android,synC=look.synSkin??(h%2?0xdfe5ee:0x9aa4b2),eyeC=look.eye??(look.glow?.color??0x3ff0ff);
+ // R14b neon seams baked into clothing (no extra draw calls): class/gang pick which seams glow
+ const seams=look.seams??(syn?[0,0,0,0]:cls==='rich'?[0,0,0,0]:cls==='poor'?[0,0,0,h%2]:cls==='mid'?[h%3?1:0,1,h%2,0]:[1,1,0,h%2]),collar=cls==='rich'||(cls==='mid'&&h%2)?1:0;
+root.traverse(o=>{if(o.isMesh){const sm=Array.isArray(o.material)?o.material[0]:o.material,mn=sm.name||'',head=/Head/.test(o.name);const g=o.geometry;if(!g.boundingBox)g.computeBoundingBox();const B=g.boundingBox;const nh=nb?o.worldToLocal(nb.getWorldPosition(new THREE.Vector3())).y:null;
+  const X={nC:trim,bb:[B.min.y,B.max.y,Math.max(Math.abs(B.min.x),B.max.x),B.max.z]};const isSkin=/^Skin/.test(mn),isHair=/Hair/.test(mn);
+  if(syn){if(isSkin){X.col=synC;X.metal=h%2?.25:.75;X.rough=h%2?.35:.28;X.nC=eyeC;if(head)X.nG=[0,.9,0,0];else X.nG=[1,0,0,0];}else if(isHair){X.col=0x2a3140;X.metal=.85;X.rough=.25;}else if(head&&/Brown|Blue/.test(mn))X.eye=eyeC;}
+  else if(!isSkin&&!isHair&&!head){X.nF=/Legs/.test(o.name)?[seams[0],seams[1],0,0]:/Feet/.test(o.name)?[0,0,seams[2],0]:/Body/.test(o.name)?[0,0,0,seams[3]]:[0,0,0,0];if(/Body/.test(o.name))X.nG=[collar,0,0,0];}
+  o.material=skinMat(sm,cls==='poor'?new THREE.Color(tint).lerp(new THREE.Color(0x6a5a48),.4).getHex():tint,syn&&(isSkin||isHair)?0:str,new THREE.Color(trim).multiplyScalar(.45),syn,nh,X);o.castShadow=false;}});
 
  // normalise height + stand on y=0
  const ht=HEIGHT[b]*(look.scale?Math.min(1.05,Math.max(.95,look.scale)):1)*(look.sex==='f'&&b!=='woman'?.97:1);{const B0=bonesOf(root);const hy=B0.Hips.getWorldPosition(new THREE.Vector3()).y,ty=(B0.LeftToeBase||B0.LeftFoot).getWorldPosition(new THREE.Vector3()).y;const s=ht*.51/(hy-ty);root.scale.multiplyScalar(s);root.updateMatrixWorld(true);root.position.y=-B0.LeftToeBase.getWorldPosition(new THREE.Vector3()).y+.02*ht;const hp=B0.Hips.getWorldPosition(new THREE.Vector3());root.position.x-=hp.x;root.position.z-=hp.z;}
@@ -84,6 +91,7 @@ root.traverse(o=>{if(o.isMesh){o.material=skinMat(Array.isArray(o.material)?o.ma
  if(tr.includes('ankles')){ring('LeftLeg',.055,'LeftLeg','LeftFoot');ring('RightLeg',.055,'RightLeg','RightFoot');}
  if(tr.includes('neck'))ring('neck',.068,'Spine','neck');if(tr.includes('waist'))add(PC,new THREE.Mesh(new THREE.TorusGeometry(.16,.008,4,28),gm),[0,hipY+.06,fz],[Math.PI/2,0,0]);
  if(cls==='rich'){add(SC,new THREE.Mesh(new THREE.BoxGeometry(.06,.012,.01),glowM(0xffe0a0)),[.09,neckY-.2,fz+.12]);}// gold lapel pin
+ if(syn){const em=glowM(eyeC);for(const e of[-1,1])add(HC,new THREE.Mesh(new THREE.BoxGeometry(.022,.009,.006),em),[e*.033,head.y+.066,head.z+.084]);}// R14b glowing android eyes
  // glow accessories (same vocabulary as the UBC rig)
  const fy=head.z+.1;
  if(look.glow){const g=glowM(look.glow.color),w=look.glow.where;
