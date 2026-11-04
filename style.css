@@ -76,3 +76,17 @@ input[type=range]{width:46%;accent-color:#7ff3ff}
 #cc .ccr{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
 #cc .row{padding-top:4px!important;padding-bottom:4px!important;min-height:0}
 #ccDone{flex:none;margin-top:6px;padding:10px;font-weight:600;background:rgba(127,243,255,.18);border-color:#7ff3ff}
+/* R4: bike HUD + city map */
+#mapB{width:36px;height:36px;padding:0;font-size:19px}
+#bikeHud{position:absolute;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:12px;align-items:center;pointer-events:auto}
+#bikeHud.hide{display:none}
+#spd{font:600 22px/1 system-ui,sans-serif;color:#fff;text-shadow:0 0 12px rgba(255,63,164,.8);min-width:74px;text-align:right}
+#spd small{font-size:10px;opacity:.7;margin-left:3px;letter-spacing:.1em}
+#bikeOff{padding:9px 14px;border-radius:20px;font-size:12px}
+#map{position:fixed;inset:0;z-index:40;background:rgba(4,3,10,.6)}
+#map.hide{display:none}
+#mapC{position:absolute;left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));top:8px;bottom:46px;width:calc(100% - 2*max(10px,env(safe-area-inset-left)));height:calc(100% - 54px);border-radius:14px;border:1px solid rgba(190,170,255,.14);touch-action:none}
+#mapBar{position:absolute;bottom:max(8px,env(safe-area-inset-bottom));left:max(14px,env(safe-area-inset-left));display:flex;gap:8px}
+#mapBar button{padding:8px 12px;font-size:12px;border-radius:16px}
+#mapTip{position:absolute;bottom:max(14px,env(safe-area-inset-bottom));right:max(16px,env(safe-area-inset-right));font-size:11px;color:#c8c0ff;opacity:.8;max-width:40%;text-align:right}
+#map .x{position:absolute;top:14px;right:max(18px,env(safe-area-inset-right))}

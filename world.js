@@ -74,7 +74,7 @@ export function corridor(scene,cfg,cand){const NE=cfg.neon||NEON,HT=cfg.hor||hor
    if(!isLadle&&srand()<.35)sign(spick(HT),spick(NE),cx-w*.25,sr(7,15),fz-s*1.3,.7,{ry:Math.PI/2,fs:48,light:srand()<.4});
    if(!isLadle&&srand()<.8){sign(spick(VT),spick(NE),x+w-.6,sr(6,Math.min(h-4,13)),fz-s*1.0,sr(3.5,5.5),{vert:true,cjk:true,ry:Math.PI/2,flick:srand()<.2,li:7,ld:11});lit.add(x+w-.6,9,fz-s*.5,.1,.1,1,0x333333);}
    x+=w;}}
- for(const e of cfg.caps||[]){const ex=e*(L+4);lit.add(ex,20,0,8,40,hw*2+20,0x1b1824);for(let k=0;k<40;k++)glow.add(ex-e*4.05,sr(3,38),sr(-hw,hw),.6,.85,.04,new THREE.Color(spick(winCols)).multiplyScalar(sr(.1,.4)).getHex());if(e)sign(spick(VT),spick(NE),ex-e*4.2,8,0,5,{vert:true,cjk:true,ry:Math.PI/2,li:6});}
+ for(const e of cfg.caps||[]){const ex=e*(L+4),pt=cfg.portal===e;if(pt){const Z=hw+10;lit.add(ex,20,-(Z+3.5)/2,8,40,Z-3.5,0x1b1824);lit.add(ex,20,(Z+3.5)/2,8,40,Z-3.5,0x1b1824);lit.add(ex,23.4,0,8,33.2,7,0x1b1824);lit.add(ex,.01,0,8,.02,7,0x2a2630);glowHot.add(ex-e*4.06,6.85,0,.08,.1,7,0x3ff0ff);glowHot.add(ex+e*4.06,6.85,0,.08,.1,7,0x3ff0ff);}else lit.add(ex,20,0,8,40,hw*2+20,0x1b1824);for(let k=0;k<40;k++){const yy=sr(3,38),zz=sr(-hw,hw),cc=new THREE.Color(spick(winCols)).multiplyScalar(sr(.1,.4)).getHex();if(!(pt&&yy<7.6&&Math.abs(zz)<4))glow.add(ex-e*4.05,yy,zz,.6,.85,.04,cc);}if(e)sign(spick(VT),spick(NE),ex-e*4.2,8,0,5,{vert:true,cjk:true,ry:Math.PI/2,li:6});}
  // overhead cables + lanterns
  for(let i=0;i<cfg.len/3.5*(cfg.cables??1);i++){const x0=sr(-L,L),x1=x0+sr(-6,6),y0=sr(5,14),y1=y0+sr(-2,2),sag=sr(.6,2);const pts=[];for(let t=0;t<=1.001;t+=.05)pts.push(new THREE.Vector3(x0+(x1-x0)*t,y0+(y1-y0)*t-Math.sin(t*Math.PI)*sag,-hw+.1+(hw*2-.2)*t));
   G.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),CABLE));
@@ -95,7 +95,7 @@ const WATER=new THREE.MeshStandardMaterial({color:0x0a0c18,roughness:.05,metalne
 const CABLE=new THREE.LineBasicMaterial({color:0x0a0a10});
 // ================= the whole city =================
 export const DISTRICTS={
- main:{name:'Saltgate Street',cx:0,cz:0,rot:0,len:96,hw:8.6,kind:'street',gaps:[{side:-1,a:20.8,b:27.2},{side:1,a:-27.4,b:-16.6}],caps:[-1],ladle:true,parent:null},
+ main:{name:'Saltgate Street',cx:0,cz:0,rot:0,len:96,hw:8.6,kind:'street',portal:-1,gaps:[{side:-1,a:20.8,b:27.2},{side:1,a:-27.4,b:-16.6}],caps:[-1],ladle:true,parent:null},
  alley:{name:'Lantern Market',cx:24,cz:-28.6,rot:Math.PI/2,len:40,hw:3.2,kind:'alley',hmin:10,hmax:26,caps:[1],parent:'main',join:[24,-6.5]},
  avenue:{name:'Line 9 Approach',cx:-22,cz:24.3,rot:-Math.PI/2,len:31.4,hw:5,kind:'street',hmin:14,hmax:30,parent:'main',join:[-22,6.5]},
  plaza:{name:'Line 9 Plaza',cx:-22,cz:54,rot:0,len:34,hw:14,kind:'plaza',hmin:18,hmax:40,gaps:[{side:-1,a:-5.2,b:5.2},{side:1,a:-5,b:5}],caps:[-1,1],parent:'avenue',join:[-22,41]},

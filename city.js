@@ -10,15 +10,16 @@ export const NEW_D={
  crown:{name:'Crown Heights · upper city',cls:'rich',cx:0,cz:-260,rot:0,len:120,hw:12,kind:'street',hmin:38,hmax:88,cables:.12,roadMat:STONE2,walkMat:STONE,t1:0x8c8a94,t2:0x7a7884,
   wall:[0x8a8e9a,0x9ea2ae,0x6a7080,0x5a6070,0xb0b0b8,0x7c8090],neon:[0xffffff,0x9fe8ff,0xffe0a0,0x3ff0ff,0xc9b2ff],
   hor:['ORRIN MUTUAL','AURELIA','HALCYON','MAISON VEIL','KESSLER & SONS','PRISM','LUMEN','SKYDECK','OBSIDIAN','GALLERIA 9','VANTA'],vert:['銀行','宝石','美術','天空','黄金','真珠','証券'],
-  gaps:[{side:-1,a:-6,b:6},{side:1,a:20,b:28},{side:1,a:-34,b:-26}],caps:[-1,1],parent:null},
+  gaps:[{side:-1,a:-6,b:6},{side:1,a:20,b:28},{side:1,a:-34,b:-26}],caps:[-1,1],portal:-1,parent:null},
  docks:{name:'Ashline Docks · the low city',cls:'poor',cx:0,cz:260,rot:0,len:100,hw:6.5,kind:'alley',hmin:7,hmax:14,cables:2.4,walkMat:GRIME,t1:0x15120e,t2:0x1c1812,
   wall:[0x3a2a22,0x2e2a26,0x342018,0x2a2c2a,0x3a3028,0x40342a],neon:[0xff4d3d,0xff8a3d,0x5dff9b,0xffc070,0xff3fa4],
   hor:['RUSTED HOOK','PARTS & PAWN','FISH','NOODLE 5¢','CHEAP SLEEP','REPAIRS','BOOZE','CLINIC','BATTERIES','PRAYER'],vert:['質屋','魚','修理','酒','宿','薬'],
-  forceH:[{side:-1,a:-50,b:12,h:7.5},{side:1,a:-32,b:20,h:7.5}],gaps:[{side:1,a:-46,b:-38},{side:-1,a:22,b:29}],caps:[-1],parent:null},
+  forceH:[{side:-1,a:-50,b:12,h:7.5},{side:1,a:-32,b:20,h:7.5}],gaps:[{side:1,a:-46,b:-38},{side:-1,a:22,b:29}],caps:[-1],portal:-1,parent:null},
  home:{name:'Home',cls:'mid',cx:0,cz:800,rot:0,len:60,hw:3,virtual:true,parent:null},
+ causeway:{name:'Ring Causeway',cls:'mid',cx:-74,cz:0,rot:Math.PI/2,len:530,hw:4,virtual:true,parent:null},
  metro:{name:'Ring Line',cls:'mid',cx:0,cz:700,rot:0,len:16,hw:1.5,virtual:true,parent:null}};
 Object.assign(DISTRICTS,NEW_D);
-export function regionOf(x,z){if(z>760)return'home';if(z<-200)return'crown';if(z>200&&z<450)return'docks';if(z>600)return'metro';return'mid';}
+export function regionOf(x,z){if(x<-59.5&&z>-300&&z<300)return'causeway';if(z>760)return'home';if(z<-200)return'crown';if(z>200&&z<450)return'docks';if(z>600)return'metro';return'mid';}
 export function buildCity(scene,cand){
  const out={districts:{},walk:[],inter:[],rooms:[],staff:[],anim:[],steam:[],stations:{},lanes:{crown:[],docks:[]},seats:[]};
  const B=new Batch(new THREE.MeshLambertMaterial()),Gl=new Batch(new THREE.MeshBasicMaterial({toneMapped:false})),Gh=new Batch(new THREE.MeshBasicMaterial({toneMapped:false}));Gl.mat.userData.boost=1;Gh.mat.userData.boost=2.6;
