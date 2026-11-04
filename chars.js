@@ -92,7 +92,7 @@ export function makeHuman(look){if(look.robot){const r=makeRobot(look.robot,look
   if(gr.t==='cyber'){add(HC,new THREE.Mesh(new THREE.BoxGeometry(.012,.05,.05),g),[.093,headY-.12,.02]);}
   if(gr.t==='belt')add(SC,new THREE.Mesh(new THREE.TorusGeometry(.15,.015,4,20),std(0x111,.4,.5)),[0,headY-.72,0],[Math.PI/2,0,0]);}
  if(look.umbrella){const u=new THREE.Group();const c=new THREE.Mesh(new THREE.ConeGeometry(.55,.22,12,1,true),new THREE.MeshLambertMaterial({color:look.umbrella,side:THREE.DoubleSide,transparent:true,opacity:.75,emissive:new THREE.Color(look.umbrella).multiplyScalar(.3)}));c.position.y=.75;u.add(c);const st=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,.75),std(0x222));st.position.y=.37;u.add(st);
-  st.position.y=0;st.geometry.translate(0,.5,0);st.scale.y=1;c.position.y=0;
+  st.position.y=0;st.geometry.translate(0,.375,0);st.scale.y=1;c.position.y=0;
   const hr=bones.hand_r;if(hr){root.add(u);H.userData.umb=u;
    // R6: the shaft runs from the right hand to a point centred over the head; the canopy stays (nearly) level above the head
    const hv=new THREE.Vector3(),top=new THREE.Vector3(0,headY+.32,.04),grip0=new THREE.Vector3(-.16,headY-.62,.2),dir=new THREE.Vector3(),UP=new THREE.Vector3(0,1,0),q=new THREE.Quaternion();
@@ -100,7 +100,7 @@ export function makeHuman(look){if(look.robot){const r=makeRobot(look.robot,look
    const lo=bones.lowerarm_r,up=bones.upperarm_r,grip=new THREE.Vector3(-.13,headY-.5,.2),tw=new THREE.Vector3(),bp=new THREE.Vector3(),v1=new THREE.Vector3(),v2=new THREE.Vector3(),qw=new THREE.Quaternion(),pq=new THREE.Quaternion();
    const ik=()=>{if(!lo||!up)return;root.updateWorldMatrix(true,false);tw.copy(grip);root.localToWorld(tw);for(let it=0;it<3;it++)for(const b of[lo,up]){hr.updateWorldMatrix(true,false);hv.setFromMatrixPosition(hr.matrixWorld);bp.setFromMatrixPosition(b.matrixWorld);v1.subVectors(hv,bp).normalize();v2.subVectors(tw,bp).normalize();qw.setFromUnitVectors(v1,v2);b.parent.getWorldQuaternion(pq);qw.premultiply(pq.clone().invert()).multiply(pq);b.quaternion.premultiply(qw);b.updateMatrixWorld(true);}};
    u.userData.fit=()=>{ik();hr.updateWorldMatrix(true,false);hv.setFromMatrixPosition(hr.matrixWorld);root.worldToLocal(hv);
-    dir.subVectors(top,hv);const L=dir.length();dir.multiplyScalar(1/L);st.position.copy(hv);st.quaternion.setFromUnitVectors(UP,dir);st.scale.y=L+.02;
+    dir.subVectors(top,hv);const L=dir.length();dir.multiplyScalar(1/L);st.position.copy(hv);st.quaternion.setFromUnitVectors(UP,dir);st.scale.y=(L+.02)/.75;// R14b: shaft base at the hand, length exactly hand->top
     c.position.copy(top);c.position.y+=.08;q.setFromUnitVectors(UP,dir);c.quaternion.identity().slerp(q,.2);};u.userData.fit();}}
  // culling: skinned meshes test a padded bind-pose sphere, so off-screen people cost no draw calls
  H.traverse(o=>{if(o.isMesh){const g=o.geometry;if(!g.boundingSphere)g.computeBoundingSphere();if(o.isSkinnedMesh){o.boundingSphere=g.boundingSphere.clone();o.boundingSphere.radius+=.45;}o.frustumCulled=true;if(!o.isSkinnedMesh&&g.boundingSphere.radius<.09)(H.userData.small||(H.userData.small=[])).push(o);}});
