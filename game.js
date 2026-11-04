@@ -27,8 +27,9 @@ const composer=new EffectComposer(R);composer.addPass(new RenderPass(scene,cam))
 const bloom=new UnrealBloomPass(new THREE.Vector2(512,256),.75,.5,.72);composer.addPass(bloom);composer.addPass(new OutputPass());
 // resolution scaling: one place decides the internal render size for every device
 function pixelRatio(){return Math.min(devicePixelRatio,SET.low?1:1.5)*SET.scale;}
-function resize(){const w=innerWidth,h=innerHeight;R.setPixelRatio(pixelRatio());composer.setPixelRatio(pixelRatio());R.setSize(w,h,false);composer.setSize(w,h);bloom.resolution.set(w/2,h/2);cam.aspect=w/h;cam.updateProjectionMatrix();}
-addEventListener('resize',resize);resize();
+function vpSize(){const r=R.domElement.getBoundingClientRect();const vv=window.visualViewport;return [Math.max(1,Math.round(Math.max(r.width,innerWidth,vv?vv.width:0))),Math.max(1,Math.round(Math.max(r.height,innerHeight,vv?vv.height:0)))];}
+let VW=innerWidth,VH=innerHeight;function resize(){const [w,h]=vpSize();VW=w;VH=h;R.setPixelRatio(pixelRatio());composer.setPixelRatio(pixelRatio());R.setSize(w,h,false);composer.setSize(w,h);bloom.resolution.set(w/2,h/2);cam.aspect=w/h;cam.updateProjectionMatrix();}
+const resizeSoon=()=>{resize();[60,250,600,1200].forEach(t=>setTimeout(resize,t));};addEventListener('resize',resizeSoon);addEventListener('orientationchange',resizeSoon);addEventListener('pageshow',resizeSoon);document.addEventListener('visibilitychange',()=>{if(!document.hidden)resizeSoon();});window.visualViewport&&visualViewport.addEventListener('resize',resizeSoon);if(window.ResizeObserver)new ResizeObserver(()=>resize()).observe(R.domElement);resize();
 const rain=makeRain(scene,SET.low?1500:2600);const steam=makeSteam(scene,[new THREE.Vector3(-1.2,1.6,-7.5),new THREE.Vector3(1.2,1.6,-7.5),...W.vents,...W.steamPts.slice(0,SET.low?3:8)]);const traffic=makeTraffic(scene);
 // elevated Line 9 train
 const train=new THREE.Group();{const bm=new THREE.MeshLambertMaterial({color:0x2a2838}),wm=new THREE.MeshBasicMaterial({color:new THREE.Color(0xffe0b0).multiplyScalar(1.8),toneMapped:false}),sm=new THREE.MeshBasicMaterial({color:new THREE.Color(0x3ff0ff).multiplyScalar(2),toneMapped:false});
@@ -221,9 +222,9 @@ Input.on('menu',()=>{menuOpen()?$('menu').classList.add('hide'):openMenu('q');})
 const beam=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,40,8,1,true),new THREE.MeshBasicMaterial({color:new THREE.Color(0x7ff3ff).multiplyScalar(1.4),transparent:true,opacity:.22,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));scene.add(beam);
 function tickWaypoint(t){const id=S.track&&typeof S.q[S.track]==='number'?S.track:null;const s=id&&stepOf(id);const tg=s&&stepTarget(s);const wp=$('wp');
  $('track').innerHTML=id?`<b>${Q[id].t.toUpperCase()}</b>${s.d}`:(S.q.m8==='done'?'<b>CHAPTER TWO COMPLETE</b>Keep the lights on':'');
- if(!tg){wp.style.display='none';beam.visible=false;return;}const dist=Math.hypot(tg.x-P.x,tg.z-P.z);beam.visible=dist>6;beam.position.set(tg.x,20,tg.z);beam.material.opacity=(.14+Math.sin(t*2.4)*.05)*Math.min(1,(dist-6)/14);tv.copy(tg).project(cam);const behind=tv.z>1;let sx=(tv.x+1)/2*innerWidth,sy=(1-tv.y)/2*innerHeight;
- if(behind){sx=innerWidth-sx;sy=innerHeight-sy;}const mg=40,off=behind||sx<mg||sx>innerWidth-mg||sy<mg||sy>innerHeight-mg;
- if(off){const cx=innerWidth/2,cy=innerHeight/2;let dx=sx-cx,dy=sy-cy;if(behind&&Math.abs(dx)<1)dx=1;const k=Math.min((cx-mg)/Math.abs(dx||1e-3),(cy-mg)/Math.abs(dy||1e-3));sx=cx+dx*k;sy=cy+dy*k;wp.querySelector('i').style.transform=`rotate(${Math.atan2(dy,dx)}rad)`;wp.classList.add('edge');}else{wp.classList.remove('edge');wp.querySelector('i').style.transform='';}
+ if(!tg){wp.style.display='none';beam.visible=false;return;}const dist=Math.hypot(tg.x-P.x,tg.z-P.z);beam.visible=dist>6;beam.position.set(tg.x,20,tg.z);beam.material.opacity=(.14+Math.sin(t*2.4)*.05)*Math.min(1,(dist-6)/14);tv.copy(tg).project(cam);const behind=tv.z>1;let sx=(tv.x+1)/2*VW,sy=(1-tv.y)/2*VH;
+ if(behind){sx=VW-sx;sy=VH-sy;}const mg=40,off=behind||sx<mg||sx>VW-mg||sy<mg||sy>VH-mg;
+ if(off){const cx=VW/2,cy=VH/2;let dx=sx-cx,dy=sy-cy;if(behind&&Math.abs(dx)<1)dx=1;const k=Math.min((cx-mg)/Math.abs(dx||1e-3),(cy-mg)/Math.abs(dy||1e-3));sx=cx+dx*k;sy=cy+dy*k;wp.querySelector('i').style.transform=`rotate(${Math.atan2(dy,dx)}rad)`;wp.classList.add('edge');}else{wp.classList.remove('edge');wp.querySelector('i').style.transform='';}
  wp.style.display=dist<2.2?'none':'block';wp.style.left=sx+'px';wp.style.top=sy+'px';wp.querySelector('span').textContent=Math.round(dist)+'m';}
 // ================= journal / menu =================
 const menuOpen=()=>!$('menu').classList.contains('hide');
@@ -274,7 +275,7 @@ function sleep(){if(S.open){toast('Close the shop first (Kitchen)');return;}
  S.day++;S.min=18*60;S.talkedDay={};S.asked={};const interest=S.flags.interestFrozen?0:Math.round(S.debt*.002);S.debt+=interest;fade();toast(`Day ${S.day}${interest?` · Orrin Mutual added ¢${interest} interest`:''}`);save();}
 function fade(){const f=$('fade');f.classList.remove('show');void f.offsetWidth;f.classList.add('show');}
 // ================= helpers =================
-const tmpV=new THREE.Vector3();function place(el,x,y,z){tmpV.set(x,y,z).project(cam);if(tmpV.z>1){el.style.display='none';return;}el.style.left=((tmpV.x+1)/2*innerWidth)+'px';el.style.top=((1-tmpV.y)/2*innerHeight)+'px';}
+const tmpV=new THREE.Vector3();function place(el,x,y,z){tmpV.set(x,y,z).project(cam);if(tmpV.z>1){el.style.display='none';return;}el.style.left=((tmpV.x+1)/2*VW)+'px';el.style.top=((1-tmpV.y)/2*VH)+'px';}
 // district streaming: hide whole districts the camera can't meaningfully see
 function tickStreaming(){const lim=SET.low?58:72;for(const k in W.districts){const d=DISTRICTS[k],g=W.districts[k].G;const c=Math.cos(d.rot||0),s=Math.abs(Math.sin(d.rot||0));const hx=(c*c>.5?d.len/2:d.hw+10),hz=(c*c>.5?d.hw+10:d.len/2);
   const dx=Math.max(0,Math.abs(cam.position.x-d.cx)-hx),dz=Math.max(0,Math.abs(cam.position.z-d.cz)-hz);g.visible=Math.hypot(dx,dz)<lim;}}
