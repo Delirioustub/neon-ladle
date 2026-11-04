@@ -19,7 +19,7 @@ export const CAST={
 };
 // schedule entries: [fromMinute, placeKey]; minutes run 18:00 (1080) .. 26:00 (1560)
 export const PLACES={
- mara_office:[-9,-7.1,'idle',0],mara_canal:[52.5,1.6,'talk',-Math.PI/2],mara_tea:[22.2,-30,'talk',Math.PI/2],
+ mara_office:[-9,-7.1,'idle',0],mara_canal:[52.5,1.6,'talk',-Math.PI/2],mara_tea:[23.9,-30,'talk',-Math.PI/2],
  juno_main:[13,6.9,'idle',Math.PI],juno_boat:[54,28.6,'idle',Math.PI/2],juno_line9:[-19,46,'idle',Math.PI],
  benny_cart:[-17,6.9,'talk',Math.PI],benny_market:[25.8,-22,'talk',-Math.PI/2],
  sela_clinic:[16,-7.1,'idle',0],sela_ladle:[1.3,-5.2,'sit',Math.PI],
