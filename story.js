@@ -10,7 +10,7 @@ export const CAST={
   home:'Cart on Saltgate Street until eleven, then haggles in the Lantern Market.'},
  sela:{n:'Sela Okafor',role:'Night nurse, Okafor Clinic',look:{sex:'f',skin:0x6a4030,top:0x2a6a70,pants:0x2a6a70,boots:0xdedede,hair:{style:'bun',color:0x0e0a0a},slim:.9,coat:{color:0xe0e4ee,len:.62,open:1},glow:{where:'strip',color:0x5dff9b},gear:[{t:'satchel',col:0x3a2a28}]},
   home:'Clinic doorway on Saltgate. Comes by the Ladle around eight for her break.'},
- kip:{n:'Kip',role:'Rooftop kid, "netrunner"',look:{sex:'m',skin:0xe0c0a0,top:0x2a3a2a,pants:0x1a1a22,boots:0x2a1a10,hair:{style:'spiky',color:0x3ff0a0},hat:'hood',slim:.84,coat:{color:0x34482a,len:.45},glow:{where:'phones',color:0x5dff9b},gear:[{t:'bag',col:0x1e2620}],scale:.86,tempo:1.08},
+ kip:{n:'Kip',role:'Rooftop kid, "netrunner"',look:{body:'man',sex:'m',skin:0xe0c0a0,top:0x2a3a2a,pants:0x1a1a22,boots:0x2a1a10,hair:{style:'spiky',color:0x3ff0a0},hat:'hood',slim:.84,coat:{color:0x34482a,len:.45},glow:{where:'phones',color:0x5dff9b},gear:[{t:'bag',col:0x1e2620}],scale:1,tempo:1.08},
   home:'Hangs under the Ladle awning early. After eight, up the Lantern Market stairs.'},
  ilse:{n:'Ilse Varn',role:'Wardline patrol officer',look:{sex:'f',skin:0xe8c8b0,top:0x1e2a44,pants:0x141c30,boots:0x08080c,hair:{style:'buzz',color:0xc8b890},hat:'cap',hatColor:0x141c30,coat:{color:0x1c2640,len:.6,shiny:1},glow:{where:'collar',color:0x3f8aff},gear:[{t:'pads',col:0x141c30},{t:'belt'}],gloves:0x0e0e12,scale:1.02},
   home:'Patrols Saltgate Street and the Line 9 Plaza. Always walking.'},

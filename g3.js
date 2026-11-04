@@ -1,4 +1,4 @@
-// R12: Grab3D CC0 rigged humans (decimated: ~15k tris "hi" for cast/player, ~6k "lo" for crowds) + Quaternius CC0 small robots.
+// R14: Quaternius Ultimate Modular Characters (CC0) under the old body keys (woman=Punk_F, man=Punk_M, businessman=Suit, police-officer=Soldier, teen-character=Worker dockhand, sci-fi-soldier=SciFi, ninja=Hooded, android=Hazmat, cyborg=Adventurer); bones renamed + feet reparented in Blender. Was: R12 Grab3D CC0 rigged humans (decimated: ~15k tris "hi" for cast/player, ~6k "lo" for crowds) + Quaternius CC0 small robots.
 // The 8 Universal Animation Library clips (authored on the UBC skeleton) are retargeted onto each Grab3D skeleton at load time:
 // per mapped bone, world-space rotation delta from the source bind pose, pre-aligned so target bone directions match source bone directions
 // at bind (handles A-pose vs T-pose), hips translation scaled by leg length. Looks get a clothing tint (skin-preserving shader), neon trims
@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 export const BODIES=['woman','man','businessman','police-officer','teen-character','sci-fi-soldier','ninja','android','cyborg'];
-const HEIGHT={woman:1.7,man:1.8,businessman:1.8,'police-officer':1.8,'teen-character':1.66,'sci-fi-soldier':1.84,ninja:1.78,android:1.78,cyborg:1.74};
+const HEIGHT={woman:1.7,man:1.8,businessman:1.8,'police-officer':1.8,'teen-character':1.78,'sci-fi-soldier':1.84,ninja:1.78,android:1.78,cyborg:1.74};
 const SIDE=s=>s==='l'?'Left':'Right';
 const MAP={pelvis:'Hips',spine_01:'Spine02',spine_02:'Spine01',spine_03:'Spine',neck_01:'neck',Head:'Head'};
 for(const s of['l','r']){const S=SIDE(s);Object.assign(MAP,{['clavicle_'+s]:S+'Shoulder',['upperarm_'+s]:S+'Arm',['lowerarm_'+s]:S+'ForeArm',['hand_'+s]:S+'Hand',['thigh_'+s]:S+'UpLeg',['calf_'+s]:S+'Leg',['foot_'+s]:S+'Foot',['ball_'+s]:S+'ToeBase'});
@@ -18,7 +18,7 @@ for(const s of['l','r']){Object.assign(CHILD,{['clavicle_'+s]:'upperarm_'+s,['up
 const LIB={hi:{},lo:{}},CLIPS={},ROBO={};let SRC=null,SRCCLIPS=null;
 export const g3Ready=()=>!!LIB.lo.man;
 export async function loadG3(dir,srcScene,srcClips,hiSet){const L=new GLTFLoader();SRC=srcScene;SRCCLIPS=srcClips;
- const jobs=[];for(const b of BODIES){jobs.push(L.loadAsync(`${dir}g3/${b}-lo.glb`).then(g=>LIB.lo[b]=prep(g.scene,b)));if(hiSet.includes(b))jobs.push(L.loadAsync(`${dir}g3/${b}-hi.glb`).then(g=>LIB.hi[b]=prep(g.scene,b)));}
+ const jobs=[];for(const b of BODIES){jobs.push(L.loadAsync(`${dir}g3/${b}-lo.glb`).then(g=>LIB.lo[b]=prep(g.scene,b)));}
  for(const r of ['CP_Flying','CP_Robot_2Legs','Enemy_EyeDrone','Enemy_Trilobite','Enemy_QuadShell'])jobs.push(L.loadAsync(`${dir}robots/${r}.glb`).then(g=>ROBO[r]={scene:g.scene,clips:g.animations}).catch(()=>{}));
  await Promise.all(jobs);}
 function prep(scene,b){let sk=null;scene.traverse(o=>{if(o.isSkinnedMesh){sk=o;o.frustumCulled=false;}});return {scene,b};}
@@ -43,7 +43,7 @@ function retargetAll(b,tgtRoot){if(CLIPS[b])return CLIPS[b];
  return CLIPS[b]=out;}
 // ---------- materials ----------
 const RIM=new THREE.Color(0x8a6cff);
-function skinMat(src,tint,str,rimC,metal,neckH){const m=new THREE.MeshStandardMaterial({map:src.map||null,normalMap:null,color:0xffffff,roughness:metal?.35:.78,metalness:metal?.55:0,emissive:0x000000});
+function skinMat(src,tint,str,rimC,metal,neckH){const m=new THREE.MeshStandardMaterial({map:src.map||null,normalMap:null,color:src.color?src.color.clone():0xffffff,roughness:metal?.35:.78,metalness:metal?.55:0,emissive:0x000000});
  m.onBeforeCompile=s=>{s.uniforms.tintC={value:new THREE.Color(tint)};s.uniforms.tintS={value:str};s.uniforms.rimC={value:rimC||RIM};s.uniforms.rimS={value:.5};s.uniforms.neckH={value:neckH??1e9};s.vertexShader=s.vertexShader.replace('#include <common>','#include <common>\nvarying float vH;').replace('#include <begin_vertex>','#include <begin_vertex>\nvH=position.y;');
   s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nuniform vec3 tintC;uniform float tintS;uniform float neckH;varying float vH;uniform vec3 rimC;uniform float rimS;')
   .replace('#include <map_fragment>','#include <map_fragment>\n{vec3 c=diffuseColor.rgb;float mx=max(c.r,max(c.g,c.b)),mn=min(c.r,min(c.g,c.b));float sat=(mx-mn)/(mx+.001);float skin=smoothstep(.02,.08,c.r-c.g)*smoothstep(-.01,.03,c.g-c.b)*smoothstep(.04,.12,c.r)*(1.-smoothstep(.62,.8,sat));float l=dot(c,vec3(.3,.59,.11));vec3 t=tintC*l*2.4;diffuseColor.rgb=mix(c,mix(c,t,tintS),(1.-skin)*(1.-smoothstep(neckH-.04*abs(neckH),neckH,vH)));}')
@@ -87,8 +87,8 @@ root.traverse(o=>{if(o.isMesh){o.material=skinMat(Array.isArray(o.material)?o.ma
  // glow accessories (same vocabulary as the UBC rig)
  const fy=head.z+.1;
  if(look.glow){const g=glowM(look.glow.color),w=look.glow.where;
-  if(w==='visor')add(HC,new THREE.Mesh(new THREE.BoxGeometry(.17,.026,.03),g),[0,head.y+.07,fy]);
-  if(w==='phones'){for(const e of[-1,1])add(HC,new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.03,12),g),[e*.09,head.y+.06,head.z],[0,0,Math.PI/2]);}
+  if(w==='visor')add(HC,new THREE.Mesh(new THREE.BoxGeometry(.13,.012,.012),g),[0,head.y+.07,fy-.02]);
+  if(w==='phones'){for(const e of[-1,1])add(HC,new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.012,12),g),[e*.09,head.y+.06,head.z],[0,0,Math.PI/2]);}
   if(w==='collar')add(SC,new THREE.Mesh(new THREE.TorusGeometry(.075,.008,6,18),g),[0,neckY-.02,head.z],[Math.PI/2,0,0]);
   if(w==='badge')add(SC,new THREE.Mesh(new THREE.BoxGeometry(.05,.035,.01),g),[.08,neckY-.2,fz+.13]);
   if(w==='strip')add(SC,new THREE.Mesh(new THREE.BoxGeometry(.008,.24,.008),g),[.07,neckY-.26,fz+.13]);}
@@ -101,7 +101,7 @@ root.traverse(o=>{if(o.isMesh){o.material=skinMat(Array.isArray(o.material)?o.ma
   if(gr.t==='mask')add(HC,new THREE.Mesh(new THREE.BoxGeometry(.12,.06,.05),stdM(gr.col||0x18181e,.5)),[0,head.y-.02,fy-.01]);
   if(gr.t==='glasses')add(HC,new THREE.Mesh(new THREE.BoxGeometry(.15,.028,.02),g||stdM(0x111)),[0,head.y+.06,fy+.005]);
   if(gr.t==='cyber')add(HC,new THREE.Mesh(new THREE.BoxGeometry(.012,.05,.05),g||gm),[.088,head.y+.05,head.z+.02]);
-  if(gr.t==='pads'&&b!=='police-officer')for(const e of[-1,1])add(SC,new THREE.Mesh(new THREE.SphereGeometry(.08,10,6,0,Math.PI*2,0,Math.PI*.42),stdM(gr.col||0x2a3044,.4,.4)),[e*.17,neckY-.06,head.z],[0,0,e*-.5]);
+  if(false&&gr.t==='pads')for(const e of[-1,1])add(SC,new THREE.Mesh(new THREE.SphereGeometry(.08,10,6,0,Math.PI*2,0,Math.PI*.42),stdM(gr.col||0x2a3044,.4,.4)),[e*.17,neckY-.06,head.z],[0,0,e*-.5]);
   if(gr.t==='belt')add(PC,new THREE.Mesh(new THREE.TorusGeometry(.15,.015,4,20),stdM(0x111,.4,.5)),[0,hipY+.04,head.z],[Math.PI/2,0,0]);}
  if(cls==='mid'&&!look.glow&&h%3===0)add(HC,new THREE.Mesh(new THREE.BoxGeometry(.012,.05,.05),gm),[.088,head.y+.05,head.z+.02]);// ear jack
  if(false&&cls==='poor'&&h%4===1)add(HC,new THREE.Mesh(new THREE.SphereGeometry(.112,14,8,0,Math.PI*2,0,Math.PI*.5),stdM(0x2a2420,.9,0)),[0,headY-.08,head.z-.005]);// worn knit cap
