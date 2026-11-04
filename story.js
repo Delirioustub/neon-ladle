@@ -2,19 +2,19 @@
 export const DISH={shoyu:{n:'Saltgate Shoyu',p:28,t:6},tea:{n:'Kettle Tea',p:12,t:3},miso:{n:'Midnight Miso',p:44,t:8},chili:{n:'Static Chili Tan',p:58,t:9},dumpling:{n:'Truce Dumplings',p:36,t:5}};
 // look: see chars.js makeHuman
 export const CAST={
- mara:{n:'Mara Voss',role:'Building agent, Orrin Mutual',look:{skin:0xd9b8a0,body:0x2a2438,joints:0x15121c,hair:{style:'bob',color:0x101018},slim:.88,coat:{color:0x3a2a48,len:.62},glow:{where:'badge',color:0xff3fa4}},
+ mara:{n:'Mara Voss',role:'Building agent, Orrin Mutual',look:{sex:'f',skin:0xe2c2aa,top:0x1a1622,pants:0x15121c,boots:0x0c0a0e,hair:{style:'bob',color:0x0c0c12},slim:.92,coat:{color:0x2e2440,len:.72,shiny:1},glow:{where:'badge',color:0xff3fa4},gear:[{t:'glasses',c:0xff3fa4}],tempo:.95},
   home:'Works out of a doorway on Saltgate Street. Walks the canal around ten. Takes tea in the market late.'},
- juno:{n:'Juno-7',role:'Courier android',look:{skin:0xb8c4d8,body:0x8a96aa,joints:0x2a3040,hair:null,glow:{where:'visor',color:0x3ff0ff},scale:1.02},
+ juno:{n:'Juno-7',role:'Courier android',look:{sex:'m',android:1,skin:0xaab4c8,body:0x6a7488,glow:{where:'visor',color:0x3ff0ff},gear:[{t:'bagglow',col:0x2a3040,c:0x3ff0ff},{t:'pads',col:0x3a4458},{t:'cyber',c:0x3ff0ff}],scale:1.03,tempo:1.05},
   home:'Delivers along Saltgate early, idles by the canal houseboats mid-shift, then heads for Line 9.'},
- benny:{n:'Benny Tsai',role:'Dumpling cart, your rival',look:{skin:0xd8a880,body:0x3a3a48,joints:0x221a16,coat:{color:0x6a4a30,len:.4},hair:{style:'short',color:0x1a1410},apron:0xd8d0c0,hat:'beanie',hatColor:0x7a2028,scale:1.04},
+ benny:{n:'Benny Tsai',role:'Dumpling cart, your rival',look:{sex:'m',skin:0xd8a880,top:0x3a3a48,pants:0x2a2a30,hair:{style:'beard',color:0x1a1410},hat:'beanie',hatColor:0x7a2028,coat:{color:0x2a3444,len:.45},apron:0xd8d0c0,bulk:1.12,scale:1.0,tempo:.92},
   home:'Cart on Saltgate Street until eleven, then haggles in the Lantern Market.'},
- sela:{n:'Sela Okafor',role:'Night nurse, Okafor Clinic',look:{slim:.88,skin:0x6a4030,body:0x2a5a64,joints:0x2a2e3a,hair:{style:'bun',color:0x0e0a0a},coat:{color:0xe0e4ee,len:.55},glow:{where:'strip',color:0x5dff9b}},
+ sela:{n:'Sela Okafor',role:'Night nurse, Okafor Clinic',look:{sex:'f',skin:0x6a4030,top:0x2a6a70,pants:0x2a6a70,boots:0xdedede,hair:{style:'bun',color:0x0e0a0a},slim:.9,coat:{color:0xe0e4ee,len:.62,open:1},glow:{where:'strip',color:0x5dff9b},gear:[{t:'satchel',col:0x3a2a28}]},
   home:'Clinic doorway on Saltgate. Comes by the Ladle around eight for her break.'},
- kip:{n:'Kip',role:'Rooftop kid, "netrunner"',look:{skin:0xe0c0a0,body:0x2a3a2a,joints:0x141a14,hair:{style:'spiky',color:0x3ff0a0},hat:'hood',slim:.9,coat:{color:0x3a4a2a,len:.4},pants:0x1a1a22,glow:{where:'phones',color:0x5dff9b},scale:.88},
+ kip:{n:'Kip',role:'Rooftop kid, "netrunner"',look:{sex:'m',skin:0xe0c0a0,top:0x2a3a2a,pants:0x1a1a22,boots:0x2a1a10,hair:{style:'spiky',color:0x3ff0a0},hat:'hood',slim:.84,coat:{color:0x34482a,len:.45},glow:{where:'phones',color:0x5dff9b},gear:[{t:'bag',col:0x1e2620}],scale:.86,tempo:1.08},
   home:'Hangs under the Ladle awning early. After eight, up the Lantern Market stairs.'},
- ilse:{n:'Ilse Varn',role:'Wardline patrol officer',look:{skin:0xe8c8b0,body:0x1e2a44,joints:0x10141e,hair:{style:'short',color:0xc8b890},hat:'cap',hatColor:0x141c30,coat:{color:0x1e2a44,len:.6},glow:{where:'collar',color:0x3f8aff}},
+ ilse:{n:'Ilse Varn',role:'Wardline patrol officer',look:{sex:'f',skin:0xe8c8b0,top:0x1e2a44,pants:0x141c30,boots:0x08080c,hair:{style:'buzz',color:0xc8b890},hat:'cap',hatColor:0x141c30,coat:{color:0x1c2640,len:.6,shiny:1},glow:{where:'collar',color:0x3f8aff},gear:[{t:'pads',col:0x141c30},{t:'belt'}],gloves:0x0e0e12,scale:1.02},
   home:'Patrols Saltgate Street and the Line 9 Plaza. Always walking.'},
- dess:{n:'Dess Marrow',role:'Your aunt. Founder of the Ladle',look:{skin:0xc89878,body:0x4a2a2a,joints:0x1a1010,hair:{style:'long',color:0xb8b0b8},slim:.9,coat:{color:0x5a2a30,len:.7},glow:{where:'collar',color:0xff8a3d}},
+ dess:{n:'Dess Marrow',role:'Your aunt. Founder of the Ladle',look:{sex:'f',skin:0xc89878,top:0x3a2420,pants:0x2a1a1a,hair:{style:'long',color:0xb8b0b8},slim:.9,coat:{color:0x5a2a30,len:.74},glow:{where:'collar',color:0xff8a3d},gear:[{t:'cyber',c:0xff8a3d}],scale:.97,tempo:.88},
   home:'Hidden on the old Line 9 platform. Or home, if you bring her back.'}
 };
 // schedule entries: [fromMinute, placeKey]; minutes run 18:00 (1080) .. 26:00 (1560)

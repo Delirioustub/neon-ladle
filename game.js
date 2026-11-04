@@ -90,15 +90,17 @@ function talk(k){const n=npcs[k];
  if(k==='dess'&&S.flags.dessHome)opts.unshift({t:'"Any tips, chef?"',then:()=>say('dess',[pick(["Customers wait longer if you look busy. Look busy.","Tea's a gateway. Nobody leaves after tea. They want soup.","Close before curfew. Wardline doesn't tip."])],[])});
  opts.push({t:'"Night."'});say(k,[line],opts);}
 // ================= people =================
-await loadRig('models/mannequin.glb');
+await loadRig('models/');
 const npcs={};const tags={};
 for(const k in CAST){const h=makeHuman(CAST[k].look);scene.add(h.obj);npcs[k]={k,h,obj:h.obj,route:[],place:null,talking:false,pi:0};
  const t=document.createElement('div');t.className='tag';t.innerHTML=`<span>${CAST[k].n}</span>`;$('tags').appendChild(t);tags[k]=t;}
 npcs.dess.obj.visible=false;
-const player=makeHuman({skin:0xe0c0a8,body:0x2a2030,joints:0x121018,hair:{style:'short',color:0x2a1a2a},coat:{color:0x3a2440,len:.6},glow:{where:'strip',color:0xff3fa4}});scene.add(player.obj);
+const player=makeHuman({sex:'f',skin:0xe0c0a8,top:0x221a28,pants:0x16141c,hair:{style:'bob',color:0x2a1a2a},coat:{color:0x3a2440,len:.45,shiny:1},glow:{where:'strip',color:0xff3fa4},gear:[{t:'bag',col:0x221a28}]});scene.add(player.obj);
 const SKIN=[0xf0d0b8,0xe0b898,0xc89070,0x8a5a40,0x5a3828,0xe8c8a8];const DRESS=[0x2a2438,0x3a2a2a,0x1e2a3a,0x2a3a2a,0x3a3040,0x4a2030,0x202028,0x5a4a3a];
-const randLook=()=>({skin:pick(SKIN),body:pick(DRESS),joints:0x141218,hair:{style:pick(['bob','bun','short','spiky','long','short']),color:pick([0x101010,0x2a1a10,0x6a4a2a,0xc0b0a0,0xff3fa4,0x3ff0ff])},hat:pick([null,null,'cap','beanie','hood']),hatColor:pick(DRESS),
- coat:Math.random()<.6?{color:pick(DRESS),len:rnd(.35,.7)}:null,umbrella:Math.random()<.45?pick([0x1a1a26,0xff3fa4,0x3ff0ff,0xffe14d,0x2a2a3a]):null,glow:Math.random()<.3?{where:pick(['visor','collar','strip']),color:pick([0x3ff0ff,0xff3fa4,0x5dff9b,0xb04dff])}:null,scale:rnd(.92,1.06)});
+const randLook=()=>{const sex=Math.random()<.5?'m':'f';const hood=Math.random()<.22;return {sex,skin:pick(SKIN),top:pick(DRESS),pants:pick([0x141218,0x1a1a22,0x22202a,0x2a2430]),boots:pick([0x0c0a0e,0x1a1410,0x2a2a30]),
+ hair:{style:pick(sex==='m'?['short','buzz','spiky','beard','short']:['bob','bun','long','short','buzz']),color:pick([0x101010,0x2a1a10,0x6a4a2a,0xc0b0a0,0xff3fa4,0x3ff0ff,0x101010])},hat:hood?'hood':pick([null,null,null,'cap','beanie']),hatColor:pick(DRESS),
+ coat:hood||Math.random()<.65?{color:pick(DRESS),len:pick([.4,.45,.6,.72]),shiny:Math.random()<.3}:null,umbrella:Math.random()<.4?pick([0x1a1a26,0xff3fa4,0x3ff0ff,0xffe14d,0x2a2a3a]):null,
+ glow:Math.random()<.35?{where:pick(['visor','collar','strip','badge']),color:pick([0x3ff0ff,0xff3fa4,0x5dff9b,0xb04dff])}:null,gear:Math.random()<.45?[{t:pick(['bag','satchel','mask','glasses','pads']),c:pick([0x3ff0ff,0xff3fa4])}]:[],slim:rnd(.88,1.02),bulk:Math.random()<.2?rnd(1.05,1.15):1,scale:rnd(.93,1.05),tempo:rnd(.9,1.08)};};
 // district graph routing
 function districtAt(x,z){if(x>=47.5)return'canal';if(z<-8.3&&x>20&&x<28)return'alley';if(z>8.3&&z<40.6&&x>-28&&x<-16)return'avenue';if(z>=40.4&&x<-4)return'plaza';return'main';}
 const chain=d=>{const c=[d];while(DISTRICTS[c[c.length-1]].parent)c.push(DISTRICTS[c[c.length-1]].parent);return c;};

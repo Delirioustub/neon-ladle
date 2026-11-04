@@ -47,7 +47,9 @@ function corridor(scene,cfg,cand){const G=new THREE.Group();G.position.set(cfg.c
  }else{ // alley / plaza: paving everywhere
   const pv=new THREE.Mesh(new THREE.PlaneGeometry(cfg.len,hw*2),WALK2);pv.rotation.x=-Math.PI/2;pv.position.y=.01;G.add(pv);
   for(let x=-L;x<L;x+=1)for(let z=-hw+.5;z<hw;z+=1)if(srand()<.3)lit.add(x+.5,.02,z,.95,.02,.95,srand()<.5?0x181620:0x1d1a26);}
- for(let i=0;i<cfg.len/6;i++){const p=new THREE.Mesh(new THREE.CircleGeometry(sr(.5,1.4),16),PUDDLE);p.rotation.x=-Math.PI/2;p.scale.y=sr(.4,.8);p.position.set(sr(-L,L),.035,sr(-hw+1,hw-1)*(kind==='canal'?0:1)+(kind==='canal'?(srand()<.5?-6:6):0));G.add(p);}
+ {const n=Math.round(cfg.len/2.6),im=new THREE.InstancedMesh(PUDDLE_G,PUDDLE,n),m=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler();// instanced puddles: one draw call per district
+  for(let i=0;i<n;i++){const r=sr(.4,1.6);e.set(-Math.PI/2,0,sr(0,3.14));q.setFromEuler(e);m.compose(new THREE.Vector3(sr(-L,L),.035+i*1e-4,sr(-hw+1,hw-1)*(kind==='canal'?0:1)+(kind==='canal'?(srand()<.5?-6:6):0)),q,new THREE.Vector3(r,r*sr(.35,.8),1));im.setMatrixAt(i,m);}
+  im.computeBoundingSphere();G.add(im);}
  // ---- buildings ----
  for(const s of[-1,1]){let x=-L;while(x<L-1){let w=sr(4.5,8.5);if(x+w>L)w=L-x;const g=gaps.find(g=>g.side===s&&x+w>g.a&&x<g.b);if(g){if(x<g.a){w=g.a-x;}else{x=g.b;continue;}}if(w<1.5){x+=w;continue;}
    const h=sr(cfg.hmin||13,cfg.hmax||34),cx=x+w/2,fz=s*hw,depth=10,wall=spick(WALL);const isLadle=cfg.ladle&&s<0&&x<0&&x+w>0;
@@ -88,7 +90,7 @@ function corridor(scene,cfg,cand){const G=new THREE.Group();G.position.set(cfg.c
 const ROAD=new THREE.MeshStandardMaterial({color:0x0d0c14,roughness:.18,metalness:.55});
 const WALK=new THREE.MeshStandardMaterial({color:0x1a1822,roughness:.3,metalness:.4});
 const WALK2=new THREE.MeshStandardMaterial({color:0x16141e,roughness:.22,metalness:.5});
-const PUDDLE=new THREE.MeshStandardMaterial({color:0x07060c,roughness:.02,metalness:.9});
+const PUDDLE=new THREE.MeshStandardMaterial({color:0x07060c,roughness:.02,metalness:.9}),PUDDLE_G=new THREE.CircleGeometry(1,18);
 const WATER=new THREE.MeshStandardMaterial({color:0x0a0c18,roughness:.05,metalness:.95});
 const CABLE=new THREE.LineBasicMaterial({color:0x0a0a10});
 // ================= the whole city =================
