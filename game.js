@@ -305,7 +305,7 @@ function tickNPCs(dt){for(const k in npcs){const n=npcs[k],o=n.obj;const pl=plac
   if(n.talking){const a=Math.atan2(P.x-o.position.x,P.z-o.position.z);turn(o,a,dt);}
   else if(n.route.length){const t=n.route[0];o.position.y=0;const dx=t.x-o.position.x,dz=t.z-o.position.z,d=Math.hypot(dx,dz);if(d<.15){n.route.shift();if(!n.route.length)n.arrived=true;}else{const sp=(k==='ilse'?1.15:1.35)*dt;o.position.x+=dx/d*Math.min(sp,d);o.position.z+=dz/d*Math.min(sp,d);turn(o,Math.atan2(dx,dz),dt);n.h.play(k==='mara'?'formal':'walk');}}
   else{const pp=placePos(n.place);if(pp){if(pp[2]==='sit'){o.position.set(pp[0]+SEAT_D*Math.sin(pp[3]),SEAT_Y,pp[1]+SEAT_D*Math.cos(pp[3]));o.rotation.y=pp[3];}else if(o.position.y)o.position.y=0;else turn(o,pp[3],dt);n.h.play(pp[2]);}}
-  const d=Math.hypot(o.position.x-cam.position.x,o.position.z-cam.position.z);o.visible=o.visible&&d<70;if(o.visible)n.h.lod(d,dt);
+  const d=Math.hypot(o.position.x-cam.position.x,o.position.z-cam.position.z);o.visible=d<70;// R10b: was o.visible&&d<70, so an NPC culled once (player >70 m away) stayed invisible forever: Kip/Ilse vanished on a fresh game after the Line 9 tripif(o.visible)n.h.lod(d,dt);
   const tg=tags[k];const show=o.visible&&d<7&&!dlgOpen;tg.style.display=show?'block':'none';if(show)place(tg,o.position.x,2.05,o.position.z);}}
 // ================= player / camera =================
 const P={x:-3.5,z:-1.5,y:0,yaw:0,pitch:.05,bob:0,sit:null};if(S.P){Object.assign(P,S.P);P.y=P.y||0;P.sit=null;}S.onBike=0;
@@ -491,7 +491,7 @@ scene.traverse(o=>{if(o.material&&o.material.isMeshStandardMaterial&&o.material.
 for(const k in npcs)tickNPCs(0);
 Object.assign(G,{Q,stepOf,onList,qAdv,emit,interact,say,fade,W,CITY,cand,makeHuman,walkable,regionOf,lookClass,CAST,Input,THREE,scene,P,cam,npcs,dlg:()=>dlgOpen,riding:()=>!!riding||bk.on&&Math.abs(bk.v)>4});R5=initR5(G);window.R5=R5;LADLE=initLadle(G);
 if(S.q.m8==='done'&&S.q.m9===undefined)setTimeout(()=>{chapter('Act Three','The Weather Men');qStart('m9');},2500);
-window.__S=S;window.__P=P;window.__G={PLACES,R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,inWalk,stepOf,placeFor,placePos,stepTarget,onList,S,get near(){return near;}};
+window.__S=S;window.__P=P;window.__G={CAST,tickNPCs:dt=>tickNPCs(dt),PLACES,R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,inWalk,stepOf,placeFor,placePos,stepTarget,onList,S,get near(){return near;}};
 $('load').classList.add('hide');$('start').classList.remove('hide');
 $('start').onclick=async()=>{$('title').classList.add('gone');setTimeout(()=>$('title').remove(),900);$('hud').classList.remove('hide');startAudio();
  try{await document.documentElement.requestFullscreen?.();await screen.orientation?.lock?.('landscape');}catch(e){}

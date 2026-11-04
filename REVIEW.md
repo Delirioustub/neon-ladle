@@ -18,7 +18,7 @@ Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain 
 | `input.js` | Touch stick and look, plus keyboard (WASD/E/V/M/Esc). |
 | `ladle.js`, `props.js` | Optional noodle-bar side gig and props. |
 | `voice.js` | Kokoro-generated voice lines (`audio/voice/`) and district street ambience. |
-| `sw.js` | Network-first service worker. Bump `C` on every deploy (currently `nl-r10a`). |
+| `sw.js` | Network-first service worker. Bump `C` on every deploy (currently `nl-r10b`). |
 | `tools/voice/` | `extract.mjs` (pull lines) and `gen.py` (Kokoro TTS). |
 | `tools/test/` | Headless Playwright tests (see below). |
 
@@ -90,3 +90,7 @@ Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain 
 - **Backwards signs:** `twoSideSigns()` makes every DoubleSide textured sign plane front-sided plus a 180-deg back twin (546 signs).
 - **White box on pier:** r5 story prop "Look under the tarp" was a bare Lambert box; now a steel cold-crate with tarp, solid.
 - Test: `r10_shots.py` (shots, ped runs, sign count, door-block and untextured-bright-box scan).
+
+## r10b: quest NPCs missing on a fresh game
+- **Root cause:** `tickNPCs` culled with `o.visible=o.visible&&d<70`. Once a cast NPC was more than 70 m from the camera a single frame (e.g. walking to the Line 9 gate), `visible` latched false and never came back. Kip and Ilse (and Mara, Benny, Juno, Sela) vanished for good; only Dess had a special-case re-show. Now `o.visible=d<70` whenever the NPC is placed.
+- **Test:** `r10b_presence.py` plays every main step at 8 times of day (19, 21:30, 23:45, 1:30, 3:00, 9, 13, 17) in a storm, first parks the player 200 m away, then arrives, and asserts each targeted/talk NPC is visible, within 4 m of its place, on walkable ground, at the waypoint, and in CAST. Fails 10 steps with the old line, 0 with the fix. Side quests not covered.

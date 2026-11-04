@@ -19,7 +19,7 @@ def story(pg,shot,lp):
  print('\n'.join(o['log']));print('BAD',o['bad']);print('finished',pg.evaluate('__S.flags.finished'),'q',json.dumps(o['q']))
 import os
 M=os.environ.get("MODE","story")
-if M=="story":run(story)
+if M=="story" and __name__=="__main__":run(story)
 END={'open':("[/Bring the street/,/Shut him down/]"),'fair':"[/Bring the street/,/Restore Dess/]",'tide':"[/Bring the Ashline Tide/,/Give the weather/]",'law':"[/Bring Ilse/,/Hand the pillar/]",'chair':"[/Go quiet|Go alone/,/Take the Chairman/]"}
 import os
 for e,pref in END.items():
@@ -44,5 +44,5 @@ def shots(pg,shot,lp):
  pg.evaluate("__G.setTP(true)");shot('r7-causeway-ramp',20,pp={'x':-46,'z':0,'yaw':1.5708,'pitch':-.05})
  shot('r7-causeway-deck',20,pp={'x':-72,'z':-2,'yaw':0,'pitch':-.05})
  pg.evaluate("__G.setTP(false)")
-if M=='shots':run(shots)
+if M=="shots" and __name__=="__main__":run(shots)
 def mig(pg,shot,lp):pass

@@ -18,9 +18,16 @@ window.__T=(()=>{const G=__G,S=__S;const log=[],bad=[];
   __P.y=P0;return R;}
  function near(x,z,y,r){const g=R.get(lv(Math.max(0,y)));if(!g)return false;for(let dx=-r;dx<=r;dx+=C)for(let dz=-r;dz<=r;dz+=C){if(dx*dx+dz*dz>r*r)continue;const i=((x+dx-X0)/C|0),j=((z+dz-Z0)/C|0);if(i>=0&&j>=0&&i<NX&&j<NZ&&g[i*NZ+j])return true;}return false;}
  const reachable=(x,z,r=2.6)=>{if(z>400)return true;/* Node 14: entered via the seal teleport */reach();for(const y of R.keys())if(near(x,z,y,r))return true;return false;};
- function check(id,s){const hrs=[19,21.5,23.75,1.5];const out=[];const m0=S.min;
+ // R10b presence: the NPC must actually be in the world when the player arrives (after having been far away), visible, near its place, on walkable ground, and talkable (in CAST).
+ const PRES=[];const W0=['clear','rain','storm'];
+ function present(id,k,h){const n=G.npcs[k];if(!n)return k+' no npc';const p=G.placeFor(k);if(!p)return k+' not placed';const pp=G.placePos(p);if(!pp)return null;const P=__P,c=G.cam.position,sv=[P.x,P.z,P.y];
+  P.x=0;P.z=-200;P.y=0;c.set(0,1.6,-200);for(let i=0;i<3;i++)G.tickNPCs(.05);P.x=pp[0]+1.5;P.z=pp[1]+1.5;c.set(P.x,1.6,P.z);for(let i=0;i<40;i++)G.tickNPCs(.1);
+  const o=n.obj.position,e=[];if(!n.obj.visible)e.push('invisible');const d=Math.hypot(o.x-pp[0],o.z-pp[1]);if(p!=='ilse_patrol'&&d>4)e.push('far '+d.toFixed(1));let ta=G.stepOf(id).at;if(typeof ta==='function')ta=ta();const tg=G.stepTarget(G.stepOf(id));if(ta===k&&tg&&tg.x!==undefined&&Math.hypot(tg.x-o.x,tg.z-o.z)>4)e.push('waypoint off');
+  if(p.indexOf('stool')<0&&o.y<.5){P.y=0;if(!G.inWalk(o.x,o.z,0))e.push('not on walk');}if(!G.CAST||!G.CAST[k])e.push('no cast');P.x=sv[0];P.z=sv[1];P.y=sv[2];return e.length?k+'@'+p+' '+e.join(','):null;}
+ function check(id,s){const hrs=window.__PRES?[19,21.5,23.75,1.5,3,9,13,17]:[19,21.5,23.75,1.5];const out=[];const m0=S.min;
   for(const h of hrs){S.min=(h<12?h+24:h)*60;let a=s.at;if(typeof a==='function')a=a();if(!a){out.push(h+':no target');continue;}
    if(typeof a==='string'){const p=G.placeFor(a);if(!p){out.push(h+':'+a+' not placed');continue;}const n=G.npcs[a];G.tickNPCsOnce&&G.tickNPCsOnce();const pp=G.placePos(p);if(pp&&!reachable(pp[0],pp[1]))out.push(h+':'+a+'@'+p+' unreachable');}
+   if(window.__PRES){const ks=new Set(typeof a==='string'?[a]:[]);for(const ev of G.onList(s))if(ev.startsWith('talk:'))ks.add(ev.slice(5));for(const k of ks){if(!G.npcs[k]){out.push(h+":"+k+" no npc");continue;}if(!G.placeFor(k))continue;const r=present(id,k,h);if(r)out.push(h+':'+r);}}
    else if(!reachable(a[0],a[1]))out.push(h+':'+a.join(',')+' unreachable');}
   S.min=m0;const tg=G.stepTarget(s);if(!tg)out.push('no live waypoint');return out;}
  function fire(id,s,pref){const st=S.q[id];const ons=G.onList(s);
