@@ -1,4 +1,4 @@
-# Neon Ladle: review notes (r7)
+# Neon Ladle: review notes (r8)
 
 Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain ES modules plus Three.js (vendored in `lib/`). There's no build step, and it's served as a PWA from GitHub Pages.
 
@@ -36,9 +36,26 @@ Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain 
 - **HUD:** the hidden status text left a `· ·` double separator, and its dot now hides with it. The clock only writes to the DOM when its text changes.
 - **Dead code removed:** `emit('interact:kitchen')` and `emit('served5')` from the old Ladle-owner quests (nothing listens for them). The "Mara holds the keys" text was updated.
 
+## r8 fixes (Joshua's iPhone report)
+- **"Invisible wall" / black boxes on the Ring Causeway:** walkable() itself was clean on every lane. The visible culprits were (a) far-skyline towers from `world.js` (random ring, radius 80–140) that landed on the causeway deck, (b) the Crown and Ashline metro kiosks standing dead centre in the ramp mouths with no collision, and (c) the spine walk rect running into the east barrier. The skyline now skips anything in the causeway band or over any walk rect. The kiosks moved off the ramp axis and are solid (`CITY.block`). The spine rect stops inside the barrier. Barrier segments and lamp posts that overlapped a ramp mouth are dropped.
+- **Umbrellas floating:** the old code lerped the grip 55% toward a fixed point, so the hand never touched the shaft. It now uses two-bone CCD IK (upperarm_r/lowerarm_r → hand_r) to a raised grip by the head, and the shaft starts at the hand.
+- **Sela sitting on air:** stool seats used root y=0 at the stool centre, but the `sit` clip's pelvis sits 0.29 m behind the root. Seated NPCs and customers now use a root offset of `SEAT_D`/`SEAT_Y` so the pelvis lands on the stool top, facing the counter.
+- **Kitchen behind the pass:** the stock pots floated at y 1.32 in the aisle and had a walk blocker. They now sit on a back range against the rear wall, with flames, wok and steam moved to match, and the blocker is removed. The player can stand centred at "The pass". The steam puffs are soft round sprites now; square planes read as white boxes.
+- **Apartments:** the starter flat and the three rentable flats are full 10×7 studios with:
+  - a sleeping nook with a working bed;
+  - a couch you can sit on;
+  - a TV that toggles and flickers;
+  - a rain-streaked city window with neon spill;
+  - a kitchenette (snack: cook +20 min / tea +10 min);
+  - a bathroom with a sink and a mirror that opens the look editor.
+  R3 decor slots are kept. The light budget is 6 point lights per flat, and only one flat is near the player at a time.
+- **Doors:** every walk-in storefront (`room()`) gets a lit frame in its sign colour, a threshold glow and an "Enter · <name>" prompt. Apartment doors, metro stairs and elevators get a bobbing glow chevron (distance-culled, under 30 m). Storefronts also show on the map.
+
 ## Tests (`tools/test/`, need `python3 -m http.server 8123` in the repo root and Playwright with Chrome)
 - `r7_story.py`: `MODE=story` plays the whole main story from a fresh save. At four times of day, every step must have a scheduled NPC or target, be reachable by multi-level flood fill (ground, metro, ladders, elevators), and show a live waypoint. `MODE=ends` plays all five endings (open, fair, tide, law, chair). `MODE=shots` writes the r7 screenshots.
 - `r7_seams.py`: walks across every touching or overlapping walk-rect pair on each level (120 crossings) and flags near-miss gaps that no door bridges. Current result: 0 failures, 0 gaps.
+- `r8_drive.py`: drives the hover bike and then walks each causeway ramp (Saltgate, Crown, Ashline) at three lane offsets into the district through the real input loop, then runs `scenery.js`, which flags opaque scenery between knee and head height on the deck, and big blocks on any street. Current result: 18/18 routes, 0 scenery hits.
+- `r8_shots.py`: writes the r8-* screenshots.
 - `r7_migration.py`: loads crafted saves (m8 done, m10 done, old R6 Ladle chain, corrupt JSON).
 
 ## Known issues / open
@@ -49,4 +66,6 @@ Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain 
 - The R6 migration resets an in-progress old-chain save to the start of `m1`.
 - Nothing has been profiled on-device. Known mobile costs: the post composer, a cube-camera env bake every 1.5 game hours, and about 1 DOM write per frame for the HUD/waypoint. `tickNPCs` runs every NPC every frame.
 - Walk geometry is rect-only, so diagonal or curved edges are approximated. NPC routing is a district join graph, not a navmesh.
+- The causeway test pins heading. It doesn't model a player steering into the side barriers at speed. Wardline checkpoint stops in Crown can still feel like a wall (it's a dialog, by design).
+- The apartment mirror reuses the character creator (no cost, no undo).
 - Large single-file `game.js` (dense one-line style). A module split would help maintainers.

@@ -115,7 +115,8 @@ export function buildWorld(scene,cand){const out={districts:{},flick:[],vents:[]
  xl.add(0,1.5,-8.7,7.6,3,.1,0x2b1c1c);xg.add(0,1.7,-8.6,6.8,1.6,.04,0x4a1a12);for(let i=-3;i<=3;i++)xh.add(i,2.75,-8.55,.4,.08,.08,0xffb36b);
  xl.add(0,1.05,-6.25,7.4,.1,1.1,0x6a4a34);xl.add(0,.52,-6.25,7.2,1.02,.9,0x2a1a16);for(let i=-3.4;i<=3.4;i+=.4)xl.add(i,.5,-5.78,.2,.9,.02,0x3a2420);
  for(let i=-2;i<=2;i++){xl.add(i*1.3,.62,-5.2,.5,.08,.5,0xb04040);xl.add(i*1.3,.3,-5.2,.08,.6,.08,0x444444);}
- for(let i=-2;i<=2;i+=2)metal.add(i*1.2,1.32,-7.5,.7,.5,.7,0x8a8a92);
+ // R8: back range against the rear wall (outside the walk rect), so the pass aisle z -6.95..-8.2 stays clear
+ xl.add(0,.45,-8.43,7.4,.9,.46,0x2a2226);xl.add(0,.92,-8.43,7.5,.04,.5,0x5a5a62);for(let i=-2;i<=2;i+=2){metal.add(i*1.2,1.16,-8.43,.42,.44,.42,0x8a8a92);metal.add(i*1.2,.95,-8.43,.5,.02,.5,0x222226);}
  for(let i=-3;i<=3;i++){xl.add(i*.9,1.13,-6.4,.3,.06,.3,0xe8e0d0);} // bowls on counter
  xl.add(0,3.1,-6.6,8.2,.14,2.8,0x7a1c24);for(let i=-3.6;i<=3.6;i+=.9){xg.add(i,2.62,-5.3,.2,.26,.2,0xff5a2a);xl.add(i,2.8,-5.3,.03,.12,.03,0x222);}
  for(let i=-3.6;i<=3.6;i+=.45)xl.add(i,2.96,-5.22,.43,.26,.02,Math.round(i/.45)%2?0x6a1818:0x1a1010);
@@ -145,7 +146,9 @@ export function buildWorld(scene,cand){const out={districts:{},flick:[],vents:[]
  out.ladleSign=ladleSign;out.L=48;
  // far skyline
  const sky=new Batch(new THREE.MeshLambertMaterial()),skg=new Batch(new THREE.MeshBasicMaterial({toneMapped:false}));skg.mat.userData.boost=1.6;seed=99;
- for(let i=0;i<90;i++){const a=srand()*Math.PI*2,r=sr(80,140);const x=10+Math.cos(a)*r,z=20+Math.sin(a)*r,h=sr(40,120),w=sr(8,18);sky.add(x,h/2,z,w,h,w,0x110f18);
+ for(let i=0;i<90;i++){const a=srand()*Math.PI*2,r=sr(80,140);const x=10+Math.cos(a)*r,z=20+Math.sin(a)*r,h=sr(40,120),w=sr(8,18);
+  // R8: never stand a skyline block on the Ring Causeway band or on any street rect (they were the black boxes on the deck)
+  const pad=w/2+2;if((x+pad>-84&&x-pad<-44)||out.walk.some(q=>x+pad>q[0]&&x-pad<q[1]&&z+pad>q[2]&&z-pad<q[3]))continue;sky.add(x,h/2,z,w,h,w,0x110f18);
   for(let k=0;k<10;k++)skg.add(x+sr(-w/2,w/2),sr(4,h),z+(z>20?-1:1)*(w/2+.05),sr(.5,2),sr(.3,.8),.1,new THREE.Color(spick(winCols)).multiplyScalar(.5).getHex());if(srand()<.35)skg.add(x,h*.75,z+(z>20?-1:1)*(w/2+.1),w*.8,sr(1.5,4),.1,spick(NEON));}
  sky.build(scene);skg.build(scene);
  return out;}

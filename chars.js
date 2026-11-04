@@ -41,7 +41,7 @@ function shell(sk,sex,mat,region,push,opt={}){
 // attach in *model space at bind pose*: a carrier group on the bone that cancels the bone's bind transform, so offsets are just (x right, y up, z forward) metres
 function carrier(root,bone){root.updateMatrixWorld(true);const g=new THREE.Group();const inv=new THREE.Matrix4().copy(bone.matrixWorld).invert().multiply(root.matrixWorld);inv.decompose(g.position,g.quaternion,g.scale);bone.add(g);return g;}
 // look: {sex:'m'|'f', skin, top, pants, boots, coat:{color,len,open}, hair:{style,color}, hat, hatColor, glow:{where,color}, gear:[...], slim, bulk, scale, android, apron, umbrella}
-export function makeHuman(look){const sex=look.sex||'f';const root=SkeletonUtils.clone(BASE[sex]);const H=new THREE.Group();H.add(root);
+export function makeHuman(look){const sex=look.sex||'f';const root=SkeletonUtils.clone(BASE[sex]);const H=new THREE.Group();H.userData.human=1;H.add(root);
  const sc0=look.scale||1,kid=look.kid||sc0<.9;const s=(kid?sc0:Math.min(1.045,Math.max(.955,sc0)))*(sex==='m'?1.02:.97);/* normalized adult heights ~1.6-1.86m */root.scale.set(s*(look.slim||1)*(look.bulk||1),s,s*(look.slim||1)*(look.bulk||1));
  const bones={};root.traverse(o=>{if(o.isBone)bones[o.name]=o;});
  const sk=bodyMesh(root);
@@ -93,7 +93,10 @@ export function makeHuman(look){const sex=look.sex||'f';const root=SkeletonUtils
   const hr=bones.hand_r;if(hr){root.add(u);H.userData.umb=u;
    // R6: the shaft runs from the right hand to a point centred over the head; the canopy stays (nearly) level above the head
    const hv=new THREE.Vector3(),top=new THREE.Vector3(0,headY+.32,.04),grip0=new THREE.Vector3(-.16,headY-.62,.2),dir=new THREE.Vector3(),UP=new THREE.Vector3(0,1,0),q=new THREE.Quaternion();
-   u.userData.fit=()=>{hr.updateWorldMatrix(true,false);hv.setFromMatrixPosition(hr.matrixWorld);root.worldToLocal(hv);hv.lerp(grip0,.55);
+   // R8: two-bone CCD pulls the right hand to a grip in front of the chest after every mixer update, so the shaft sits in the fist
+   const lo=bones.lowerarm_r,up=bones.upperarm_r,grip=new THREE.Vector3(-.13,headY-.5,.2),tw=new THREE.Vector3(),bp=new THREE.Vector3(),v1=new THREE.Vector3(),v2=new THREE.Vector3(),qw=new THREE.Quaternion(),pq=new THREE.Quaternion();
+   const ik=()=>{if(!lo||!up)return;root.updateWorldMatrix(true,false);tw.copy(grip);root.localToWorld(tw);for(let it=0;it<3;it++)for(const b of[lo,up]){hr.updateWorldMatrix(true,false);hv.setFromMatrixPosition(hr.matrixWorld);bp.setFromMatrixPosition(b.matrixWorld);v1.subVectors(hv,bp).normalize();v2.subVectors(tw,bp).normalize();qw.setFromUnitVectors(v1,v2);b.parent.getWorldQuaternion(pq);qw.premultiply(pq.clone().invert()).multiply(pq);b.quaternion.premultiply(qw);b.updateMatrixWorld(true);}};
+   u.userData.fit=()=>{ik();hr.updateWorldMatrix(true,false);hv.setFromMatrixPosition(hr.matrixWorld);root.worldToLocal(hv);
     dir.subVectors(top,hv);const L=dir.length();dir.multiplyScalar(1/L);st.position.copy(hv);st.quaternion.setFromUnitVectors(UP,dir);st.scale.y=L+.02;
     c.position.copy(top);c.position.y+=.08;q.setFromUnitVectors(UP,dir);c.quaternion.identity().slerp(q,.2);};u.userData.fit();}}
  // culling: skinned meshes test a padded bind-pose sphere, so off-screen people cost no draw calls

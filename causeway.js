@@ -10,20 +10,20 @@ export function buildCauseway(scene,cand){const out={walk:[],anim:[],signs:[]};
  const W=(x0,x1,z0,z1)=>out.walk.push([Math.min(x0,x1),Math.max(x0,x1),Math.min(z0,z1),Math.max(z0,z1),0]);
  const deck=(x0,x1,z0,z1)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0,z1-z0),MATS.ROAD);m.rotation.x=-Math.PI/2;m.position.set((x0+x1)/2,.005,(z0+z1)/2);scene.add(m);B.add((x0+x1)/2,-.35,(z0+z1)/2,x1-x0+.4,.7,z1-z0,0x16141c);};
  // spine + three ramps (Saltgate west portal, Crown west cap, Ashline west cap)
- deck(X0,X1,Z0,Z1);W(X0+.2,X1+.6,Z0,Z1);
+ deck(X0,X1,Z0,Z1);W(X0+.2,X1-.2,Z0,Z1);// R8: spine stops inside the east barrier; ramps (x0=-70.5) overlap it by 0.3m and the union joins them
  const ramps=[[-70.5,-47,-3.2,3.2,'SALTGATE',0xff3fa4],[-70.5,-58.6,-263.2,-256.8,'CROWN HEIGHTS',0x9fe8ff],[-70.5,-48.6,256.8,263.2,'ASHLINE DOCKS',0xff8a3d]];
  for(const [x0,x1,z0,z1,name,col] of ramps){deck(Math.max(x0,X1-.1),x1,z0,z1);W(x0,x1,z0,z1);
   for(const z of[z0,z1]){B.add((x0+x1)/2+.6,.55,z,x1-x0-1.2,1.1,.25,0x2a2832);Gh.add((x0+x1)/2+.6,1.12,z,x1-x0-1.2,.05,.27,col);}
  }
  // barriers with neon trim (gaps where ramps join)
- const gapAt=z=>ramps.some(r=>z>r[2]-.5&&z<r[3]+.5);
+ const gapAt=z=>ramps.some(r=>z+2.05>r[2]&&z-2.05<r[3]);// R8: a 4m barrier segment is dropped if it overlaps the ramp mouth at all
  for(let z=Z0;z<Z1;z+=4){const cz=z+2;const col=Math.abs(cz)<60?0xff3fa4:cz<0?0x9fe8ff:0xff8a3d;
   B.add(X0-.12,.55,cz,.25,1.1,4,0x2a2832);Gh.add(X0-.12,1.12,cz,.27,.03,3.6,col);
   if(!gapAt(cz)){B.add(X1+.12,.55,cz,.25,1.1,4,0x2a2832);Gh.add(X1+.12,1.12,cz,.27,.03,3.6,col);}
   if(z%8===0)Gl.add(XC,.02,cz,.12,.01,2,0xd8d0b0);Gl.add(X0+.5,.012,cz,.25,.01,4,new THREE.Color(col).multiplyScalar(.22).getHex());Gl.add(X1-.5,.012,cz,.25,.01,4,new THREE.Color(col).multiplyScalar(.22).getHex());}
  for(const z of[Z0,Z1]){B.add(XC,.8,z,8.4,1.6,.4,0x2a2832);Gh.add(XC,1.62,z,8.4,.06,.42,0xff2040);}
  // sodium lamps + pillars into the fog below
- for(let z=Z0+8,i=0;z<Z1;z+=14,i++){const x=i%2?X0-.1:X1+.1,s=i%2?1:-1;B.add(x,3.2,z,.14,6.4,.14,0x3a3844);B.add(x+s*1,6.35,z,2,.1,.18,0x3a3844);Gh.add(x+s*1.7,6.25,z,.5,.06,.25,0xffc070);L(x+s*1.7,5.6,z,0xffb878,13,20);out._pools=(out._pools||[]).concat([[x+s*1.4,z]]);}
+ for(let z=Z0+8,i=0;z<Z1;z+=14,i++){const x=i%2?X0-.1:X1+.1,s=i%2?1:-1;if(!(i%2)&&ramps.some(r=>z>r[2]-1&&z<r[3]+1))continue;B.add(x,3.2,z,.14,6.4,.14,0x3a3844);B.add(x+s*1,6.35,z,2,.1,.18,0x3a3844);Gh.add(x+s*1.7,6.25,z,.5,.06,.25,0xffc070);L(x+s*1.7,5.6,z,0xffb878,13,20);out._pools=(out._pools||[]).concat([[x+s*1.4,z]]);}
  for(let z=Z0+15;z<Z1;z+=30){B.add(XC,-22,z,3,44,3,0x15131b);B.add(XC,-1.2,z,9,1.2,1.6,0x1a1820);}
  // the city around it: towers you pass, with lit windows facing the road
  const WIN=[0xffc98a,0x3ff0ff,0xff3fa4,0xffe14d,0xd8e8ff];
@@ -42,7 +42,7 @@ export function buildCauseway(scene,cand){const out={walk:[],anim:[],signs:[]};
   const tx=new THREE.CanvasTexture(c);tx.colorSpace=THREE.SRGBColorSpace;const gm=new THREE.MeshBasicMaterial({map:tx,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:false,toneMapped:false,side:THREE.DoubleSide});
   out.glow=[];for(const [dx,dz,ry] of[[-150,0,1],[140,0,1],[0,-170,0],[0,170,0]]){const m=new THREE.Mesh(new THREE.PlaneGeometry(ry?340:340,80),gm);m.userData.d=[dx,dz];m.position.set(XC+dx,6,dz);m.rotation.y=ry?Math.PI/2:0;m.renderOrder=-1;m.visible=false;scene.add(m);out.glow.push(m);}
   out.follow=(x,z)=>{const on=x<-50&&x>-100;for(const m of out.glow){m.visible=on;if(on)m.position.set(XC+m.userData.d[0],6,z+m.userData.d[1]);}};}
- {for(let z=Z0+8,i=0;z<Z1;z+=14,i++){const x=i%2?X0-.1:X1+.1,s=i%2?1:-1;Gh.add(x+s*1.7,6.22,z,.9,.08,.4,0xffd090);}}
+ {for(let z=Z0+8,i=0;z<Z1;z+=14,i++){const x=i%2?X0-.1:X1+.1,s=i%2?1:-1;if(!(i%2)&&ramps.some(r=>z>r[2]-1&&z<r[3]+1))continue;Gh.add(x+s*1.7,6.22,z,.9,.08,.4,0xffd090);}}
  {const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,190,120,.9)');gr.addColorStop(.45,'rgba(255,140,70,.35)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,64,64);
   const tx=new THREE.CanvasTexture(c);const pg=new THREE.PlaneGeometry(1,1);pg.rotateX(-Math.PI/2);const pm=new THREE.MeshBasicMaterial({map:tx,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,opacity:.75});
   const P=out._pools;const im=new THREE.InstancedMesh(pg,pm,P.length);const o=new THREE.Object3D();P.forEach((p,i)=>{o.position.set(p[0],.03,p[1]);o.scale.set(7,1,9);o.updateMatrix();im.setMatrixAt(i,o.matrix);});im.computeBoundingSphere();scene.add(im);}

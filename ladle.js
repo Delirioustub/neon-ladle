@@ -3,10 +3,11 @@ const pick=a=>a[Math.floor(Math.random()*a.length)];
 export function initLadle(G){const {S,THREE,scene,P,toast,say,interact}=G;
  // ---- props: burner flames under the stock pots, a wok, rising steam puffs ----
  const fl=[],puffs=[];const fm=new THREE.MeshBasicMaterial({color:0x4aa8ff,toneMapped:false,transparent:true,opacity:.85});
- for(const x of[-2.4,0,2.4]){const f=new THREE.Mesh(new THREE.ConeGeometry(.22,.16,10,1,true),fm);f.position.set(x,1.02,-7.5);f.rotation.x=Math.PI;scene.add(f);fl.push(f);}
- const wok=new THREE.Mesh(new THREE.SphereGeometry(.32,16,8,0,Math.PI*2,Math.PI*.6,Math.PI*.4),new THREE.MeshStandardMaterial({color:0x2a2a2e,roughness:.4,metalness:.7,side:THREE.DoubleSide}));wok.position.set(1.2,1.42,-7.5);scene.add(wok);
- const wf=new THREE.Mesh(new THREE.ConeGeometry(.2,.14,10,1,true),new THREE.MeshBasicMaterial({color:0xff7a2a,toneMapped:false,transparent:true,opacity:.8}));wf.rotation.x=Math.PI;wf.position.set(1.2,1.12,-7.5);scene.add(wf);
- const pm=new THREE.MeshBasicMaterial({color:0xcfd6e0,transparent:true,opacity:.18,depthWrite:false});const pg=new THREE.PlaneGeometry(.35,.35);
+ for(const x of[-2.4,0,2.4]){const f=new THREE.Mesh(new THREE.ConeGeometry(.22,.16,10,1,true),fm);f.position.set(x,.99,-8.43);f.rotation.x=Math.PI;scene.add(f);fl.push(f);}
+ const wok=new THREE.Mesh(new THREE.SphereGeometry(.32,16,8,0,Math.PI*2,Math.PI*.6,Math.PI*.4),new THREE.MeshStandardMaterial({color:0x2a2a2e,roughness:.4,metalness:.7,side:THREE.DoubleSide}));wok.position.set(1.2,1.2,-8.43);scene.add(wok);
+ const wf=new THREE.Mesh(new THREE.ConeGeometry(.2,.14,10,1,true),new THREE.MeshBasicMaterial({color:0xff7a2a,toneMapped:false,transparent:true,opacity:.8}));wf.rotation.x=Math.PI;wf.position.set(1.2,.99,-8.43);scene.add(wf);
+ const pcv=document.createElement('canvas');pcv.width=pcv.height=64;{const g=pcv.getContext('2d'),gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.5,'rgba(255,255,255,.45)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,64,64);}
+ const pm=new THREE.MeshBasicMaterial({color:0xcfd6e0,map:new THREE.CanvasTexture(pcv),transparent:true,opacity:.18,depthWrite:false});// R8: soft round puffs (square planes read as floating white boxes)const pg=new THREE.PlaneGeometry(.35,.35);
  for(let i=0;i<14;i++){const m=new THREE.Mesh(pg,pm.clone());m.userData={src:[-2.4,0,2.4,1.2][i%4],t:Math.random()*2};scene.add(m);puffs.push(m);}
  // ---- sizzle (own tiny audio graph so it works without the ambience bus) ----
  let AC=null;const sizzle=(dur=1.2,vol=.18)=>{try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const n=AC.sampleRate*dur|0,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++){const t=i/n;d[i]=(Math.random()*2-1)*(Math.random()<.08?1:.35)*Math.min(1,t*20)*(1-t);}
@@ -37,4 +38,4 @@ export function initLadle(G){const {S,THREE,scene,P,toast,say,interact}=G;
  // ---- tick ----
  let T=0;return {tick(dt){T+=dt;const near=Math.hypot(P.x,P.z+7)<30;for(const f of fl){f.visible=near;f.scale.set(1+Math.sin(T*23+f.position.x)*.12,1+Math.sin(T*17+f.position.x*3)*.3,1);}
   wf.scale.y=1+Math.sin(T*29)*.35+(burst>0?1.2:0);burst=Math.max(0,burst-dt);
-  for(const m of puffs){m.visible=near;if(!near)continue;const u=m.userData;u.t+=dt*(burst>0?1.8:1);if(u.t>2.4)u.t=0;const k=u.t/2.4;m.position.set(u.src+Math.sin(u.t*3+u.src)*.15,1.55+k*1.6,-7.5+Math.cos(u.t*2)*.1);m.scale.setScalar(.6+k*1.6);m.material.opacity=.22*(1-k)*(burst>0?1.6:1);m.quaternion.copy(G.cam.quaternion);}}};}
+  for(const m of puffs){m.visible=near;if(!near)continue;const u=m.userData;u.t+=dt*(burst>0?1.8:1);if(u.t>2.4)u.t=0;const k=u.t/2.4;m.position.set(u.src+Math.sin(u.t*3+u.src)*.15,1.4+k*1.6,-8.43+Math.cos(u.t*2)*.1);m.scale.setScalar(.6+k*1.6);m.material.opacity=.22*(1-k)*(burst>0?1.6:1);m.quaternion.copy(G.cam.quaternion);}}};}

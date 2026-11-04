@@ -130,13 +130,13 @@ function placeFor(k){const m=S.min;
  if(k==='benny'&&stepOf('s8')===Q.s8.steps[0]&&S.open&&m<25*60)return'stool:4';
  if(k==='sela'&&m>=20*60&&m<21*60+30)return'stool:3';
  const sc=SCHED[k];let p=sc[0][1];for(const [t,pl] of sc)if(m>=t)p=pl;return p;}
-const STOOLX=[-2.6,-1.3,0,1.3,2.6];
-function placePos(p){if(p.startsWith('stool:'))return[STOOLX[+p.slice(6)],-5.05,'sit',Math.PI];return PLACES[p];}
+const STOOLX=[-2.6,-1.3,0,1.3,2.6];// R8: 'sit' clip puts the pelvis 0.29m behind the root at y .53; stool tops are y .66 at z -5.2
+const SEAT_D=.29,SEAT_Y=.2;
+function placePos(p){if(p.startsWith('stool:'))return[STOOLX[+p.slice(6)],-5.2,'sit',Math.PI];return PLACES[p];}
 // ================= interactables =================
 const interact=[];// {id,pos:()=>Vector3,r,label,fn,cond}
 function addI(id,x,y,z,r,label,fn,cond=()=>true){interact.push({id,pos:()=>new THREE.Vector3(x,y,z),r,label,fn,cond});}
 addI('kitchen',3.6,1.2,-6.3,2.4,'Kitchen',()=>openCook());
-addI('home',-6.2,1.2,-8.4,2.2,'Home · sleep',()=>sleep());
 addI('fuse',24,1,-46.6,2.2,'Fuse box',()=>{if(stepOf('m1')===Q.m1.steps[3]){inspect('Fuse box','Behind the fuses: a greasy tin. Inside, Dess\'s handwriting: "Midnight Miso. Toast the paste. Never trust Orrin. Line 9 still hums."');emit('interact:fuse');}else inspect('Fuse box','A rusted fuse box humming in the rain. Someone scratched a little ladle into the paint.');});
 const POSTERS=[[-20,1.6,-8.5,'TOMAS REYE, 34. Dock loader. Last seen: The Neon Ladle, Saltgate.'],[21.3,1.6,-24,'AIKO VENN, 27. Line cook. Last seen near the old Line 9 stairs.'],[-17.1,1.6,26,'"GRANDPA" OSU, 71. Retired. Regular at Saltgate noodle bars. Owes nobody, says his daughter. Orrin says otherwise.']];
 POSTERS.forEach(([x,y,z,t],i)=>addI('poster'+i,x,y,z,2,'Missing poster',()=>{inspect('Missing',t);if(S.q.s3===0&&!S.flags['poster'+i]){S.flags['poster'+i]=1;emit('count:poster');}}));
@@ -214,7 +214,7 @@ const jobI={id:'jobpt',pos:()=>{const p=S.jobDef.sp[S.q.job];return new THREE.Ve
 for(const b of BOARDS){interact.push({id:'board'+b.id,pos:()=>new THREE.Vector3(b.x,b.y,b.z),r:2.4,label:b.label,fn:()=>jobBoard(b),cond:()=>true});const m=new THREE.Mesh(new THREE.BoxGeometry(1.1,1.4,.08),new THREE.MeshBasicMaterial({color:new THREE.Color(b.id==='tide'?0xff8a3d:b.id==='ward'?0x3f8aff:0xc9b2ff).multiplyScalar(.6),toneMapped:false}));m.position.set(b.x,1.4,b.z+(b.z>200?.6:-.6));scene.add(m);cand.push({x:b.x,y:2,z:b.z,col:0xffe0a0,int:2,dist:5});}
 function jobBoard(b){if(S.jobDef){say('Job board',[`You're already on a job: ${Q.job.t}. ${S.jobDef.flav}`],[{t:'Keep at it'},{t:'Abandon the job',fx:()=>{delete S.jobDef;delete Q.job;delete S.q.job;if(S.track==='job')S.track=null;toast('Job abandoned');}}]);return;}
  const offers=[genJob(b.f),genJob(b.f),genJob(b.f)];say('Job board',['Three postings flicker on the cracked screen.'],offers.map(j=>({t:`${JOBT[j.type].n} · ${FN[j.fac].split(' (')[0]} · ¢${j.pay}`,fx:()=>{S.jobDef=j;mountJob(j);S.q.job=0;S.track='job';toast(`Job taken · <b>${Q.job.t}</b><br>${j.flav}`);save();}})).concat([{t:'Leave'}]));}
-S.apts=S.apts||{};S.decor=S.decor||{};const DECOR=[['Nothing',null],['Potted fern',0x2a6a40],['Neon tube (pink)',0xff3fa4],['Neon tube (cyan)',0x3ff0ff],['Paper lantern',0xffb06b],['Rug',0x6a2a3a],['Vinyl crate',0x3a3a48]];
+S.apts=S.apts||{};S.apts.home=1;S.decor=S.decor||{};const DECOR=[['Nothing',null],['Potted fern',0x2a6a40],['Neon tube (pink)',0xff3fa4],['Neon tube (cyan)',0x3ff0ff],['Paper lantern',0xffb06b],['Rug',0x6a2a3a],['Vinyl crate',0x3a3a48]];
 const decorG={};function buildDecor(key){const A=CITY.apts[key];if(decorG[key])scene.remove(decorG[key]);const g=new THREE.Group();scene.add(g);decorG[key]=g;
  A.slots.forEach((p,si)=>{const it=DECOR[(S.decor[key]||[])[si]||0];if(!it[1])return;const c=it[1],name=it[0];let m;
   if(name.startsWith('Neon'))m=new THREE.Mesh(new THREE.BoxGeometry(1.2,.06,.06),new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(2.5),toneMapped:false}));
@@ -223,11 +223,24 @@ const decorG={};function buildDecor(key){const A=CITY.apts[key];if(decorG[key])s
   else m=new THREE.Mesh(new THREE.BoxGeometry(.45,name==='Potted fern'?.9:.4,.45),new THREE.MeshLambertMaterial({color:c}));
   m.position.set(p[0],p[1]+(p[1]>2?-.2:p[1]>1?0:name==='Potted fern'?.45:.2),p[2]);if(name==='Rug')m.position.set(A.x-.6,.06,A.z+.2);g.add(m);});}
 for(const k in CITY.apts){const A=CITY.apts[k];buildDecor(k);const out=A.door[1]>200?-1.4:1.4;
- interact.push({id:'aptdoor'+k,pos:()=>new THREE.Vector3(A.door[0],1.2,A.door[1]),r:2.4,label:`Door · ${A.name}`,fn:()=>{if(S.apts[k]){tp(A.x,0,A.z-1.4,Math.PI);return;}say('Ring Realty',[`${A.name}. ${A.blurb} One-time lease: ¢${A.price}.`],[{t:`Lease it · ¢${A.price}`,fx:()=>{if(S.cash<A.price){toast('Not enough cash. Take some jobs.');return;}S.cash-=A.price;S.apts[k]=1;toast(`The keys are yours · ${A.name}`);save();}},{t:'"Maybe later."'}]);},cond:()=>true});
- const dm=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.2,.06),new THREE.MeshBasicMaterial({color:new THREE.Color(A.col).multiplyScalar(.35),toneMapped:false}));dm.position.set(A.door[0],1.1,A.door[1]);scene.add(dm);
- interact.push({id:'aptout'+k,pos:()=>new THREE.Vector3(A.x,1.2,A.z-2.2),r:1.8,label:'Leave the apartment',fn:()=>tp(A.door[0],0,A.door[1]+out,out>0?0:Math.PI),cond:()=>true});
- interact.push({id:'aptbed'+k,pos:()=>new THREE.Vector3(A.x+2.4,.9,A.z+1.4),r:2,label:'Bed · sleep',fn:()=>{if(S.min<20*60&&S.min>=10*60){inspect('Bed','Too early to sleep. The city is still awake out there.');return;}S.day++;S.min=10*60;S.talkedDay={};S.asked={};fade();toast(`Day ${S.day} · you wake to rain on the window`);save();},cond:()=>true});
- interact.push({id:'aptdec'+k,pos:()=>new THREE.Vector3(A.x-1.5,1.2,A.z+1.2),r:2.4,label:'Decorate',fn:()=>decorate(k),cond:()=>true});}
+ interact.push({id:k==='home'?'home':'aptdoor'+k,pos:()=>new THREE.Vector3(A.door[0],1.2,A.door[1]),r:2.4,label:k==='home'?'Enter · your flat':S.apts[k]?`Enter · ${A.name}`:`Door · ${A.name} · for lease`,fn:()=>{if(S.apts[k]){if(k==='home'&&S.open){toast('Close the shop first (Kitchen)');return;}tp(A.out[0],0,A.out[1],Math.PI);setTimeout(()=>toast(A.name),700);return;}say('Ring Realty',[`${A.name}. ${A.blurb} One-time lease: ¢${A.price}.`],[{t:`Lease it · ¢${A.price}`,fx:()=>{if(S.cash<A.price){toast('Not enough cash. Take some jobs.');return;}S.cash-=A.price;S.apts[k]=1;toast(`The keys are yours · ${A.name}`);save();}},{t:'"Maybe later."'}]);},cond:()=>true});
+ interact.push({id:'aptout'+k,pos:()=>new THREE.Vector3(A.out[0],1.2,A.out[1]-.5),r:1.6,label:'Leave the apartment',fn:()=>tp(A.door[0],0,A.door[1]+out,out>0?0:Math.PI),cond:()=>true});
+ interact.push({id:'aptbed'+k,pos:()=>new THREE.Vector3(A.bed[0],.9,A.bed[1]),r:2,label:'Bed · sleep',fn:()=>{if(k==='home'){sleep();return;}if(S.min<20*60&&S.min>=10*60){inspect('Bed','Too early to sleep. The city is still awake out there.');return;}S.day++;S.min=10*60;S.talkedDay={};S.asked={};fade();toast(`Day ${S.day} · you wake to rain on the window`);save();},cond:()=>true});
+ interact.push({id:'aptdec'+k,pos:()=>new THREE.Vector3(A.x-1.5,1.2,A.z-.6),r:1.6,label:'Decorate',fn:()=>decorate(k),cond:()=>true});
+ interact.push({id:'aptsnack'+k,pos:()=>new THREE.Vector3(A.kitchen[0],1.1,A.kitchen[1]),r:1.6,label:'Kitchenette · make a snack',fn:()=>say('Kitchenette',[pick(['Instant noodles, the good kind with the oil packet. The kettle ticks as it heats.','Two eggs, rice from yesterday, chili crisp. The window fogs over the stove.','A tin of Ashline sardines on toast. Somewhere below, a scooter horn plays a little song.'])],[{t:'Cook and eat',fx:()=>{S.min+=20;toast(pick(['Warm, salty, exactly right.','You eat standing at the counter, watching the rain.','Better than the Ladle? Don\'t tell Mara.']));}},{t:'Just tea',fx:()=>{S.min+=10;toast('The kettle sings. You hold the cup with both hands.');}},{t:'Not hungry'}]),cond:()=>true});
+ interact.push({id:'aptmirror'+k,pos:()=>new THREE.Vector3(A.mirror[0],1.5,A.mirror[1]),r:1.3,label:'Mirror · change your look',fn:()=>openCreator(false),cond:()=>true});
+ {let on=false;const tm=A.tv.material,news=['ORRIN MUTUAL · RECORD QUARTER · "THE CITY IS IN GOOD HANDS"','WARDLINE: CURFEW HOLDS IN SALTGATE · RAIN CONTINUES','HALCYON SLEEP PODS · NOW 0% DOWN','LINE 9 HUM "WITHIN SAFE LIMITS", SAYS RING TRANSIT'];
+  interact.push({id:'apttv'+k,pos:()=>new THREE.Vector3(A.tvPos[0],1.2,A.tvPos[1]),r:2.6,label:'TV · flick it on or off',fn:()=>{on=!on;tm.color.setHex(on?0x6a7aa0:0x050508);if(on)toast('📺 '+pick(news));},cond:()=>true});
+  CITY.anim.push(t=>{if(on)tm.color.setHSL(.6+Math.sin(t*.7)*.05,.35,.32+Math.sin(t*9)*.03+(Math.sin(t*2.3)>.9?.15:0));});}}
+// R8: discoverability. Every walk-in storefront gets an "Enter" prompt; doors, metro stairs and elevators get a bobbing glow chevron.
+for(const [i,d] of CITY.doors.entries())interact.push({id:'enter'+i,pos:()=>new THREE.Vector3(d.x,1.2,d.z-d.dir*1.1),r:2.3,label:`Enter · ${d.name}`,fn:()=>tp(d.x,0,d.z+d.dir*2.2,d.dir>0?Math.PI:0),cond:()=>(P.z-d.z)*d.dir<-.3&&(P.y||0)<.5});
+const CUE=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');g.shadowColor='#fff';g.shadowBlur=10;g.fillStyle='#fff';g.beginPath();g.moveTo(14,18);g.lineTo(50,18);g.lineTo(32,44);g.closePath();g.fill();const t=new THREE.CanvasTexture(c);return t;})();
+const cues=[];function addCue(x,y,z,col){const m=new THREE.Sprite(new THREE.SpriteMaterial({map:CUE,color:new THREE.Color(col).multiplyScalar(1.6),transparent:true,depthWrite:false,toneMapped:false}));m.scale.set(.32,.32,1);m.position.set(x,y,z);m.userData.y=y;m.visible=false;scene.add(m);cues.push(m);}
+for(const d of CITY.doors)addCue(d.x,2.75,d.z-d.dir*.3,d.col);
+for(const k in CITY.apts){const A=CITY.apts[k];addCue(A.door[0],2.55,A.door[1]+(A.door[1]>200?-.25:.25),A.col);}
+for(const k in CITY.stations){const s0=CITY.stations[k];addCue(s0.x,3.9,s0.z,0x3ff0ff);}
+for(const c of CITY.inter)if(/^elev/.test(c.id))addCue(c.x,c.y+1.3,c.z,0x9fe8ff);
+function tickCues(t){for(const m of cues){const d=Math.abs(m.position.x-P.x)+Math.abs(m.position.z-P.z);m.visible=d<30&&Math.abs(m.userData.y-(P.y||0))<8;if(m.visible){m.position.y=m.userData.y+Math.sin(t*2.2+m.position.x)*.06;m.material.opacity=d<8?1:.75;}}}
 function decorate(k){const A=CITY.apts[k];const names=['Corner by the door','Window corner','Left wall','Ceiling','Over the bed'];
  say('Decorate',[`${A.name}. Tap a spot to change what's there.`],names.map((n,si)=>({t:`${n}: ${DECOR[(S.decor[k]||[])[si]||0][0]}`,then:()=>{S.decor[k]=S.decor[k]||[];S.decor[k][si]=((S.decor[k][si]||0)+1)%DECOR.length;buildDecor(k);save();decorate(k);}})).concat([{t:'Done'}]));}
 // ================= kitchen / shop =================
@@ -265,7 +278,7 @@ function tickCustomers(dt){customers=customers.filter(c=>{const p=c.h.obj.positi
   if(!c.leave&&c.leaveT!==undefined&&(c.leaveT-=dt)<0)c.leave=true;
   if(c.seated&&!c.leave){if(!c.served){c.pat-=dt;if(c.pat<=0){c.leave=true;toast('A customer left hungry');}}}
   else{const tx=c.leave?(p.x<0?-24:24):sx,tz=c.leave?2:(c.near?-5.05:-4.2);const dx=tx-p.x,dz=tz-p.z,d=Math.hypot(dx,dz);
-   if(d<.12&&!c.leave){if(!c.near)c.near=1;else{c.seated=true;c.h.play('sit');p.set(sx,0,-5.05);c.h.obj.rotation.y=Math.PI;}}else{if(c.seated){c.seated=false;}c.h.play('walk');p.x+=dx/d*dt*1.35;p.z+=dz/d*dt*1.35;turn(c.h.obj,Math.atan2(dx,dz),dt);}}
+   if(d<.12&&!c.leave){if(!c.near)c.near=1;else{c.seated=true;c.h.play('sit');p.set(sx,SEAT_Y,-5.2-SEAT_D);c.h.obj.rotation.y=Math.PI;}}else{if(c.seated){c.seated=false;p.y=0;}c.h.play('walk');p.x+=dx/d*dt*1.35;p.z+=dz/d*dt*1.35;turn(c.h.obj,Math.atan2(dx,dz),dt);}}
   c.h.mixer.update(dt);{const um=c.h.obj.userData.umb;um&&um.userData.fit();}
   c.tag.style.display=c.seated&&!c.served&&!c.leave?'block':'none';if(c.seated&&!c.served){c.tag.innerHTML=`${DISH[c.order].n}<i style="width:${c.pat/c.patMax*100}%"></i>`;place(c.tag,p.x,2.0,p.z);}
   if(c.leave&&Math.abs(p.x)>=23.5){scene.remove(c.h.obj);c.tag.remove();return false;}return true;});}
@@ -283,15 +296,15 @@ function tickNPCs(dt){for(const k in npcs){const n=npcs[k],o=n.obj;const pl=plac
    const far=Math.hypot(o.position.x-P.x,o.position.z-P.z)>45&&Math.hypot(pp[0]-P.x,pp[1]-P.z)>45;if(far||!n.init){o.position.set(pp[0],0,pp[1]);n.route=[];n.arrived=true;}else n.route=route(o.position.x,o.position.z,pp[0],pp[1]);n.init=1;}
   if(pl==='ilse_patrol'){n.place=pl;n.init=1;if(!n.route.length){n.pi=(n.pi+1)%PATROL.length;const t=PATROL[n.pi];n.route=[{x:t[0],z:t[1]}];}}
   if(n.talking){const a=Math.atan2(P.x-o.position.x,P.z-o.position.z);turn(o,a,dt);}
-  else if(n.route.length){const t=n.route[0];const dx=t.x-o.position.x,dz=t.z-o.position.z,d=Math.hypot(dx,dz);if(d<.15){n.route.shift();if(!n.route.length)n.arrived=true;}else{const sp=(k==='ilse'?1.15:1.35)*dt;o.position.x+=dx/d*Math.min(sp,d);o.position.z+=dz/d*Math.min(sp,d);turn(o,Math.atan2(dx,dz),dt);n.h.play(k==='mara'?'formal':'walk');}}
-  else{const pp=placePos(n.place);if(pp){if(pp[2]==='sit'){o.position.set(pp[0],0,pp[1]);o.rotation.y=pp[3];}else turn(o,pp[3],dt);n.h.play(pp[2]);}}
+  else if(n.route.length){const t=n.route[0];o.position.y=0;const dx=t.x-o.position.x,dz=t.z-o.position.z,d=Math.hypot(dx,dz);if(d<.15){n.route.shift();if(!n.route.length)n.arrived=true;}else{const sp=(k==='ilse'?1.15:1.35)*dt;o.position.x+=dx/d*Math.min(sp,d);o.position.z+=dz/d*Math.min(sp,d);turn(o,Math.atan2(dx,dz),dt);n.h.play(k==='mara'?'formal':'walk');}}
+  else{const pp=placePos(n.place);if(pp){if(pp[2]==='sit'){o.position.set(pp[0]+SEAT_D*Math.sin(pp[3]),SEAT_Y,pp[1]+SEAT_D*Math.cos(pp[3]));o.rotation.y=pp[3];}else if(o.position.y)o.position.y=0;else turn(o,pp[3],dt);n.h.play(pp[2]);}}
   const d=Math.hypot(o.position.x-cam.position.x,o.position.z-cam.position.z);o.visible=o.visible&&d<70;if(o.visible)n.h.lod(d,dt);
   const tg=tags[k];const show=o.visible&&d<7&&!dlgOpen;tg.style.display=show?'block':'none';if(show)place(tg,o.position.x,2.05,o.position.z);}}
 // ================= player / camera =================
 const P={x:-3.5,z:-1.5,y:0,yaw:0,pitch:.05,bob:0,sit:null};if(S.P){Object.assign(P,S.P);P.y=P.y||0;P.sit=null;}S.onBike=0;
 function walkable(x,z){const m=.3;const py=P.y||0;if(py<.5&&Math.abs(x)<3.85&&z<-5.55&&z>-6.95)return false;// counter (kitchen behind it is open from both ends)
- if(py<.5&&z<-7.1&&z>-7.9)for(const i of[-2.4,0,2.4])if(Math.abs(x-i)<.45)return false;// stock pots
  if(x>-18.4&&x<-15.6&&z>5.8&&z<7.8)return false;
+ if(py<.5)for(const b of CITY.block)if(x>b[0]-m&&x<b[1]+m&&z>b[2]-m&&z<b[3]+m)return false;
  return inWalk(x,z,py)&&inWalk(x+m,z,py)&&inWalk(x-m,z,py)&&inWalk(x,z+m,py)&&inWalk(x,z-m,py);}
 // R7: walk rects are unioned before the body-radius inset, so seams between adjacent rects never become invisible walls.
 // Rects are bucketed on a 4m grid (rebuilt when W.walk grows) so mobile pays ~a handful of tests per query instead of hundreds.
@@ -384,7 +397,7 @@ function tickStreaming(){const lim=SET.low?58:72;for(const k in W.districts){con
   const dx=Math.max(0,Math.abs(cam.position.x-d.cx)-hx),dz=Math.max(0,Math.abs(cam.position.z-d.cz)-hz);g.visible=Math.hypot(dx,dz)<lim;}}
 // ================= R4: Ring Causeway, hover bike, city map, fast travel =================
 const CW=buildCauseway(scene,cand);W.walk.push(...CW.walk);
-const BK=(()=>{const g=new THREE.Group(),col=0xff3fa4;const body=new THREE.MeshStandardMaterial({color:0x1a1822,roughness:.25,metalness:.75}),dark=new THREE.MeshStandardMaterial({color:0x0c0b10,roughness:.5,metalness:.4});
+const BK=(()=>{const g=new THREE.Group();g.userData.dyn=1;const col=0xff3fa4;const body=new THREE.MeshStandardMaterial({color:0x1a1822,roughness:.25,metalness:.75}),dark=new THREE.MeshStandardMaterial({color:0x0c0b10,roughness:.5,metalness:.4});
  const gl=c=>new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(2.4),toneMapped:false});
  const add=(geo,m,x,y,z,rx=0)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);o.rotation.x=rx;g.add(o);return o;};
  add(new THREE.BoxGeometry(.46,.3,1.5),body,0,.62,0);add(new THREE.BoxGeometry(.4,.26,.7),body,0,.78,-.75,-.35);add(new THREE.BoxGeometry(.34,.12,.6),dark,0,.85,.35);
@@ -443,7 +456,7 @@ function drawMap(){const c=$('mapC'),dpr=devicePixelRatio,w=c.clientWidth*dpr,h=
  const icon=(x,z,ch,col,r=7)=>{const [sx,sy]=toS(x,z);g.fillStyle='rgba(6,5,14,.85)';g.beginPath();g.arc(sx,sy,px(r),0,7);g.fill();g.strokeStyle=col;g.lineWidth=1.5*dpr;g.stroke();g.fillStyle=col;g.font=`700 ${px(r*1.2)}px system-ui`;g.textAlign='center';g.textBaseline='middle';g.fillText(ch,sx,sy+.5);g.textBaseline='alphabetic';return [sx,sy];};
  for(const key in CITY.stations){const st=CITY.stations[key];icon(st.x,st.z,'M','#7ff3ff',9);if(mapZoom||1)label(st.name,st.x+ (mapZoom?6:-12),st.z,'#7ff3ff',9);}
  for(const b of BOARDS)icon(b.x,b.z,'!',b.id==='tide'?'#ff8a3d':b.id==='ward'?'#3f8aff':'#c9b2ff',7);
- for(const k2 in CITY.apts){const A=CITY.apts[k2];icon(A.door[0],A.door[1],'⌂',S.apts[k2]?'#5dff9b':'rgba(232,224,255,.5)',7);}
+ for(const k2 in CITY.apts){const A=CITY.apts[k2];icon(A.door[0],A.door[1],'⌂',S.apts[k2]?'#5dff9b':'rgba(232,224,255,.5)',7);}for(const d of CITY.doors)icon(d.x,d.z,'▪','#ffe0a0',5);
  if(!bk.on)icon(S.bike.x,S.bike.z,'⛍','#ff3fa4',7);
  for(const t of mapTargets()){const [sx,sy]=toS(t.x,t.z);const pr=(t.tr?7:4)+Math.sin(T*4)*1.5;g.fillStyle=t.tr?'#ffd24d':'rgba(255,210,77,.6)';g.beginPath();g.arc(sx,sy,px(pr),0,7);g.fill();if(t.tr){g.strokeStyle='rgba(255,210,77,.5)';g.beginPath();g.arc(sx,sy,px(pr+6),0,7);g.stroke();}}
  if(S.jobDef&&typeof S.q.job==='number'){const p=S.jobDef.sp[S.q.job];icon(p[0],p[1],'$','#ffe14d',8);}
@@ -495,7 +508,7 @@ function frameBody(now){const dt=Math.min(.05,(now-last)/1000)*(window.__G.ts||1
  const hh=Math.floor(S.min/60)%24,mm=Math.floor(S.min%60);setText('clock',`Day ${S.day} · ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${fmtWeather(ENV.st.w)}`);$('shop').textContent=S.open?'Working the Ladle':S.min>=26*60?'Curfew':'';{const on=$('shop').textContent?'':'none';$('shop').style.display=on;$('shop').previousElementSibling.style.display=on;}$('cash').textContent='¢'+S.cash.toLocaleString();
  tickNPCs(dt);R5&&R5.tick(dt,T);LADLE&&LADLE.tick(dt);tickStaff(dt);tickCreator(dt);if(S.jobDef&&typeof S.q.job==='number'){const p=S.jobDef.sp[S.q.job];jobMarker.visible=true;jobMarker.position.set(p[0],(p[3]||0)+1.3+Math.sin(T*2)*.1,p[1]);jobMarker.rotation.y=T;}else jobMarker.visible=false;tickShop(dt);tickCustomers(dt);tickPeds(dt);pickTarget();tickWaypoint(T);
  slowT-=dt;if(slowT<=0){slowT=.5;tickStreaming();tickAudio();}
- LP.update(dt,cam);const indoor=(P.z>67.8&&P.z<80&&P.x<-16)||CITY.inRoom(P.x,P.z,P.y+1);rain.m.visible=!indoor&&!riding;rain.update(dt,cam.position,P.y);for(const a of CITY.anim)a(T,crack);tickRide(dt);steam.update(dt);traffic.update(dt);
+ LP.update(dt,cam);const indoor=(P.z>67.8&&P.z<80&&P.x<-16)||CITY.inRoom(P.x,P.z,P.y+1);rain.m.visible=!indoor&&!riding;rain.update(dt,cam.position,P.y);for(const a of CITY.anim)a(T,crack);tickCues(T);tickRide(dt);steam.update(dt);traffic.update(dt);
  trainT-=dt;if(trainT<=0){train.position.x+=dt*16;if(train.position.x>40){train.position.x=-90;trainT=rnd(25,45);}}
  if(gateAnim&&W.gate.position.y<2.9){W.gate.position.y+=dt*.8;}
  flickT-=dt;if(flickT<=0){flickT=rnd(.05,.4);for(const f of W.flick)f.material.color.setScalar(Math.random()<.15?.25:1.25);if(!S.up.sign&&!S.open)W.ladleSign.material.color.setScalar(Math.random()<.12?.2:.6);}

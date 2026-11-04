@@ -21,7 +21,7 @@ export const NEW_D={
 Object.assign(DISTRICTS,NEW_D);
 export function regionOf(x,z){if(x<-59.5&&z>-300&&z<300)return'causeway';if(z>760)return'home';if(z<-200)return'crown';if(z>200&&z<450)return'docks';if(z>600)return'metro';return'mid';}
 export function buildCity(scene,cand){
- const out={districts:{},walk:[],inter:[],rooms:[],staff:[],anim:[],steam:[],stations:{},lanes:{crown:[],docks:[]},seats:[]};
+ const out={districts:{},walk:[],inter:[],rooms:[],staff:[],anim:[],steam:[],stations:{},block:[],doors:[],lanes:{crown:[],docks:[]},seats:[]};
  const B=new Batch(new THREE.MeshLambertMaterial()),Gl=new Batch(new THREE.MeshBasicMaterial({toneMapped:false})),Gh=new Batch(new THREE.MeshBasicMaterial({toneMapped:false}));Gl.mat.userData.boost=1;Gh.mat.userData.boost=2.6;
  const Mt=new Batch(new THREE.MeshStandardMaterial({roughness:.15,metalness:.8}));
  const L=(x,y,z,col,int=4,dist=8)=>cand.push({x,y,z,col,int,dist,pri:0});
@@ -40,6 +40,9 @@ export function buildCity(scene,cand){
   for(let x=x0+1.4;x<x1-1;x+=2.2)for(let z=1.5;z<dep-1;z+=2.6){Gl.add(x,h-.08,fz+dir*z,.45,.04,.45,new THREE.Color(o.lamp||0xffd9a0).multiplyScalar(.8).getHex());}
   L(cx,h-.8,fz+dir*dep*.3,o.lamp||0xffd9a0,4.5,9);L(cx,h-.8,fz+dir*dep*.75,o.lamp2||o.lamp||0xffc890,4,8);
   W(x0+.35,x1-.35,fz-dir*.2,zb-dir*.35);W(cx-dw/2+.2,cx+dw/2-.2,fz-dir*1.2,fz+dir*.6);
+  // R8: lit door frame + threshold glow so every enterable storefront reads as a door
+  {const dc=o.sc||o.lamp||0xffd9a0,fzz=fz-dir*.15;Gh.add(cx-dw/2+.04,(h-.7)/2,fzz,.07,h-.7,.07,dc);Gh.add(cx+dw/2-.04,(h-.7)/2,fzz,.07,h-.7,.07,dc);Gh.add(cx,h-.72,fzz,dw,.07,.07,dc);Gl.add(cx,.035,fz-dir*.7,dw-.2,.01,.6,new THREE.Color(dc).multiplyScalar(.35).getHex());
+   out.doors.push({x:cx,z:fz,dir,name:o.sign?o.sign.split(' ').map(w=>w[0]+w.slice(1).toLowerCase()).join(' '):'Inside',col:dc});}
   out.rooms.push([x0,x1,Math.min(fz,zb),Math.max(fz,zb),h]);if(o.sign)sign(o.sign,o.sc||0xffffff,cx,h+.8,fz-dir*.16,.7,dir<0?0:Math.PI,{fs:64,li:6});
   return {cx,zm,zb,fz,dir,h};}
  // ======================= CROWN HEIGHTS (rich) =======================
@@ -85,7 +88,7 @@ export function buildCity(scene,cand){
    const ph=i*1.7;out.anim.push((t,red)=>{g.position.set(Math.sin(t*.13+ph)*50,7+Math.sin(t*.7+ph),cz+Math.cos(t*.21+ph)*6);g.rotation.y=t*.5;l.material.color.setHex(red&&Math.sin(t*10)>0?0xff2040:0x3f8aff).multiplyScalar(3);});}
   out.lanes.crown=[[-55,cz-9.6,55,cz-9.6],[-55,cz+9.6,55,cz+9.6],[-50,cz-8,50,cz-8],[-45,cz+8.2,45,cz+8.2],[-30,cz-6,30,cz-6],[-40,cz+5.5,-10,cz+5.5],[10,cz+5.5,45,cz+5.5]];
   // Ring Line station (west end)
-  station('crown','CROWN EXCHANGE',-53,cz,Math.PI/2,0xffffff,true);}
+  station('crown','CROWN EXCHANGE',-53,cz+7.5,Math.PI/2,0xffffff,true);}
  // ======================= ASHLINE DOCKS (poor) =======================
  {const cz=260,N=cz-6.5,S=cz+6.5;W(-49,49,N+.3,S-.3);
   // rooftops (y 7.5) + plank bridge + fire ladders
@@ -122,7 +125,7 @@ export function buildCity(scene,cand){
   I({id:'pierend',x:71,y:1.3,z:cz,r:2.4,label:'End of the pier',act:{type:'read',t:'Ashline pier',x:['The black water slaps the pilings. Out on the harbor, a barge with no running lights slides toward the Orrin Archive tower.','A fisherman two pilings down doesn\'t look up. "Third one this week," he says. "They load people at night and nobody comes back with the boat."']}});
   I({id:'piersit',x:66,y:.8,z:cz+2.4,r:1.6,label:'Sit, legs over the water',act:{type:'sit',x:66,y:0,z:cz+2.5,yaw:Math.PI}});
   out.lanes.docks=[[-46,cz-4.8,46,cz-4.8],[-46,cz+4.8,46,cz+4.8],[-40,cz,40,cz],[-46,cz-2,10,cz-2],[10,cz+2,46,cz+2],[49,cz-1.5,70,cz-1.5]];
-  station('docks','ASHLINE',-47,cz,Math.PI/2,0xff8a3d,false);}
+  station('docks','ASHLINE',-34,cz-3.6,Math.PI/2,0xff8a3d,false);}
  // ======================= middle: Ring Line entrance on the Line 9 plaza =======================
  station('mid','LINE 9 PLAZA',-35,47,Math.PI/2,0x3ff0ff,false,true);
  // ---------- station kiosk: glowing stair head ----------
@@ -132,6 +135,8 @@ export function buildCity(scene,cand){
   for(let k=0;k<6;k++)mk(2.8,.08,.5,0,.02-k*.0,-1.6+k*.55,0x1a1820);mk(2.8,.04,.04,0,.08,-1.9,col,1);mk(3.3,.04,.04,0,2.9,2.05,col,1);mk(1.6,.9,.04,0,.6,-2.1,0x101018);
   const st=signTex('RING LINE · '+name,col,{fs:56});const sm=new THREE.Mesh(new THREE.PlaneGeometry(.55*st.aspect,.55),new THREE.MeshBasicMaterial({map:st.t,toneMapped:false,side:THREE.DoubleSide}));sm.position.set(0,3.4,2.1);g.add(sm);
   const sm2=sm.clone();sm2.position.z=-2.1;g.add(sm2);g.updateMatrixWorld();const wp=new THREE.Vector3(0,1.5,0).applyMatrix4(g.matrixWorld);L(wp.x,2.6,wp.z,col,5,10);
+  // R8: kiosks are solid now (you used to ride straight through them) and sit off the causeway ramp axis
+  {const hx=Math.abs(Math.sin(ry))>.5?2.1:1.7,hz=hx===2.1?1.7:2.1;out.block.push([x-hx,x+hx,z-hz,z+hz]);}
   out.stations[key]={name,x,z,spawn:[x+Math.sin(ry)*2.6,z+Math.cos(ry)*2.6]};
   I({id:'metro_'+key,x,y:1.2,z,r:2.8,label:'Ring Line · ride the metro',act:{type:'metro',from:key}});}
  // ======================= Ring Line train car (underground; virtual district) =======================
@@ -145,20 +150,62 @@ export function buildCity(scene,cand){
   for(const [x,s,sex] of[[-5,-1,'f'],[-1.5,1,'m'],[3,-1,'m'],[5.5,1,'f']])out.staff.push({k:'Passenger',x,z:cz+s*1.05,ry:s<0?0:Math.PI,sit:1,rand:1,sex,lines:['They don\'t look up from their glowing palm.','"Next stop\'s mine. Don\'t take my seat when I stand. It\'s still mine."','A quiet nod. Their reflection in the window looks more tired than they do.']});
   for(const x of[-3.2,.5,4.2])I({id:'carseat'+x,x,y:.9,z:cz-.95,r:1.3,label:'Sit',act:{type:'sit',x,y:.1,z:cz-1.05,yaw:0}});}
  // ======================= apartments (interiors at z≈800) =======================
- out.apts={};const APT=[['docks','Ashline capsule','Above the Rusted Hook. Damp, cheap, yours.',40,-30,0x3a2a22,0xff8a3d,[-16,N0(260)+.6]],['mid','Saltgate walk-up','Two rooms over a pachinko parlor on Saltgate Street.',160,0,0x2e2836,0xff3fa4,[-36,-7.4]],['crown','Crown Heights loft','Floor 31. Heated floors. Rain is a view, not a problem.',900,30,0x8a8690,0x9fe8ff,[44,-248.6]]];
+ // ======================= R8 apartments: walkable studios (interiors at z≈800) =======================
+ // Layout (local, door in the north wall at -z): bathroom NW, kitchenette NE along the door wall, living area W (couch faces east to the TV),
+ // sleeping nook SE behind a half partition, big rain window on the south wall with neon spill.
+ out.apts={};out.rain=[];const APT=[['home','Capsule flat over the Ladle','Your narrow flat behind the Ladle. Mara\'s spare key.',0,60,0x3a2e34,0xff3fa4,[-6.2,-8.2]],['docks','Ashline capsule','Above the Rusted Hook. Damp, cheap, yours.',40,-30,0x3a2a22,0xff8a3d,[-16,N0(260)+.6]],['mid','Saltgate walk-up','Two rooms over a pachinko parlor on Saltgate Street.',160,0,0x2e2836,0xff3fa4,[-36,-7.4]],['crown','Crown Heights loft','Floor 31. Heated floors. Rain is a view, not a problem.',900,30,0x8a8690,0x9fe8ff,[44,-248.6]]];
  function N0(cz){return cz+6.5;}
- for(const [key,name,blurb,price,x,wall,col,door] of APT){const z=800,w=7,d=5;B.add(x,0,z,w,.1,d,0x2a2420);B.add(x,3,z,w,.1,d,0x1a1820);B.add(x-w/2,1.5,z,.15,3,d,wall);B.add(x+w/2,1.5,z,.15,3,d,wall);B.add(x,1.5,z+d/2,w,3,.15,wall);B.add(x-2.4,1.5,z-d/2,2.2,3,.15,wall);B.add(x+2.4,1.5,z-d/2,2.2,3,.15,wall);B.add(x,.4,z-d/2,2.6,.8,.15,wall);B.add(x,2.7,z-d/2,2.6,.6,.15,wall);
-  const cv=document.createElement('canvas');cv.width=256;cv.height=128;const g=cv.getContext('2d');const gr=g.createLinearGradient(0,0,0,128);gr.addColorStop(0,key==='crown'?'#1a2238':'#120a22');gr.addColorStop(1,'#2a1438');g.fillStyle=gr;g.fillRect(0,0,256,128);
-  for(let i=0;i<40;i++){const bx=Math.random()*256,bw=8+Math.random()*24,bh=(key==='crown'?20:50)+Math.random()*70;g.fillStyle='#0a0812';g.fillRect(bx,128-bh,bw,bh);for(let k=0;k<6;k++){g.fillStyle=['#ffc98a','#3ff0ff','#ff3fa4','#ffe14d'][k%4];g.globalAlpha=.6;g.fillRect(bx+Math.random()*bw,128-Math.random()*bh,2,2);g.globalAlpha=1;}}
-  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;const win=new THREE.Mesh(new THREE.PlaneGeometry(2.5,1.4),new THREE.MeshBasicMaterial({map:t,toneMapped:false}));win.position.set(x,1.5,z-d/2-.05);scene.add(win);
-  B.add(x+2.4,.3,z+1.4,1.8,.5,1.9,0x3a3040);B.add(x+2.4,.6,z+1.4,1.7,.12,1.8,0xd8d0c8);L(x,2.6,z,0xffd9a0,6,9);L(x,1.6,z-2,col,4,7);L(x+2.2,2.2,z+1.4,0xffc890,3.5,6);Gl.add(x,2.93,z,1.6,.03,.5,0xffe8c8);
-  // lived-in furniture: kitchenette, desk + monitor, shelf, poster, hanging bulb
-  B.add(x-2.9,.45,z+.2,.9,.9,2.2,0x2a2630);Mt.add(x-2.9,.92,z+.2,.92,.04,2.22,0x8a8a92);Gh.add(x-2.9,1.6,z+.2,.5,.03,1.6,0xffe8c8);B.add(x-3.1,1.9,z+.2,.4,.5,1.8,0x22202a);
-  B.add(x-.9,.75,z+2.2,1.6,.06,.6,0x3a2e2a);B.add(x-1.6,.38,z+2.2,.06,.75,.5,0x2a2222);B.add(x-.2,.38,z+2.2,.06,.75,.5,0x2a2222);B.add(x-.9,1.1,z+2.4,.7,.42,.04,0x101014);Gl.add(x-.9,1.1,z+2.37,.62,.34,.02,key==='crown'?0x9fe8ff:key==='docks'?0x5dff9b:0xff3fa4);
-  for(let k=0;k<3;k++){B.add(x+3.2,.6+k*.6,z-.6,.5,.04,1.4,0x3a3028);for(let j=0;j<4;j++)B.add(x+3.25,.75+k*.6,z-1.1+j*.33,.3,.26,.12,[0x6a2a3a,0x2a4a6a,0xc8b890,0x3a5a3a][(j+k)%4]);}
-  Gh.add(x+.6,2.45,z-.2,.14,.18,.14,0xffd9a0);B.add(x+.6,2.75,z-.2,.01,.5,.01,0x111);L(x+.6,2.3,z-.2,0xffc070,3,5);
-  W(x-w/2+.35,x+w/2-.35,z-d/2+.35,z+d/2-.35);out.rooms.push([x-w/2,x+w/2,z-d/2,z+d/2,3]);
-  out.apts[key]={key,name,blurb,price,x,z,door,col,slots:[[x-2.8,0,z+1.9],[x+2.9,0,z-1.9],[x-2.9,0,z-1.6],[x,2.95,z],[x+.5,1.6,z+2.38]]};}
+ const rainTex=(()=>{const c=document.createElement('canvas');c.width=128;c.height=256;const g=c.getContext('2d');g.clearRect(0,0,128,256);for(let i=0;i<70;i++){const x=Math.random()*128,y=Math.random()*256,l=8+Math.random()*26;const gr=g.createLinearGradient(x,y,x,y+l);gr.addColorStop(0,'rgba(200,220,255,0)');gr.addColorStop(1,'rgba(220,235,255,.55)');g.strokeStyle=gr;g.lineWidth=1+Math.random();g.beginPath();g.moveTo(x,y);g.lineTo(x+1,y+l);g.stroke();g.fillStyle='rgba(230,240,255,.5)';g.beginPath();g.arc(x+1,y+l,1.4,0,7);g.fill();}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t;})();
+ for(const [key,name,blurb,price,x,wall,col,door] of APT){const z=800,w=10,d=7,X=x,Z=z,hw=w/2,hd=d/2;const rich=key==='crown',poor=key==='docks';
+  const floorC=rich?0x8a7a66:poor?0x2a2420:0x4a3a30,trim=rich?0xd8d4d0:0x2a2228;
+  B.add(X,0,Z,w,.1,d,floorC);B.add(X,3,Z,w,.1,d,0x1a1820);
+  B.add(X-hw,1.5,Z,.15,3,d,wall);B.add(X+hw,1.5,Z,.15,3,d,wall);
+  // north wall with the entry door gap (x -0.6..0.6)
+  B.add(X-(hw+.6)/2,1.5,Z-hd,hw-.6,3,.15,wall);B.add(X+(hw+.6)/2,1.5,Z-hd,hw-.6,3,.15,wall);B.add(X,2.6,Z-hd,1.2,.8,.15,wall);B.add(X,1.1,Z-hd-.02,1.1,2.2,.04,0x15121a);Gh.add(X,2.22,Z-hd+.08,1.3,.05,.05,col);
+  // south wall: window x -3.4..1.4 (y .9..2.6) set into the wall
+  const wx0=-3.4,wx1=1.4,wc=(wx0+wx1)/2,ww=wx1-wx0;B.add(X+(-hw+wx0)/2,1.5,Z+hd,wx0+hw,3,.15,wall);B.add(X+(wx1+hw)/2,1.5,Z+hd,hw-wx1,3,.15,wall);B.add(X+wc,.45,Z+hd,ww,.9,.15,wall);B.add(X+wc,2.8,Z+hd,ww,.4,.15,wall);B.add(X+wc,.92,Z+hd-.12,ww+.1,.05,.3,trim);
+  const cv=document.createElement('canvas');cv.width=512;cv.height=192;const g=cv.getContext('2d');const gr=g.createLinearGradient(0,0,0,192);gr.addColorStop(0,rich?'#1a2238':'#120a22');gr.addColorStop(1,poor?'#3a1a14':'#2a1438');g.fillStyle=gr;g.fillRect(0,0,512,192);
+  for(let i=0;i<60;i++){const bx=Math.random()*512,bw=10+Math.random()*34,bh=(rich?30:70)+Math.random()*110;g.fillStyle=i%3?'#0a0812':'#0e0c18';g.fillRect(bx,192-bh,bw,bh);for(let k=0;k<9;k++){g.fillStyle=['#ffc98a','#3ff0ff','#ff3fa4','#ffe14d'][k%4];g.globalAlpha=.65;g.fillRect(bx+Math.random()*bw,192-Math.random()*bh,2,3);g.globalAlpha=1;}}
+  for(let i=0;i<4;i++){g.fillStyle=['#ff3fa4','#3ff0ff','#ffb06b','#b04dff'][i];g.globalAlpha=.85;g.fillRect(Math.random()*480,40+Math.random()*100,20+Math.random()*30,6);g.globalAlpha=1;}
+  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;const win=new THREE.Mesh(new THREE.PlaneGeometry(ww,1.7),new THREE.MeshBasicMaterial({map:t,toneMapped:false}));win.position.set(X+wc,1.75,Z+hd+.06);win.rotation.y=Math.PI;scene.add(win);
+  const rt=rainTex.clone();rt.needsUpdate=true;rt.repeat.set(2.4,1);const rm=new THREE.Mesh(new THREE.PlaneGeometry(ww,1.7),new THREE.MeshBasicMaterial({map:rt,transparent:true,depthWrite:false,toneMapped:false,opacity:.8}));rm.position.set(X+wc,1.75,Z+hd-.02);rm.rotation.y=Math.PI;scene.add(rm);out.rain.push(rt);
+  for(let k=0;k<3;k++)B.add(X+wc-ww/2+ww*(k+.5)/3,1.75,Z+hd-.04,.04,1.7,.03,trim);
+  L(X+wc,1.6,Z+hd-.6,col,4.5,6);// neon spill through the glass
+  // bathroom NW: x -5..-2.6, z -3.5..-1.1, doorway x -3.6..-2.6 in its south wall
+  B.add(X-2.6,1.5,Z-2.3,.12,3,2.4,wall);B.add(X-4.3,1.5,Z-1.1,1.4,3,.12,wall);B.add(X-3.1,2.6,Z-1.1,1,.8,.12,wall);
+  B.add(X-4.35,0,Z-2.3,1.3,.11,2.3,0x8a9098);// tile floor
+  B.add(X-4.7,.8,Z-2.9,.5,.12,.6,0xe8e8ea);B.add(X-4.75,.4,Z-2.9,.3,.8,.3,0xb8b8bc);Mt.add(X-4.85,1.0,Z-2.9,.08,.12,.05,0x9a9aa2);
+  const mir=new THREE.Mesh(new THREE.PlaneGeometry(.6,.8),new THREE.MeshStandardMaterial({color:0x9aa4b4,roughness:.05,metalness:1}));mir.position.set(X-4.9,1.6,Z-2.9);mir.rotation.y=Math.PI/2;scene.add(mir);Gh.add(X-4.88,2.08,Z-2.9,.04,.05,.64,0xffe8c8);
+  B.add(X-4.55,.25,Z-1.65,.45,.5,.6,0xd8d8dc);// toilet
+  Mt.add(X-3.2,1.1,Z-3.0,.9,2.2,.9,0x6a7a86);Gl.add(X-3.2,2.3,Z-3.0,.6,.02,.6,0xd8e8ff);// glass shower
+  L(X-3.8,2.6,Z-2.3,0xdfe8ff,2.2,4);
+  // kitchenette NE along the door wall: counter x 1.4..4.6 (z -3.5..-2.9), stove, sink, fridge, wall cabinets
+  B.add(X+2.8,.45,Z-3.15,3.2,.9,.6,0x2a2630);Mt.add(X+2.8,.92,Z-3.15,3.24,.04,.64,rich?0xd8d8e0:0x8a8a92);B.add(X+3.9,1.0,Z-3.15,.9,.15,.5,0x1a1a1e);Gh.add(X+3.7,1.08,Z-3.15,.2,.01,.2,0xff5a2a);Gh.add(X+4.1,1.08,Z-3.15,.2,.01,.2,0xff5a2a);
+  Mt.add(X+2,.95,Z-3.15,.5,.05,.4,0x5a5a62);B.add(X+4.9,1,Z-2.0,.2,2,.8,0xc8c8cc);B.add(X+4.65,1,Z-2.0,.4,2,.8,0xdadade);// fridge
+  B.add(X+2.8,2.15,Z-3.3,3.2,.7,.35,0x3a3440);Gh.add(X+2.8,1.78,Z-3.15,3,.03,.03,0xffe8c8);L(X+2.8,1.7,Z-2.8,0xffe0b0,2.6,4);
+  B.add(X+2.6,1.03,Z-3.1,.25,.18,.25,0xb04040);B.add(X+1.7,1.0,Z-3.05,.16,.12,.16,0xe8e0d0);// kettle + bowl
+  // living area W: couch against the west wall facing east, low table, rug; TV on the nook partition facing west
+  B.add(X-4.55,.28,Z+1.4,.8,.56,2.2,rich?0x2a3a4a:poor?0x4a3428:0x5a2a3a);B.add(X-4.85,.7,Z+1.4,.25,.6,2.2,rich?0x223040:poor?0x3a2a20:0x4a2030);for(const dz of[-1.05,1.05])B.add(X-4.55,.5,Z+1.4+dz,.8,.3,.15,0x2a2228);
+  B.add(X-2.9,.42,Z+1.4,.9,.06,1.2,0x3a2e2a);B.add(X-2.9,.2,Z+1.4,.8,.4,1.1,0x1a1618);
+  B.add(X+1.95,.35,Z+1.4,.4,.7,1.6,0x22202a);const tvm=new THREE.Mesh(new THREE.PlaneGeometry(1.5,.85),new THREE.MeshBasicMaterial({color:0x050508,toneMapped:false}));tvm.position.set(X+1.73,1.45,Z+1.4);tvm.rotation.y=-Math.PI/2;scene.add(tvm);B.add(X+1.76,1.45,Z+1.4,.04,.92,1.58,0x0a0a0c);
+  // sleeping nook SE: half partition at x 2.2 (z .5..3.5) with the TV on its west face, bed against the east wall, bedside lamp
+  B.add(X+2.0,1.0,Z+1.6,.12,2,2.2,wall);B.add(X+2.0,2.05,Z+1.6,.14,.06,2.2,trim);
+  B.add(X+3.9,.25,Z+2.3,1.7,.5,2.2,0x3a3040);B.add(X+3.9,.56,Z+2.3,1.6,.12,2.1,0xd8d0c8);B.add(X+3.9,.66,Z+3.15,1.2,.12,.35,0xe8e2da);B.add(X+3.9,.64,Z+1.9,1.62,.08,1.2,rich?0x9fb0c0:poor?0x6a4a3a:0x6a2a3a);B.add(X+4.88,1.0,Z+2.3,.06,.9,2.2,0x2a2228);
+  B.add(X+2.6,.3,Z+3.2,.4,.6,.4,0x2a2228);Gh.add(X+2.6,.75,Z+3.2,.22,.3,.22,0xffc070);L(X+2.6,1.0,Z+3.0,0xffb070,3,5);
+  // warm overheads + bulb, shelf by the door
+  Gh.add(X-1.5,2.93,Z+.5,1.4,.03,.4,0x9a8670);L(X-1.5,2.6,Z+.5,0xffd9a0,3.6,8);Gh.add(X+.4,2.45,Z-.8,.14,.18,.14,0xb08a60);B.add(X+.4,2.75,Z-.8,.01,.5,.01,0x111);L(X+.4,2.3,Z-.8,0xffc070,3,5);
+  for(let k=0;k<3;k++){B.add(X-1.8,.5+k*.55,Z-3.25,1.1,.04,.4,0x3a3028);for(let j=0;j<4;j++)B.add(X-2.2+j*.26,.64+k*.55,Z-3.25,.12,.24,.3,[0x6a2a3a,0x2a4a6a,0xc8b890,0x3a5a3a][(j+k)%4]);}
+  // walkable: main floor east of the bathroom, west strip south of it, bathroom + doorway
+  W(X-2.6+.15,X+hw-.25,Z-hd+.25,Z+hd-.25);W(X-hw+.25,X-2.45,Z-1.1+.15,Z+hd-.25);W(X-hw+.25,X-2.95,Z-hd+.25,Z-1.25);W(X-3.55,X-2.95,Z-1.6,Z-.6);
+  // furniture you can't walk through (level 0, checked by walkable)
+  for(const [a,b,c,e] of[[-4.95,-4.15,.3,2.5],[-3.35,-2.45,.8,2.0],[1.75,2.15,.3,2.8],[2.95,4.95,1.2,3.5],[1.2,4.95,-3.5,-2.85],[4.25,4.95,-2.4,-1.6],[-4.95,-4.3,-3.2,-2.6],[-3.65,-2.75,-3.45,-2.55]])out.block.push([X+a,X+b,Z+c,Z+e]);
+  out.rooms.push([X-hw,X+hw,Z-hd,Z+hd,3]);
+  // couch seat + sit
+  out.seats.push({x:X-4.3,z:Z+1.4,y:0,yaw:-Math.PI/2});I({id:'aptcouch'+key,x:X-4.2,y:.8,z:Z+1.4,r:1.6,label:'Sit · couch',act:{type:'sit',x:X-3.78,y:0,z:Z+1.4,yaw:-Math.PI/2}});
+  out.apts[key]={key,name,blurb,price,x:X,z:Z,door,col,tv:tvm,
+   bed:[X+3.9,Z+2.3],out:[X,Z-hd+.8],kitchen:[X+2.8,Z-2.6],mirror:[X-4.4,Z-2.6],tvPos:[X+1.4,Z+1.4],
+   slots:[[X-1.0,0,Z-2.9],[X+1.9,0,Z+3.05],[X-4.6,0,Z-.4],[X,2.95,Z+.4],[X+3.9,1.6,Z+3.38]]};}
+ out.anim.push(t=>{for(const r of out.rain)r.offset.y=(t*.45)%1;});
  B.build(scene);Gl.build(scene);Gh.build(scene);Mt.build(scene);
  out.inRoom=(x,z,y)=>out.rooms.some(r=>x>r[0]&&x<r[1]&&z>r[2]&&z<r[3]&&y<r[4]);
  return out;}
