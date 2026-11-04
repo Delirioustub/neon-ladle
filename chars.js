@@ -4,10 +4,13 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 const BASE={},HAIR={};let clips={};
+import {loadG3,makeG3,makeRobot,g3Ready} from './g3.js';
+export {BODIES,ROBOTS} from './g3.js';
 export async function loadRig(dir='models/'){const L=new GLTFLoader();
  const [m,f,h,a]=await Promise.all(['ubc-male','ubc-female','ubc-hair','ubc-anims'].map(n=>L.loadAsync(dir+n+'.glb')));
  BASE.m=m.scene;BASE.f=f.scene;h.scene.traverse(o=>{if(o.isMesh){let n=o;while(n.parent&&!/^Hair_/.test(n.name))n=n.parent;HAIR[n.name.replace('Hair_','')]=o;o.updateWorldMatrix(true,false);}});
- for(const c of a.animations)clips[c.name]=c;}
+ for(const c of a.animations)clips[c.name]=c;
+ if(!/[?&]ubc/.test(location.search))try{await loadG3(dir,BASE.m,clips,['woman','man','businessman','teen-character']);}catch(e){console.warn('g3 fallback',e);}}
 const A={idle:'Idle_Loop',walk:'Walk_Loop',talk:'Idle_Talking_Loop',sit:'Sitting_Idle_Loop',sittalk:'Sitting_Talking_Loop',interact:'Interact',jog:'Jog_Fwd_Loop',formal:'Walk_Formal_Loop'};
 // shared rim light: neon edge glow so figures separate from the dark street (cheap: one extra term in the fragment shader)
 const RIM=new THREE.Color(0x8a6cff);
@@ -41,7 +44,7 @@ function shell(sk,sex,mat,region,push,opt={}){
 // attach in *model space at bind pose*: a carrier group on the bone that cancels the bone's bind transform, so offsets are just (x right, y up, z forward) metres
 function carrier(root,bone){root.updateMatrixWorld(true);const g=new THREE.Group();const inv=new THREE.Matrix4().copy(bone.matrixWorld).invert().multiply(root.matrixWorld);inv.decompose(g.position,g.quaternion,g.scale);bone.add(g);return g;}
 // look: {sex:'m'|'f', skin, top, pants, boots, coat:{color,len,open}, hair:{style,color}, hat, hatColor, glow:{where,color}, gear:[...], slim, bulk, scale, android, apron, umbrella}
-export function makeHuman(look){const sex=look.sex||'f';const root=SkeletonUtils.clone(BASE[sex]);const H=new THREE.Group();H.userData.human=1;H.add(root);
+export function makeHuman(look){if(look.robot){const r=makeRobot(look.robot,look.glow?.color??0x3ff0ff);if(r)return r;}if(g3Ready()&&!look.ubc)return makeG3(look,look.hi);const sex=look.sex||'f';const root=SkeletonUtils.clone(BASE[sex]);const H=new THREE.Group();H.userData.human=1;H.add(root);
  const sc0=look.scale||1,kid=look.kid||sc0<.9;const s=(kid?sc0:Math.min(1.045,Math.max(.955,sc0)))*(sex==='m'?1.02:.97);/* normalized adult heights ~1.6-1.86m */root.scale.set(s*(look.slim||1)*(look.bulk||1),s,s*(look.slim||1)*(look.bulk||1));
  const bones={};root.traverse(o=>{if(o.isBone)bones[o.name]=o;});
  const sk=bodyMesh(root);

@@ -105,22 +105,22 @@ function talk(k){const n=npcs[k];
 // ================= people =================
 await loadRig('models/');
 const npcs={};const tags={};
-for(const k in CAST){const h=makeHuman(CAST[k].look);scene.add(h.obj);npcs[k]={k,h,obj:h.obj,route:[],place:null,talking:false,pi:0};
+for(const k in CAST){const h=makeHuman(Object.assign({hi:1},CAST[k].look));scene.add(h.obj);npcs[k]={k,h,obj:h.obj,route:[],place:null,talking:false,pi:0};
  const t=document.createElement('div');t.className='tag';t.innerHTML=`<span>${CAST[k].n}</span>`;$('tags').appendChild(t);tags[k]=t;}
 npcs.dess.obj.visible=false;
 const BASE_LOOK={sex:'f',skin:0xe0c0a8,top:0x221a28,pants:0x16141c,hair:{style:'bob',color:0x2a1a2a},coat:{color:0x3a2440,len:.45,shiny:1},glow:{where:'strip',color:0xff3fa4},gear:[{t:'bag',col:0x221a28}]};
-let player=makeHuman(Object.assign({},BASE_LOOK,S.look||{}));scene.add(player.obj);
-function rebuildPlayer(){scene.remove(player.obj);player=makeHuman(Object.assign({},BASE_LOOK,S.look||{}));scene.add(player.obj);}
+let player=makeHuman(Object.assign({hi:1},BASE_LOOK,S.look||{}));scene.add(player.obj);
+function rebuildPlayer(){scene.remove(player.obj);player=makeHuman(Object.assign({hi:1},BASE_LOOK,S.look||{}));scene.add(player.obj);}
 const SKIN=[0xf0d0b8,0xe0b898,0xc89070,0x8a5a40,0x5a3828,0xe8c8a8];const DRESS=[0x2a2438,0x3a2a2a,0x1e2a3a,0x2a3a2a,0x3a3040,0x4a2030,0x202028,0x5a4a3a];
 const randLook=()=>{const sex=Math.random()<.5?'m':'f';const hood=Math.random()<.22;return {sex,skin:pick(SKIN),top:pick(DRESS),pants:pick([0x141218,0x1a1a22,0x22202a,0x2a2430]),boots:pick([0x0c0a0e,0x1a1410,0x2a2a30]),
  hair:{style:pick(sex==='m'?['short','buzz','spiky','beard','short']:['bob','bun','long','short','buzz']),color:pick([0x101010,0x2a1a10,0x6a4a2a,0xc0b0a0,0xff3fa4,0x3ff0ff,0x101010])},hat:hood?'hood':pick([null,null,null,'cap','beanie']),hatColor:pick(DRESS),
  coat:hood||Math.random()<.65?{color:pick(DRESS),len:pick([.4,.45,.6,.72]),shiny:Math.random()<.3}:null,umbrella:Math.random()<.4?pick([0x1a1a26,0xff3fa4,0x3ff0ff,0xffe14d,0x2a2a3a]):null,
- glow:Math.random()<.35?{where:pick(['visor','collar','strip','badge']),color:pick([0x3ff0ff,0xff3fa4,0x5dff9b,0xb04dff])}:null,gear:Math.random()<.45?[{t:pick(['bag','satchel','mask','glasses','pads']),c:pick([0x3ff0ff,0xff3fa4])}]:[],slim:rnd(.88,1.02),bulk:Math.random()<.2?rnd(1.05,1.15):1,scale:rnd(.93,1.05),tempo:rnd(.9,1.08)};};
+ glow:Math.random()<.35?{where:pick(['visor','collar','strip','badge']),color:pick([0x3ff0ff,0xff3fa4,0x5dff9b,0xb04dff])}:null,gear:Math.random()<.45?[{t:pick(['bag','satchel','mask','glasses','pads']),c:pick([0x3ff0ff,0xff3fa4])}]:[],slim:rnd(.88,1.02),bulk:Math.random()<.2?rnd(1.05,1.15):1,scale:rnd(.93,1.05),tempo:rnd(.9,1.08),cls:'mid'};};
 const RICH=[0xd8d4cc,0x8a8a9a,0x1a1a22,0x2a2a3a,0xe8e4e0,0x5a4a6a,0x3a4a5a],POOR=[0x2a2420,0x3a3028,0x2a2c22,0x34281e,0x1e1c1a,0x3a2a2a];
-function classLook(cls){const l=randLook();if(cls==='rich'){l.hat=Math.random()<.15?'cap':null;l.coat={color:pick(RICH),len:pick([.6,.72,.72]),shiny:Math.random()<.6};l.top=pick(RICH);l.umbrella=Math.random()<.6?pick([0xf0f0f0,0x101014,0xd8c8a8,0x3ff0ff]):null;l.glow=Math.random()<.5?{where:pick(['visor','collar']),color:pick([0x9fe8ff,0xffffff,0xc9b2ff])}:null;l.hair.color=pick([0x101010,0x2a1a10,0x6a4a2a,0xd8c8a8,0xe8e8f0]);}
+function classLook(cls){const l=randLook();l.cls=cls;if(cls==='rich'){l.hat=Math.random()<.15?'cap':null;l.coat={color:pick(RICH),len:pick([.6,.72,.72]),shiny:Math.random()<.6};l.top=pick(RICH);l.umbrella=Math.random()<.6?pick([0xf0f0f0,0x101014,0xd8c8a8,0x3ff0ff]):null;l.glow=Math.random()<.5?{where:pick(['visor','collar']),color:pick([0x9fe8ff,0xffffff,0xc9b2ff])}:null;l.hair.color=pick([0x101010,0x2a1a10,0x6a4a2a,0xd8c8a8,0xe8e8f0]);}
  else if(cls==='poor'){const hood=Math.random()<.5;l.hat=hood?'hood':pick([null,'beanie','beanie','cap']);l.coat=hood||Math.random()<.5?{color:pick(POOR),len:pick([.4,.45]),shiny:0}:null;l.top=pick(POOR);l.pants=pick(POOR);l.umbrella=Math.random()<.12?0x2a2a2a:null;l.gear=Math.random()<.5?[{t:pick(['mask','bag','satchel','pads']),c:pick([0xff4d3d,0x5dff9b])}]:[];l.glow=Math.random()<.15?{where:'strip',color:pick([0xff4d3d,0xff8a3d])}:null;}
  return l;}
-const COP=()=>({sex:pick(['m','f']),skin:pick(SKIN),top:0x1e2a44,pants:0x141c30,boots:0x08080c,hair:{style:'buzz',color:0x2a1a10},hat:'cap',hatColor:0x141c30,coat:{color:0x1c2640,len:.6,shiny:1},glow:{where:'collar',color:0x3f8aff},gear:[{t:'pads',col:0x141c30}],scale:rnd(.98,1.04)});
+const COP=()=>({sex:pick(['m','f']),skin:pick(SKIN),top:0x1e2a44,pants:0x141c30,boots:0x08080c,hair:{style:'buzz',color:0x2a1a10},hat:'cap',hatColor:0x141c30,coat:{color:0x1c2640,len:.6,shiny:1},glow:{where:'collar',color:0x3f8aff},gear:[{t:'pads',col:0x141c30}],scale:rnd(.98,1.04),gang:'wardline'});
 // district graph routing
 function districtAt(x,z){if(z>500&&z<600&&Math.abs(x)<12)return'node14';{const r=regionOf(x,z);if(r!=='mid')return r;}if(x>=47.5)return'canal';if(z<-8.3&&x>20&&x<28)return'alley';if(z>8.3&&z<40.6&&x>-28&&x<-16)return'avenue';if(z>=40.4&&x<-4)return'plaza';return'main';}
 const chain=d=>{const c=[d];while(DISTRICTS[c[c.length-1]].parent)c.push(DISTRICTS[c[c.length-1]].parent);return c;};
@@ -182,11 +182,18 @@ function staffTalk(s0){if(R5&&R5.staffHook(s0))return;const sh=s0.shop&&SHOPS[s0
  R5&&R5.shopOpts(s0,opts);opts.push({t:'"Just looking."'});say(s0.k,[(s0.lines?pick(s0.lines)+' ':'')+sh.hi],opts);}
 function tickStaff(dt){for(const st of staff){const d=Math.hypot(st.s0.x-cam.position.x,st.s0.z-cam.position.z);st.h.obj.visible=d<45;if(d<45)st.h.lod(d,dt);}}
 // ================= R3: look class, character creator, jobs, apartments =================
-function lookClass(){const l=S.look||{};if(l.hat==='hood')return'low';if(l.coat&&l.coat.shiny&&l.coat.len>=.7)return'high';return'mid';}
+function lookClass(){const l=S.look||{};if(l.body==='businessman')return'high';if(l.body==='ninja')return'low';if(l.hat==='hood')return'low';if(l.coat&&l.coat.shiny&&l.coat.len>=.7)return'high';return'mid';}
 let creating=false;const CC={sex:['f','m'],skin:[0xf0d0b8,0xe0b898,0xc89070,0x8a5a40,0x5a3828],hairF:['bob','bun','long','short','buzz'],hairM:['short','buzz','spiky','beard'],hairC:[0x101010,0x2a1a10,0x6a4a2a,0xc0b0a0,0xff3fa4,0x3ff0ff,0x5dff9b],coat:[[0x3a2440,.45,1],[0x16161c,.6,1],[0x2a2c22,.45,0],[0x5a2030,.72,1],null],glow:[0xff3fa4,0x3ff0ff,0x5dff9b,0xffe14d,null],height:[.96,1,1.04]};
 function cyc(a,v,d){const i=a.indexOf(v);return a[((i<0?0:i)+d+a.length)%a.length];}
 function openCreator(first){creating=true;S.look=S.look||{};const el=$('cc');el.classList.remove('hide');const L=()=>Object.assign({},BASE_LOOK,S.look);
- const rows=[['Body',()=>L().sex==='m'?'Masc':'Fem',d=>{S.look.sex=L().sex==='m'?'f':'m';S.look.hair={style:(S.look.sex==='m'?CC.hairM:CC.hairF)[0],color:L().hair.color};}],
+ const G3B=['woman','man','businessman','teen-character','sci-fi-soldier','ninja','android','cyborg'],G3N={woman:'Ines (fem)',man:'Rook (masc)',businessman:'Suit',['teen-character']:'Kid','sci-fi-soldier':'Armour',ninja:'Shinobi',android:'Android',cyborg:'Cyborg'},TOPS=[0x8a8a8a,0x221a28,0x3a2440,0x16161c,0x2a2c22,0x5a2030,0x1e2a3a,0xd8d4cc,0x3ff0ff,0xff3fa4],TR=[['wrists'],['wrists','ankles'],['wrists','ankles','waist'],['neck','wrists'],[]],ACC=[null,'visor','phones','collar','badge','strip'];
+ const g3rows=[['Body',()=>G3N[L().body||(L().sex==='m'?'man':'woman')],d=>{S.look.body=cyc(G3B,L().body||(L().sex==='m'?'man':'woman'),d);S.look.sex=['woman'].includes(S.look.body)?'f':'m';}],
+  ['Outfit tint',()=>'#'+(L().top??0).toString(16).padStart(6,'0'),d=>{S.look.top=cyc(TOPS,L().top,d);}],
+  ['Neon trim',()=>L().glow?'#'+L().glow.color.toString(16).padStart(6,'0'):'none',d=>{const a=CC.glow;const i=a.findIndex(c=>L().glow&&c===L().glow.color);const n=a[((i<0?a.length-1:i)+d+a.length)%a.length];S.look.glow=n?{where:L().glow?.where||'strip',color:n}:null;}],
+  ['Trim rings',()=>(L().trims||['wrists']).join('+')||'none',d=>{const i=TR.findIndex(t=>t.join()===(L().trims||['wrists']).join());S.look.trims=TR[((i<0?0:i)+d+TR.length)%TR.length];}],
+  ['Glow piece',()=>L().glow?L().glow.where:'—',d=>{if(!L().glow)S.look.glow={where:'strip',color:0xff3fa4};const w=cyc(ACC.slice(1),L().glow.where,d);S.look.glow={where:w,color:L().glow.color};}],
+  ['Height',()=>({0.96:'Shorter',1:'Average',1.04:'Taller'})[L().scale||1],d=>{S.look.scale=cyc(CC.height,L().scale||1,d);}]];
+ const rows=player.bones&&player.bones.Hips?g3rows:[['Body',()=>L().sex==='m'?'Masc':'Fem',d=>{S.look.sex=L().sex==='m'?'f':'m';S.look.hair={style:(S.look.sex==='m'?CC.hairM:CC.hairF)[0],color:L().hair.color};}],
   ['Skin',()=>'tone '+(CC.skin.indexOf(L().skin)+1||1),d=>{S.look.skin=cyc(CC.skin,L().skin,d);}],
   ['Hair',()=>L().hair.style,d=>{S.look.hair={style:cyc(L().sex==='m'?CC.hairM:CC.hairF,L().hair.style,d),color:L().hair.color};}],
   ['Hair colour',()=>'#'+L().hair.color.toString(16).padStart(6,'0'),d=>{S.look.hair={style:L().hair.style,color:cyc(CC.hairC,L().hair.color,d)};}],
@@ -289,7 +296,7 @@ function turn(o,a,dt){let d=a-o.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d))
 // ================= pedestrians =================
 const LANES=[[-44,7.4,-24,7.4],[-14,7.5,44,7.5],[-44,-7.6,-5,-7.6],[5,-7.6,19,-7.6],[30,-7.6,44,-7.6],[23,-10,23,-44],[25.2,-12,25.2,-40],[-25.5,9,-25.5,40],[-18.5,10,-18.5,40],[-36,43,-8,43],[-34,61,-10,61],[51,-42,51,42],[65,-40,65,40],[-44,2,44,2]];
 const peds=[];const pools=[['mid',SET.low?8:16,LANES,()=>randLook(),1],['crown',SET.low?6:11,CITY.lanes.crown,()=>classLook('rich'),3],['docks',SET.low?6:12,CITY.lanes.docks,()=>classLook('poor'),0]];
-for(const [reg,cnt,lanes,lf,cops] of pools)for(let i=0;i<cnt;i++){const h=makeHuman(i<cops?COP():lf());scene.add(h.obj);const L=lanes[i%lanes.length];const len=Math.hypot(L[2]-L[0],L[3]-L[1]);peds.push({h,L,len,reg,t:Math.random(),dir:Math.random()<.5?1:-1,v:rnd(1,1.45)/len});h.play(i<cops?'formal':'walk');}
+for(const [reg,cnt,lanes,lf,cops] of pools)for(let i=0;i<cnt;i++){const bot=i>=cops&&i%7===3;/* R12: small robots as crowd filler (drones + walkers, all human-scale or smaller) */const h=makeHuman(i<cops?COP():bot?{robot:pick(reg==='crown'?['CP_Flying','Enemy_EyeDrone','CP_Robot_2Legs']:reg==='docks'?['Enemy_Trilobite','Enemy_QuadShell','CP_Robot_2Legs']:['CP_Flying','CP_Robot_2Legs','Enemy_EyeDrone','Enemy_QuadShell']),glow:{color:pick([0x3ff0ff,0xff3fa4,0xffe14d,0x5dff9b])}}:lf());scene.add(h.obj);const L=lanes[i%lanes.length];const len=Math.hypot(L[2]-L[0],L[3]-L[1]);peds.push({h,L,len,reg,t:Math.random(),dir:Math.random()<.5?1:-1,v:rnd(1,1.45)/len});h.play(i<cops?'formal':'walk');}
 // R10: lanes were straight lines authored by hand, so several cut through facades, room walls and side-street blocks. On first tick each lane is clipped to runs that are walkable (ground level, body radius, prop blocks) every 0.4 m; peds walk only on runs >= 5 m.
 function clipLanes(){const py=P.y;P.y=0;const runs={};for(const [reg,,lanes] of pools){const out=runs[reg]=[];for(const L of lanes){const len=Math.hypot(L[2]-L[0],L[3]-L[1]);const n=Math.max(2,Math.ceil(len/.4));let a=-1;for(let i=0;i<=n;i++){const t=i/n,ok=walkable(L[0]+(L[2]-L[0])*t,L[1]+(L[3]-L[1])*t);if(ok&&a<0)a=t;if((!ok||i===n)&&a>=0){const b=ok?t:(i-1)/n;if((b-a)*len>=5)out.push([L[0]+(L[2]-L[0])*a,L[1]+(L[3]-L[1])*a,L[0]+(L[2]-L[0])*b,L[1]+(L[3]-L[1])*b]);a=-1;}}}}
  P.y=py;const ix={};for(const p of peds){const r=runs[p.reg];if(!r.length){p.dead=1;p.h.obj.visible=false;continue;}ix[p.reg]=(ix[p.reg]||0)+1;const L=r[(ix[p.reg]-1)%r.length];p.L=L;p.len=Math.hypot(L[2]-L[0],L[3]-L[1]);p.v=rnd(1,1.45)/p.len;}G.pedRuns=runs;window.__pedRuns=runs;}
@@ -498,7 +505,7 @@ scene.traverse(o=>{if(o.material&&o.material.isMeshStandardMaterial&&o.material.
 for(const k in npcs)tickNPCs(0);
 Object.assign(G,{Q,stepOf,onList,qAdv,emit,interact,say,fade,W,CITY,cand,makeHuman,walkable,regionOf,lookClass,CAST,Input,THREE,scene,P,cam,npcs,dlg:()=>dlgOpen,riding:()=>!!riding||bk.on&&Math.abs(bk.v)>4});R5=initR5(G);window.R5=R5;LADLE=initLadle(G);
 if(S.q.m8==='done'&&S.q.m9===undefined)setTimeout(()=>{chapter('Act Three','The Weather Men');qStart('m9');},2500);
-window.__S=S;window.__P=P;window.__G={groundY,CAST,tickNPCs:dt=>tickNPCs(dt),PLACES,R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,inWalk,stepOf,placeFor,placePos,stepTarget,onList,S,get near(){return near;}};
+window.__S=S;window.__P=P;window.__G={groundY,makeHuman,CAST,tickNPCs:dt=>tickNPCs(dt),PLACES,R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,inWalk,stepOf,placeFor,placePos,stepTarget,onList,S,get near(){return near;}};
 $('load').classList.add('hide');$('start').classList.remove('hide');
 $('start').onclick=async()=>{$('title').classList.add('gone');setTimeout(()=>$('title').remove(),900);$('hud').classList.remove('hide');startAudio();
  try{await document.documentElement.requestFullscreen?.();await screen.orientation?.lock?.('landscape');}catch(e){}

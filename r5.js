@@ -104,9 +104,9 @@ export function initR5(G){const {S,THREE,scene,P,cam,npcs,toast,note,rel,say}=G;
   if(s0.shop==='pawn'&&S.gun.has)opts.push({t:`Box of rounds · ¢${Math.round(20*priceMul('pawn'))}`,fx:()=>{const c=Math.round(20*priceMul('pawn'));if(S.cash<c){toast('Not enough cash');return;}S.cash-=c;S.gun.ammo+=12;toast(`Ammo ${S.gun.ammo}`);}});};
  // ================= r5c: dynamic events =================
  const pool=[];const getActor=look=>{let a=pool.find(p=>!p.busy);if(!a){if(pool.length>=5)return null;a={h:G.makeHuman(look)};scene.add(a.h.obj);pool.push(a);}else{scene.remove(a.h.obj);a.h=G.makeHuman(look);scene.add(a.h.obj);}a.busy=1;a.h.obj.visible=true;a.h.obj.rotation.set(0,0,0);return a;};
- const LOOK={tide:()=>({sex:pick(['m','f']),skin:pick([0x8a5a40,0xd8a880,0x5a3828]),top:0x2a2c22,pants:0x1a1a1a,hat:'hood',coat:{color:0x3a2a1a,len:.45},glow:{where:'strip',color:0xff8a3d}}),
-  saint:()=>({sex:'m',skin:pick([0xe8c8b0,0xc89878]),top:0xe8e8f0,pants:0x1a1a22,hair:{style:'spiky',color:0xf0f0f0},coat:{color:0xd8dce8,len:.5,shiny:1},glow:{where:'visor',color:0xffffff}}),
-  cop:()=>({sex:pick(['m','f']),skin:pick([0xe8c8b0,0x8a5a40]),top:0x1e2a44,pants:0x141c30,hat:'cap',hatColor:0x141c30,coat:{color:0x1c2640,len:.6,shiny:1},glow:{where:'collar',color:0x3f8aff},gear:[{t:'pads',col:0x141c30}]}),
+ const LOOK={tide:()=>({sex:pick(['m','f']),skin:pick([0x8a5a40,0xd8a880,0x5a3828]),top:0x2a2c22,pants:0x1a1a1a,hat:'hood',coat:{color:0x3a2a1a,len:.45},glow:{where:'strip',color:0xff8a3d},gang:'tide'}),
+  saint:()=>({sex:'m',skin:pick([0xe8c8b0,0xc89878]),top:0xe8e8f0,pants:0x1a1a22,hair:{style:'spiky',color:0xf0f0f0},coat:{color:0xd8dce8,len:.5,shiny:1},glow:{where:'visor',color:0xffffff},gang:'saint'}),
+  cop:()=>({sex:pick(['m','f']),skin:pick([0xe8c8b0,0x8a5a40]),top:0x1e2a44,pants:0x141c30,hat:'cap',hatColor:0x141c30,coat:{color:0x1c2640,len:.6,shiny:1},glow:{where:'collar',color:0x3f8aff},gear:[{t:'pads',col:0x141c30}],gang:'wardline'}),
   civ:()=>({sex:pick(['m','f']),skin:pick([0xe0c0a0,0x6a4030,0xd8a880,0xf0d0b8]),top:pick([0x3a3a48,0x6a2a3a,0x2a6a70]),pants:0x22222a,hair:{style:pick(['bob','long','buzz','bun']),color:0x1a1410},coat:{color:pick([0x2a3444,0x4a2a30,0x34482a]),len:.5}})};
  let ev=null,evT=rnd(40,70),lampMul=1,fight=null;
  const spot=()=>{const f=new THREE.Vector3(-Math.sin(P.yaw),0,-Math.cos(P.yaw));for(let d=14;d>=7;d-=1.5)for(const side of[0,.5,-.5]){const x=P.x+f.x*d+f.z*side*d,z=P.z+f.z*d-f.x*side*d;if(G.walkable(x,z))return [x,z];}return null;};
