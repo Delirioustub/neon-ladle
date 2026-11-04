@@ -4,7 +4,8 @@ import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
-import {buildWorld,makeLightPool,makeRain,makeSteam,makeTraffic,rnd,pick,DISTRICTS} from './world.js';
+import {buildWorld,makeLightPool,makeRain,makeSteam,makeTraffic,rnd,pick,DISTRICTS,MATS} from './world.js';
+import {makeEnv,fmtWeather} from './env.js';
 import {loadRig,makeHuman} from './chars.js';
 import {Input,initInput} from './input.js';
 import {DISH,CAST,PLACES,SCHED,PATROL,CHAT,TOPICS,makeQuests} from './story.js';
@@ -18,7 +19,7 @@ const canvas=$('c');const R=new THREE.WebGLRenderer({canvas,antialias:false,powe
 R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.15;
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x120a22);scene.fog=new THREE.FogExp2(0x241236,.03);
 const cam=new THREE.PerspectiveCamera(66,2,.08,220);scene.add(cam);
-scene.add(new THREE.HemisphereLight(0x5a4a9a,0x120818,.6));
+const hemi=new THREE.HemisphereLight(0x5a4a9a,0x120818,.6);scene.add(hemi);
 const moon=new THREE.DirectionalLight(0x6a7aff,.35);moon.position.set(-10,30,10);scene.add(moon);
 const fill=new THREE.PointLight(0xb8a8ff,2.2,8,1.3);scene.add(fill);
 const cand=[];const W=buildWorld(scene,cand);const LP=makeLightPool(scene,cand,SET.low?10:18);
@@ -267,14 +268,14 @@ function startAudio(){if(audio)return;const AC=new (window.AudioContext||window.
  const chime=()=>{const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=pick([220,261.6,329.6,392,440,523.3])*pick([1,.5]);g.gain.setValueAtTime(0,AC.currentTime);g.gain.linearRampToValueAtTime(.025,AC.currentTime+1.5);g.gain.linearRampToValueAtTime(0,AC.currentTime+6);o.connect(g).connect(ambB);o.start();o.stop(AC.currentTime+6.2);};
  setInterval(()=>{if(audio.on&&!document.hidden)chime();},4200);
  audio={AC,master,rainB,ambB,water,crowd,hg,rumble,on:true};applyVol();}
-function applyVol(){if(!audio)return;const t=audio.AC.currentTime;audio.master.gain.linearRampToValueAtTime(audio.on?SET.master:0,t+.6);audio.rainB.gain.setTargetAtTime(SET.rain*(zone==='plaza'&&P.z>68?.25:1),t,.4);audio.ambB.gain.setTargetAtTime(SET.amb,t,.4);}
-function tickAudio(){if(!audio)return;const t=audio.AC.currentTime;audio.water.gn.gain.setTargetAtTime(zone==='canal'?.5:0,t,1);audio.crowd.gn.gain.setTargetAtTime(zone==='alley'?.05:zone==='main'&&S.open&&Math.hypot(P.x,P.z+5)<10?.03:0,t,1);
+function applyVol(){if(!audio)return;const t=audio.AC.currentTime;audio.master.gain.linearRampToValueAtTime(audio.on?SET.master:0,t+.6);audio.rainB.gain.setTargetAtTime(SET.rain*(zone==='plaza'&&P.z>68?.25:1)*(.15+.85*(window.__ENV?__ENV.st.rain:1)),t,.4);audio.ambB.gain.setTargetAtTime(SET.amb,t,.4);}
+function tickAudio(){if(!audio)return;const t=audio.AC.currentTime;audio.rainB.gain.setTargetAtTime(SET.rain*(zone==='plaza'&&P.z>68?.25:1)*(.15+.85*ENV.st.rain),t,.8);audio.water.gn.gain.setTargetAtTime(zone==='canal'?.5:0,t,1);audio.crowd.gn.gain.setTargetAtTime(zone==='alley'?.05:zone==='main'&&S.open&&Math.hypot(P.x,P.z+5)<10?.03:0,t,1);
  const tr=Math.max(0,1-Math.hypot(train.position.x+11-P.x,50-P.z)/45);audio.rumble.gn.gain.setTargetAtTime(.35+tr*.6,t,.3);audio.hg.gain.setTargetAtTime(.015+(zone==='plaza'?.03:0),t,1);}
 document.addEventListener('visibilitychange',()=>{if(!audio)return;document.hidden?audio.AC.suspend():audio.AC.resume();});
 // ================= time / sleep =================
 function sleep(){if(S.open){toast('Close the shop first (Kitchen)');return;}
  if(S.min<22*60){inspect('Home','A narrow capsule flat above the Ladle. It\'s too early to sleep. The street is still awake.');return;}
- S.day++;S.min=18*60;S.talkedDay={};S.asked={};const interest=S.flags.interestFrozen?0:Math.round(S.debt*.002);S.debt+=interest;fade();toast(`Day ${S.day}${interest?` · Orrin Mutual added ¢${interest} interest`:''}`);save();}
+ S.day++;S.min=10*60;S.talkedDay={};S.asked={};const interest=S.flags.interestFrozen?0:Math.round(S.debt*.002);S.debt+=interest;fade();toast(`Day ${S.day}${interest?` · Orrin Mutual added ¢${interest} interest`:''}`);save();}
 function fade(){const f=$('fade');f.classList.remove('show');void f.offsetWidth;f.classList.add('show');}
 // ================= helpers =================
 const tmpV=new THREE.Vector3();function place(el,x,y,z){tmpV.set(x,y,z).project(cam);if(tmpV.z>1){el.style.display='none';return;}el.style.left=((tmpV.x+1)/2*VW)+'px';el.style.top=((1-tmpV.y)/2*VH)+'px';}
@@ -285,7 +286,9 @@ function tickStreaming(){const lim=SET.low?58:72;for(const k in W.districts){con
 initInput({surface:canvas,joyEl:$('joy'),knobEl:$('knob')});
 if(SET.low)bloom.strength=.7;
 // bake wet-street reflections once, lit by the pool around the Ladle
-cam.position.set(0,1.6,-2);LP.update(10,cam);for(let i=0;i<20;i++)LP.update(.5,cam);cubeCam.position.set(0,.4,-2);cubeCam.update(R,scene);
+const ENV=makeEnv(scene,{hemi,moon,bloom,R,mats:MATS});ENV.set(S.weather||'rain',true);if(S.wet!=null)ENV.st.wet=S.wet;window.__ENV=ENV;let envBake=0;
+ENV.onThunder=()=>{if(!audio)return;const A=audio.AC,t=A.currentTime+.4+Math.random()*1.5,b=A.createBuffer(1,A.sampleRate*3,A.sampleRate),d=b.getChannelData(0);let l=0;for(let i=0;i<d.length;i++){l=l*.985+(Math.random()*2-1)*.015;d[i]=l*12*Math.exp(-i/A.sampleRate*1.1);}const sN=A.createBufferSource();sN.buffer=b;const g=A.createGain();g.gain.value=.9;sN.connect(g);g.connect(audio.rainB);sN.start(t);};
+cam.position.set(0,1.6,-2);ENV.update(0,(S.min/60)%24,0,S);LP.update(10,cam);for(let i=0;i<20;i++)LP.update(.5,cam);cubeCam.position.set(0,.4,-2);cubeCam.update(R,scene);
 scene.traverse(o=>{if(o.material&&o.material.isMeshStandardMaterial&&o.material.metalness>.3){o.material.envMap=cubeRT.texture;o.material.envMapIntensity=.9;}});
 for(const k in npcs)tickNPCs(0);
 window.__S=S;window.__P=P;window.__G={Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,stepOf,get near(){return near;}};
@@ -298,8 +301,10 @@ if(S.q.m4==='done'&&S.q.m5===undefined&&S.flags.intro)qStart('m5');
 // ================= main loop =================
 let last=performance.now(),T=0,saveT=0,slowT=0,flickT=0;
 function frame(now){const dt=Math.min(.05,(now-last)/1000)*(window.__G.ts||1);last=now;T+=dt;
- tickPlayer(dt);if(!dlgOpen&&!menuOpen()){S.min+=dt*1;if(S.min>=30*60)S.min=30*60;}
- const hh=Math.floor(S.min/60)%24,mm=Math.floor(S.min%60);$('clock').textContent=`Day ${S.day} · ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;$('shop').textContent=S.open?'Ladle open':S.min>=26*60?'Curfew':'Ladle closed';$('cash').textContent='¢'+S.cash.toLocaleString();
+ tickPlayer(dt);let gH=0;if(!dlgOpen&&!menuOpen()){S.min+=dt*1;gH=dt/60;if(S.min>=34*60){S.min-=24*60;S.day++;S.talkedDay={};S.asked={};}}
+ ENV.update(dt,(S.min/60)%24,gH,S);LP.mul=ENV.lampMul;rain.m.geometry.setDrawRange(0,Math.round(rain.n*2*Math.min(1,ENV.st.rain*1.1)));rain.m.material.opacity=.18+.2*ENV.st.rain;
+ envBake-=gH;if(envBake<=0){envBake=1.5;const vis=[];cubeCam.position.set(P.x,.4,P.z);cubeCam.update(R,scene);}
+ const hh=Math.floor(S.min/60)%24,mm=Math.floor(S.min%60);$('clock').textContent=`Day ${S.day} · ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${fmtWeather(ENV.st.w)}`;$('shop').textContent=S.open?'Ladle open':S.min>=26*60?'Curfew':'Ladle closed';$('cash').textContent='¢'+S.cash.toLocaleString();
  tickNPCs(dt);tickShop(dt);tickCustomers(dt);tickPeds(dt);pickTarget();tickWaypoint(T);
  slowT-=dt;if(slowT<=0){slowT=.5;tickStreaming();tickAudio();}
  LP.update(dt,cam);rain.m.visible=!(P.z>67.8&&P.x<-16);rain.update(dt,cam.position);steam.update(dt);traffic.update(dt);

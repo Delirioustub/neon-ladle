@@ -151,16 +151,16 @@ export function buildWorld(scene,cand){const out={districts:{},flick:[],vents:[]
  return out;}
 // dynamic light pool: a fixed number of PointLights follow the nearest candidates (keeps shader cost constant)
 export function makeLightPool(scene,cand,n){const pool=[];for(let i=0;i<n;i++){const l=new THREE.PointLight(0xffffff,0,8,1.5);scene.add(l);pool.push({l,c:null,tI:0});}
- let t=0;return {pool,update(dt,cam){t-=dt;if(t<=0){t=.35;const p=cam.position;const ranked=cand.map(c=>({c,d:(c.x-p.x)**2+(c.y-p.y)**2+(c.z-p.z)**2-(c.pri?400:0)})).sort((a,b)=>a.d-b.d).slice(0,n).map(r=>r.c);
+ let t=0;return {pool,mul:1,update(dt,cam){const M=this.mul;t-=dt;if(t<=0){t=.35;const p=cam.position;const ranked=cand.map(c=>({c,d:(c.x-p.x)**2+(c.y-p.y)**2+(c.z-p.z)**2-(c.pri?400:0)})).sort((a,b)=>a.d-b.d).slice(0,n).map(r=>r.c);
    const free=pool.filter(s=>!ranked.includes(s.c));const want=ranked.filter(c=>!pool.some(s=>s.c===c));for(const s of free){const c=want.shift();if(!c){s.c=null;continue;}s.c=c;s.l.intensity=0;s.l.position.set(c.x,c.y,c.z);s.l.color.setHex(c.col);s.l.distance=c.dist*1.3;}}
-  for(const s of pool){const target=s.c?s.c.int*1.4:0;s.l.intensity+=(target-s.l.intensity)*Math.min(1,dt*4);}}};}
+  for(const s of pool){const target=s.c?s.c.int*1.4*M:0;s.l.intensity+=(target-s.l.intensity)*Math.min(1,dt*4);}}};}
 const streakTex=(()=>{const c=document.createElement('canvas');c.width=16;c.height=128;const g=c.getContext('2d');const gr=g.createLinearGradient(0,0,0,128);gr.addColorStop(0,'rgba(255,255,255,0)');gr.addColorStop(.75,'rgba(255,255,255,.55)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,16,128);const h=g.createLinearGradient(0,0,16,0);h.addColorStop(0,'rgba(0,0,0,1)');h.addColorStop(.5,'rgba(0,0,0,0)');h.addColorStop(1,'rgba(0,0,0,1)');g.globalCompositeOperation='destination-out';g.fillStyle=h;g.fillRect(0,0,16,128);return new THREE.CanvasTexture(c);})();
 function streakMat(col){return new THREE.MeshBasicMaterial({map:streakTex,color:new THREE.Color(col).multiplyScalar(.9),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false});}
 // ---- rain ----
 export function makeRain(scene,n=2600){const g=new THREE.BufferGeometry();const a=new Float32Array(n*6);const sp=new Float32Array(n);
  for(let i=0;i<n;i++){const x=rnd(-18,18),y=rnd(0,16),z=rnd(-12,12);a.set([x,y,z,x-.03,y-.55,z+.02],i*6);sp[i]=rnd(14,20);}
  g.setAttribute('position',new THREE.BufferAttribute(a,3));const m=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x9fb4e8,transparent:true,opacity:.32}));m.frustumCulled=false;scene.add(m);
- return {m,update(dt,c){const p=g.attributes.position.array;for(let i=0;i<n;i++){const k=i*6;let y=p[k+1]-sp[i]*dt;if(y<0){y=rnd(12,16);const x=c.x+rnd(-18,18),z=c.z+rnd(-12,12);p[k]=x;p[k+3]=x-.03;p[k+2]=z;p[k+5]=z+.02;}
+ return {m,n,update(dt,c){const p=g.attributes.position.array;for(let i=0;i<n;i++){const k=i*6;let y=p[k+1]-sp[i]*dt;if(y<0){y=rnd(12,16);const x=c.x+rnd(-18,18),z=c.z+rnd(-12,12);p[k]=x;p[k+3]=x-.03;p[k+2]=z;p[k+5]=z+.02;}
    p[k+1]=y;p[k+4]=y-.55;}g.attributes.position.needsUpdate=true;}};}
 // ---- steam/smoke puffs ----
 export function makeSteam(scene,origins){const tex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');const r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'rgba(255,255,255,.5)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);})();
@@ -173,3 +173,4 @@ export function makeTraffic(scene){const cars=[];const cols=[0xffe0a0,0xff4d5e,0
   const tl=new THREE.Mesh(new THREE.BoxGeometry(.06,.1,.5),new THREE.MeshBasicMaterial({color:new THREE.Color(0xff2040).multiplyScalar(2.5),toneMapped:false}));tl.position.x=-.72;g.add(tl);
   scene.add(g);cars.push({g,lane,x:rnd(-60,60),y:18+lane*5+rnd(-1,1),z:-4+lane*2.6,v:(lane%2?1:-1)*rnd(6,10)});}
  return {update(dt){for(const c of cars){c.x+=c.v*dt;if(c.x>70)c.x=-70;if(c.x<-70)c.x=70;c.g.position.set(c.x,c.y,c.z);c.g.rotation.y=c.v>0?0:Math.PI;}}};}
+export const MATS={ROAD,WALK,WALK2,PUDDLE,WATER};
