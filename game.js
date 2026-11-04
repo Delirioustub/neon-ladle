@@ -18,9 +18,9 @@ import {initR5} from './r5.js';
 let R5=null,LADLE=null;
 const $=id=>document.getElementById(id);
 // ================= settings (device-agnostic; persisted) =================
-const SET=Object.assign({low:0,scale:1,master:.8,rain:.8,amb:.7,view:'fp',sens:1},JSON.parse(localStorage.getItem('nlSettings')||'{}'));
+const SET=Object.assign({low:0,scale:1,master:.8,rain:.8,amb:.7,view:'fp',sens:1},(()=>{try{return JSON.parse(localStorage.getItem('nlSettings')||'{}')||{};}catch(e){return {};}})());
 if(localStorage.nlLow&&SET.low===0&&!localStorage.nlSettings)SET.low=1;
-const saveSet=()=>localStorage.setItem('nlSettings',JSON.stringify(SET));Input.lookSens=SET.sens;
+const saveSet=()=>{try{localStorage.setItem('nlSettings',JSON.stringify(SET));}catch(e){}};Input.lookSens=SET.sens;
 // ================= renderer / scene =================
 const canvas=$('c');const R=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance'});
 R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.15;
@@ -49,7 +49,8 @@ let trainT=10;
 const DEF={v:2,cash:120,debt:20000,day:1,min:18*60,open:false,served:0,servedTotal:0,rel:{},q:{},flags:{},up:{stools:3,burners:1,sign:0,menu:['shoyu','tea']},talkedDay:{},asked:{},notes:[],track:null,P:null};
 let S;try{const raw=localStorage.getItem('neonLadle2');if(raw)S=Object.assign(structuredClone(DEF),JSON.parse(raw));else{const v1=JSON.parse(localStorage.getItem('neonLadle')||'null');S=structuredClone(DEF);
   if(v1){for(const k of['cash','debt','day','servedTotal','rel','q','flags','up'])if(v1[k]!==undefined)S[k]=v1[k];S.flags.fromV1=1;}}}catch(e){S=structuredClone(DEF);}
-S.open=false;const save=()=>localStorage.setItem('neonLadle2',JSON.stringify(S));
+S.open=false;let saveWarned=0;const save=()=>{try{localStorage.setItem('neonLadle2',JSON.stringify(S));}catch(e){if(!saveWarned++)setTimeout(()=>toast&&toast('Could not save (storage full or private mode)'),0);}};
+addEventListener('pagehide',()=>save());document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
 // ================= UI helpers =================
 function toast(t){const d=document.createElement('div');d.className='toast';d.innerHTML=t;$('toasts').appendChild(d);setTimeout(()=>d.remove(),3600);}
 const relv=k=>S.rel[k]??2;
@@ -66,7 +67,7 @@ const stepOf=id=>typeof S.q[id]==='number'?Q[id].steps[S.q[id]]:null;
 const onList=s=>Array.isArray(s.on)?s.on:[s.on];
 function emit(ev){for(const id in Q){const s=stepOf(id);if(!s)continue;for(const o of onList(s)){if(o===ev&&!s.say){qAdv(id);break;}
   if(o.startsWith('count:')){const[,key,n]=o.split(':');if(ev==='count:'+key){const c=Object.keys(S.flags).filter(f=>f.startsWith(key)&&/\d$/.test(f)).length;if(c>=+n)qAdv(id);else toast(`${key==='poster'?'Posters read':'Relays spliced'} ${c}/${n}`);}}}}}
-function stepTarget(s){let a=s&&s.at;if(typeof a==='function')a=a();if(!a)return null;if(typeof a==='string'){const n=npcs[a];return n&&n.obj.visible?new THREE.Vector3(n.obj.position.x,2.1,n.obj.position.z):null;}return new THREE.Vector3(a[0],1.4,a[1]);}
+function stepTarget(s){let a=s&&s.at;if(typeof a==='function')a=a();if(!a)return null;if(typeof a==='string'){const n=npcs[a];return n&&placeFor(a)?new THREE.Vector3(n.obj.position.x,2.1,n.obj.position.z):null;}return new THREE.Vector3(a[0],1.4,a[1]);}
 // ================= dialogue =================
 let dlgOpen=false,dlgWho=null;
 function say(k,lines,opts=[]){dlgOpen=true;dlgWho=k;const D=$('dlg');D.classList.remove('hide');const c=CAST[k];
@@ -232,9 +233,9 @@ function decorate(k){const A=CITY.apts[k];const names=['Corner by the door','Win
 // ================= kitchen / shop =================
 let pots=[],ready=[],customers=[],spawnT=2;
 const price=k=>DISH[k].p+(k==='miso'?(S.flags.goodFish?6:0)+(S.flags.misoPremium?8:0):0);
-function openCook(){if(!S.open){if(S.q.m1===undefined||S.q.m1===0){inspect('The Neon Ladle','Dess\'s old haunt, shutters down. Mara Voss, the building agent, holds the keys. Talk to her first.');return;}
+function openCook(){if(!S.open){if(S.q.m1===undefined||S.q.m1===0){inspect('The Neon Ladle','Dess\'s old haunt, shutters down. Ask around about Dess first. Mara Voss, the building agent, handled her place.');return;}
   if(S.min>=26*60){inspect('Curfew','It\'s past curfew. Get some sleep. Your door is just west of the Ladle.');return;}
-  S.open=true;S.served=0;emit('interact:kitchen');toast('The Ladle is open');W.ladleSign.material.color.setScalar(2.2);save();}
+  S.open=true;S.served=0;toast('The Ladle is open');W.ladleSign.material.color.setScalar(2.2);save();}
  $('cook').classList.remove('hide');renderCook();}
 function renderCook(){const d=$('dishes');d.innerHTML='';S.up.menu.forEach(k=>{const b=document.createElement('button');b.className='dish';b.innerHTML=`<span>${DISH[k].n}</span><small>¢${price(k)} · ${DISH[k].t}s</small>`;
   b.onclick=()=>{if(pots.length>=S.up.burners){toast('All burners busy');return;}pots.push({dish:k,t:0,max:DISH[k].t*(S.up.burners>1?.8:1)});renderCook();};d.appendChild(b);});
@@ -253,7 +254,7 @@ let cookT=0;function tickShop(dt){cookT-=dt;if(cookT<=0&&!$('cook').classList.co
  for(let i=ready.length-1;i>=0;i--){const c=diners.find(c=>c.seated&&!c.served&&c.order===ready[i]);if(!c)continue;c.served=true;ready.splice(i,1);
   if(c.npc){npcOrders[c.npc+S.day]=1;delete npcOrders['_'+c.npc];toast(`${CAST[c.npc].n} · ${DISH[c.order].n}`);emit(`serve:${c.npc}:${c.order}`);continue;}
   c.leaveT=2.5;const tip=Math.round(price(c.order)*(.1+.4*c.pat/c.patMax));S.cash+=price(c.order)+tip;S.served++;S.servedTotal++;
-  toast(`+¢${price(c.order)+tip} · ${DISH[c.order].n}${tip>8?' · great tip':''}`);if(S.served>=5)emit('served5');}
+  toast(`+¢${price(c.order)+tip} · ${DISH[c.order].n}${tip>8?' · great tip':''}`);}
  if(S.open&&S.min<26*60){spawnT-=dt;const taken=Object.values(npcs).filter(n=>(n.place||'').startsWith('stool:')).map(n=>+n.place.slice(6));
   if(spawnT<=0&&customers.filter(c=>!c.leave).length+taken.length<S.up.stools){spawnT=rnd(6,11)*(S.up.sign?.75:1)*(S.flags.radio?.8:1)*(S.flags.ledger==='ilse'?.85:1);spawnCustomer(taken);}}
  if(S.open&&S.min>=26*60){closeShop();toast('Curfew · 02:00. Head home to sleep.');}}
@@ -291,7 +292,12 @@ const P={x:-3.5,z:-1.5,y:0,yaw:0,pitch:.05,bob:0,sit:null};if(S.P){Object.assign
 function walkable(x,z){const m=.3;const py=P.y||0;if(py<.5&&Math.abs(x)<3.85&&z<-5.55&&z>-6.95)return false;// counter (kitchen behind it is open from both ends)
  if(py<.5&&z<-7.1&&z>-7.9)for(const i of[-2.4,0,2.4])if(Math.abs(x-i)<.45)return false;// stock pots
  if(x>-18.4&&x<-15.6&&z>5.8&&z<7.8)return false;
- for(const r of W.walk)if(Math.abs((r[4]||0)-py)<.6&&x>r[0]+m&&x<r[1]-m&&z>r[2]+m&&z<r[3]-m)return true;return false;}
+ return inWalk(x,z,py)&&inWalk(x+m,z,py)&&inWalk(x-m,z,py)&&inWalk(x,z+m,py)&&inWalk(x,z-m,py);}
+// R7: walk rects are unioned before the body-radius inset, so seams between adjacent rects never become invisible walls.
+// Rects are bucketed on a 4m grid (rebuilt when W.walk grows) so mobile pays ~a handful of tests per query instead of hundreds.
+let WG=null,WGn=-1;const WC=4;
+function wgrid(){if(WGn===W.walk.length)return WG;WG=new Map();WGn=W.walk.length;for(const r of W.walk){for(let i=Math.floor(r[0]/WC);i<=Math.floor(r[1]/WC);i++)for(let j=Math.floor(r[2]/WC);j<=Math.floor(r[3]/WC);j++){const k=i*4096+j;let a=WG.get(k);if(!a)WG.set(k,a=[]);a.push(r);}}return WG;}
+function inWalk(x,z,py){const a=wgrid().get(Math.floor(x/WC)*4096+Math.floor(z/WC));if(!a)return false;for(const r of a)if(Math.abs((r[4]||0)-py)<.6&&x>=r[0]&&x<=r[1]&&z>=r[2]&&z<=r[3])return true;return false;}
 let viewTP=SET.view==='tp';Input.on('toggleView',()=>{viewTP=!viewTP;SET.view=viewTP?'tp':'fp';saveSet();});
 const fwd=new THREE.Vector3(),camTP=new THREE.Vector3();let zone='';
 function tickPlayer(dt){if(creating){Input.consumeLook();return;}const lk=Input.consumeLook();const onB=bk.on&&!riding;if(!dlgOpen&&!menuOpen()&&!mapOpen&&!onB){P.yaw-=lk.dx*.0055;P.pitch=Math.max(-1.1,Math.min(1.05,P.pitch-lk.dy*.0045));}
@@ -463,7 +469,7 @@ scene.traverse(o=>{if(o.material&&o.material.isMeshStandardMaterial&&o.material.
 for(const k in npcs)tickNPCs(0);
 Object.assign(G,{Q,stepOf,onList,qAdv,emit,interact,say,fade,W,CITY,cand,makeHuman,walkable,regionOf,lookClass,CAST,Input,THREE,scene,P,cam,npcs,dlg:()=>dlgOpen,riding:()=>!!riding||bk.on&&Math.abs(bk.v)>4});R5=initR5(G);window.R5=R5;LADLE=initLadle(G);
 if(S.q.m8==='done'&&S.q.m9===undefined)setTimeout(()=>{chapter('Act Three','The Weather Men');qStart('m9');},2500);
-window.__S=S;window.__P=P;window.__G={R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,stepOf,get near(){return near;}};
+window.__S=S;window.__P=P;window.__G={R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,inWalk,stepOf,placeFor,placePos,stepTarget,onList,S,get near(){return near;}};
 $('load').classList.add('hide');$('start').classList.remove('hide');
 $('start').onclick=async()=>{$('title').classList.add('gone');setTimeout(()=>$('title').remove(),900);$('hud').classList.remove('hide');startAudio();
  try{await document.documentElement.requestFullscreen?.();await screen.orientation?.lock?.('landscape');}catch(e){}
@@ -473,14 +479,20 @@ $('start').onclick=async()=>{$('title').classList.add('gone');setTimeout(()=>$('
 if(typeof S.q.m2==='number'||typeof S.q.m3==='number'||S.q.m2==='done'||S.q.m3==='done'){const fuse=S.q.m3==='done';delete S.q.m2;delete S.q.m3;if(S.q.m4===undefined){if(fuse){S.q.m1='done';qStart('m4');}else{S.q.m1=0;S.track='m1';}}else S.q.m1='done';}
 if(typeof S.q.m1==='number'&&S.q.m1>=4)S.q.m1=3;if(typeof S.q.m4==='number'&&S.q.m4>0)S.q.m4=0;if(typeof S.q.m8==='number'&&S.q.m8>0)S.q.m8=0;
 if(S.q.m4==='done'&&S.q.m5===undefined&&S.flags.intro)qStart('m5');
+// R7 soft-lock repair: chapter hand-offs run on timers (chapter cards). A reload inside that window used to strand the save with no main quest.
+{const NEXT=[['m1','m4'],['m5','m6'],['m6','m7'],['m7','m8'],['m9','m10'],['m10','m11'],['m11','m12']];if(S.flags.intro)for(const [a,b] of NEXT)if(S.q[a]==='done'&&S.q[b]===undefined&&Q[b])setTimeout(()=>qStart(b),2600);
+ if(S.track&&(typeof S.q[S.track]!=='number'||!Q[S.track]))S.track=Object.keys(Q).find(k=>typeof S.q[k]==='number'&&Q[k].main)||Object.keys(Q).find(k=>typeof S.q[k]==='number')||null;}
 function beginStory(){S.flags.intro=1;save();say('Veyra City',["Veyra. It hasn't stopped raining in three years. The upper city stays dry under a canopy you can't see. Everyone else gets wet.",'You came in on the Ring Line with ¢120 and one message from your aunt Dess, a fixer who ran deals out of a Saltgate noodle bar called the Neon Ladle: "Come. Line 9 still hums." By the time you arrived, she was gone.',"Nobody here knows your name yet. Take jobs from the gangs, the Wardline, the towers or the street. Find out who keeps disappearing, and why.",'Left thumb walks. Drag on the right to look. Look at something and tap. Job boards are in Saltgate, Ashline and Crown Heights. The Ring Line connects them.'],[{t:'Step into the rain',fx:()=>qStart('m1')}]);}
 // ================= main loop =================
 let mapT=0,last=performance.now(),T=0,saveT=0,slowT=0,flickT=0;
-function frame(now){const dt=Math.min(.05,(now-last)/1000)*(window.__G.ts||1);last=now;T+=dt;
+// R7: one thrown error used to stop requestAnimationFrame forever (frozen game). Schedule first, then run guarded.
+const _txt={};function setText(id,t){if(_txt[id]!==t){_txt[id]=t;$(id).textContent=t;}}
+let frameErr=0;function frame(now){requestAnimationFrame(frame);try{frameBody(now);}catch(e){if(frameErr++<3)console.error('frame',e);}}
+function frameBody(now){const dt=Math.min(.05,(now-last)/1000)*(window.__G.ts||1);last=now;T+=dt;
  tickPlayer(dt);let gH=0;if(!dlgOpen&&!menuOpen()){S.min+=dt*1;gH=dt/60;if(S.min>=34*60){S.min-=24*60;S.day++;S.talkedDay={};S.asked={};}}
  ENV.update(dt,(S.min/60)%24,gH,S);LP.mul=ENV.lampMul*(R5?R5.lampMul:1);if(P.y>20)scene.fog.density*=.4;else if(P.x<-66&&P.x>-82&&Math.abs(P.z)>8)scene.fog.density*=.42;else if(riding)scene.fog.density*=.3;rain.m.geometry.setDrawRange(0,Math.round(rain.n*2*Math.min(1,ENV.st.rain*1.1)));rain.m.material.opacity=.18+.2*ENV.st.rain;
  envBake-=gH;if(envBake<=0){envBake=1.5;const vis=[];cubeCam.position.set(P.x,P.y+.4,P.z);cubeCam.update(R,scene);}
- const hh=Math.floor(S.min/60)%24,mm=Math.floor(S.min%60);$('clock').textContent=`Day ${S.day} · ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${fmtWeather(ENV.st.w)}`;$('shop').textContent=S.open?'Working the Ladle':S.min>=26*60?'Curfew':'';$('shop').style.display=$('shop').textContent?'':'none';$('cash').textContent='¢'+S.cash.toLocaleString();
+ const hh=Math.floor(S.min/60)%24,mm=Math.floor(S.min%60);setText('clock',`Day ${S.day} · ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${fmtWeather(ENV.st.w)}`);$('shop').textContent=S.open?'Working the Ladle':S.min>=26*60?'Curfew':'';{const on=$('shop').textContent?'':'none';$('shop').style.display=on;$('shop').previousElementSibling.style.display=on;}$('cash').textContent='¢'+S.cash.toLocaleString();
  tickNPCs(dt);R5&&R5.tick(dt,T);LADLE&&LADLE.tick(dt);tickStaff(dt);tickCreator(dt);if(S.jobDef&&typeof S.q.job==='number'){const p=S.jobDef.sp[S.q.job];jobMarker.visible=true;jobMarker.position.set(p[0],(p[3]||0)+1.3+Math.sin(T*2)*.1,p[1]);jobMarker.rotation.y=T;}else jobMarker.visible=false;tickShop(dt);tickCustomers(dt);tickPeds(dt);pickTarget();tickWaypoint(T);
  slowT-=dt;if(slowT<=0){slowT=.5;tickStreaming();tickAudio();}
  LP.update(dt,cam);const indoor=(P.z>67.8&&P.z<80&&P.x<-16)||CITY.inRoom(P.x,P.z,P.y+1);rain.m.visible=!indoor&&!riding;rain.update(dt,cam.position,P.y);for(const a of CITY.anim)a(T,crack);tickRide(dt);steam.update(dt);traffic.update(dt);
@@ -488,6 +500,6 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000)*(window.__G.ts||1);la
  if(gateAnim&&W.gate.position.y<2.9){W.gate.position.y+=dt*.8;}
  flickT-=dt;if(flickT<=0){flickT=rnd(.05,.4);for(const f of W.flick)f.material.color.setScalar(Math.random()<.15?.25:1.25);if(!S.up.sign&&!S.open)W.ladleSign.material.color.setScalar(Math.random()<.12?.2:.6);}
  saveT+=dt;if(saveT>5){saveT=0;const rg=regionOf(P.x,P.z);if(rg!=='home'&&rg!=='metro')S.lastOut={x:P.x,z:P.z};if(!riding)S.P={x:P.x,z:P.z,y:P.y,yaw:P.yaw,pitch:P.pitch};save();}if(mapOpen){mapT-=dt;if(mapT<=0){mapT=.25;drawMap();}}for(const a of CW.anim)a(T,dt);CW.follow&&CW.follow(P.x,P.z);
- composer.render(dt);requestAnimationFrame(frame);}
+ composer.render(dt);}
 requestAnimationFrame(frame);
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),5*60e3);}).catch(()=>{});let rl=0;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(rl++)return;try{save()}catch(e){}location.reload();});}
