@@ -9,6 +9,7 @@ import {makeEnv,fmtWeather} from './env.js';
 import {buildCity,regionOf} from './city.js';
 import {dressCity} from './props.js';
 import {buildCauseway} from './causeway.js';
+import {buildLayers} from './layers.js';
 import {loadRig,makeHuman} from './chars.js';
 import {Input,initInput} from './input.js';
 import {DISH,CAST,PLACES,SCHED,PATROL,CHAT,TOPICS,makeQuests} from './story.js';
@@ -29,7 +30,7 @@ const cam=new THREE.PerspectiveCamera(66,2,.15,220);scene.add(cam);
 const hemi=new THREE.HemisphereLight(0x5a4a9a,0x120818,.6);scene.add(hemi);
 const moon=new THREE.DirectionalLight(0x6a7aff,.35);moon.position.set(-10,30,10);scene.add(moon);
 const fill=new THREE.PointLight(0xb8a8ff,2.2,8,1.3);scene.add(fill);
-const cand=[];const W=buildWorld(scene,cand);const CITY=buildCity(scene,cand);W.walk.push(...CITY.walk);CITY.block.push(...W.block);Object.assign(W.districts,CITY.districts);dressCity(W.districts,cand,Object.values(CITY.apts||{}).map(a=>a.door).concat((CITY.doors||[]).map(d=>Array.isArray(d)?d:[d.x,d.z]).filter(d=>d&&isFinite(d[0]))),CITY.block);const LP=makeLightPool(scene,cand,SET.low?10:18);
+const cand=[];const W=buildWorld(scene,cand);const CITY=buildCity(scene,cand);W.walk.push(...CITY.walk);CITY.block.push(...W.block);Object.assign(W.districts,CITY.districts);dressCity(W.districts,cand,Object.values(CITY.apts||{}).map(a=>a.door).concat((CITY.doors||[]).map(d=>Array.isArray(d)?d:[d.x,d.z]).filter(d=>d&&isFinite(d[0]))),CITY.block);buildLayers(scene,W.walk);const LP=makeLightPool(scene,cand,SET.low?10:18);
 const cubeRT=new THREE.WebGLCubeRenderTarget(256,{type:THREE.HalfFloatType});const cubeCam=new THREE.CubeCamera(.5,120,cubeRT);scene.add(cubeCam);
 const composer=new EffectComposer(R);composer.addPass(new RenderPass(scene,cam));
 const bloom=new UnrealBloomPass(new THREE.Vector2(512,256),.75,.5,.72);composer.addPass(bloom);composer.addPass(new OutputPass());
@@ -512,7 +513,7 @@ const _txt={};function setText(id,t){if(_txt[id]!==t){_txt[id]=t;$(id).textConte
 let frameErr=0;function frame(now){requestAnimationFrame(frame);try{frameBody(now);}catch(e){if(frameErr++<3)console.error('frame',e);}}
 function frameBody(now){const dt=Math.min(.05,(now-last)/1000)*(window.__G.ts||1);last=now;T+=dt;
  tickPlayer(dt);let gH=0;if(!dlgOpen&&!menuOpen()){S.min+=dt*1;gH=dt/60;if(S.min>=34*60){S.min-=24*60;S.day++;S.talkedDay={};S.asked={};}}
- ENV.update(dt,(S.min/60)%24,gH,S);LP.mul=ENV.lampMul*(R5?R5.lampMul:1);if(P.y>20)scene.fog.density*=.4;else if(P.x<-66&&P.x>-82&&Math.abs(P.z)>8)scene.fog.density*=.42;else if(riding)scene.fog.density*=.3;rain.m.geometry.setDrawRange(0,Math.round(rain.n*2*Math.min(1,ENV.st.rain*1.1)));rain.m.material.opacity=.18+.2*ENV.st.rain;
+ ENV.update(dt,(S.min/60)%24,gH,S);LP.mul=ENV.lampMul*(R5?R5.lampMul:1);if(P.y>20)scene.fog.density*=.4;else if((P.z<-196&&P.x>58)||(P.z>200&&P.z<230&&P.x>26))scene.fog.density*=.3;// R11: overlooks see the lower tierselse if(P.x<-66&&P.x>-82&&Math.abs(P.z)>8)scene.fog.density*=.42;else if(riding)scene.fog.density*=.3;rain.m.geometry.setDrawRange(0,Math.round(rain.n*2*Math.min(1,ENV.st.rain*1.1)));rain.m.material.opacity=.18+.2*ENV.st.rain;
  envBake-=gH;if(envBake<=0){envBake=1.5;const vis=[];cubeCam.position.set(P.x,P.y+.4,P.z);cubeCam.update(R,scene);}
  const hh=Math.floor(S.min/60)%24,mm=Math.floor(S.min%60);setText('clock',`Day ${S.day} · ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${fmtWeather(ENV.st.w)}`);if(S.open&&Math.hypot(P.x,P.z+5)>45){closeShop();}$('shop').textContent=S.open?'Working the Ladle':S.min>=26*60?'Curfew':'';{const on=$('shop').textContent?'':'none';$('shop').style.display=on;$('shop').previousElementSibling.style.display=on;}$('cash').textContent='¢'+S.cash.toLocaleString();
  tickNPCs(dt);R5&&R5.tick(dt,T);LADLE&&LADLE.tick(dt);tickStaff(dt);tickCreator(dt);if(S.jobDef&&typeof S.q.job==='number'){const p=S.jobDef.sp[S.q.job];jobMarker.visible=true;jobMarker.position.set(p[0],(p[3]||0)+1.3+Math.sin(T*2)*.1,p[1]);jobMarker.rotation.y=T;}else jobMarker.visible=false;tickShop(dt);tickCustomers(dt);tickPeds(dt);pickTarget();tickWaypoint(T);

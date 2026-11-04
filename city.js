@@ -10,11 +10,11 @@ export const NEW_D={
  crown:{name:'Crown Heights · upper city',cls:'rich',cx:0,cz:-260,rot:0,len:120,hw:12,kind:'street',hmin:38,hmax:88,cables:.12,roadMat:STONE2,walkMat:STONE,t1:0x8c8a94,t2:0x7a7884,
   wall:[0x8a8e9a,0x9ea2ae,0x6a7080,0x5a6070,0xb0b0b8,0x7c8090],neon:[0xffffff,0x9fe8ff,0xffe0a0,0x3ff0ff,0xc9b2ff],
   hor:['AURELIA','HALCYON','MAISON VEIL','KESSLER & SONS','PRISM','SKYDECK','OBSIDIAN','GALLERIA 9','VANTA','ÉCLAT','NOVA CLINIC','SERAPH','CASSIAN','IVORY & ASH','MERIDIAN','SOLACE SPA','HELIX','LA CORVÉE','ATLAS PRIVATE','OPALINE','VERDANT','STRATA','CELESTE','MONOLITH','AUREUM BANK','KIRIN','THE GILT','POLARIS','ARGENT','SABLE','LUXE OPTICS','HAUTE','ZENITH','CORDELIA','ALABASTER','QUILL & CO','MIRA','ELYSIAN','ORCHID ROOM','CIRRUS AIR','VESPER'],vert:['銀行','宝石','美術','天空','黄金','真珠','証券','香水','画廊','時計','茶室','花','月光','雅'],
-  gaps:[{side:-1,a:-6,b:6},{side:1,a:20,b:28},{side:1,a:-34,b:-26}],caps:[-1,1],portal:-1,parent:null},
+  gaps:[{side:-1,a:-6,b:6},{side:1,a:20,b:28},{side:1,a:-34,b:-26}],caps:[-1],portal:-1,parent:null},
  docks:{name:'Ashline Docks · the low city',cls:'poor',cx:0,cz:260,rot:0,len:100,hw:6.5,kind:'alley',hmin:7,hmax:14,cables:2.4,walkMat:GRIME,t1:0x15120e,t2:0x1c1812,
   wall:[0x3a2a22,0x2e2a26,0x342018,0x2a2c2a,0x3a3028,0x40342a],neon:[0xff4d3d,0xff8a3d,0x5dff9b,0xffc070,0xff3fa4],
   hor:['FISH','NOODLE 5¢','CHEAP SLEEP','REPAIRS','BOOZE','CLINIC','BATTERIES','PRAYER','NETS & ROPE','DOC KAYE','EELS','SCRAP','SOUP','HOT BATHS','WIRE','FERRY','ROOMS','LUCKY 8','DIVE GEAR','TEETH','CHARMS','RICE'],vert:['質屋','魚','修理','酒','宿','薬','湯','米','網','運'],
-  forceH:[{side:-1,a:-50,b:12,h:7.5},{side:1,a:-32,b:20,h:7.5}],gaps:[{side:1,a:-46,b:-38},{side:-1,a:22,b:29}],caps:[-1],portal:-1,parent:null},
+  forceH:[{side:-1,a:-50,b:12,h:7.5},{side:1,a:-32,b:20,h:7.5}],gaps:[{side:1,a:-46,b:-38},{side:-1,a:22,b:29},{side:-1,a:38,b:46}],caps:[-1],portal:-1,parent:null},
  home:{name:'Home',cls:'mid',cx:0,cz:800,rot:0,len:60,hw:3,virtual:true,parent:null},
  causeway:{name:'Ring Causeway',cls:'mid',cx:-74,cz:0,rot:Math.PI/2,len:530,hw:4,virtual:true,parent:null},
  metro:{name:'Ring Line',cls:'mid',cx:0,cz:700,rot:0,len:16,hw:1.5,virtual:true,parent:null}};
@@ -118,7 +118,7 @@ export function buildCity(scene,cand){
   out.staff.push({k:'Ninefingers',x:25.5,z:N-4.5,ry:0,look:{sex:'f',skin:0x5a3828,top:0x2a3a2a,pants:0x22202a,hair:{style:'buzz',color:0xff3fa4},hat:'beanie',hatColor:0x2a2a2a,gear:[{t:'glasses',c:0x5dff9b}]},shop:'pawn',lines:["Name's Ninefingers. Don't ask. I buy, I sell, I don't remember faces."]});
   // waterfront (east end): pier, containers, cranes, moored boat
   W(48,72,cz-3,cz+3);B.add(60,-.1,cz,24,.2,6,0x3a2e24);for(let x=49;x<72;x+=.6)B.add(x,.02,cz,.5,.04,5.8,0x4a3a2a);
-  const wat=new THREE.Mesh(new THREE.PlaneGeometry(220,160),MATS.WATER);wat.rotation.x=-Math.PI/2;wat.position.set(120,-.9,cz);scene.add(wat);
+  /* R11: the docks water is now the shared sea from layers.js */
   // R10: containers used to stack by index (i>=8 got y=3.9 on the other side, with nothing under them) and stood over open water. Now: a concrete quay with pilings each side of the pier, bottom tier on the quay, top tier only on top of a bottom container.
   {const CC=[0x8a2a20,0x2a5a7a,0x6a6a2a,0x3a6a3a,0x7a4a2a];let k=0;for(const sd of[-1,1]){B.add(60,-.35,cz+sd*8.4,20,.7,7.6,0x3c3a38);for(let x=51;x<70;x+=3)B.add(x,-.9,cz+sd*11.9,.5,1.6,.5,0x2a2420);
    for(let c=0;c<4;c++)for(let r=0;r<2;r++){const x=52.5+c*5,z=cz+sd*(6.6+r*2.6);B.add(x,1.25,z,4.8,2.5,2.4,CC[k++%5]);B.add(x,.02,z,4.6,.06,2.2,0x101010);if((c+r+(sd>0?1:0))%3===0)B.add(x+(r?.3:-.2),3.76,z,4.8,2.5,2.4,CC[(k+2)%5]);}}}
@@ -209,6 +209,51 @@ export function buildCity(scene,cand){
    bed:[X+3.9,Z+2.3],out:[X,Z-hd+.8],kitchen:[X+2.8,Z-2.6],mirror:[X-4.4,Z-2.6],tvPos:[X+1.4,Z+1.4],
    slots:[[X-1.0,0,Z-2.9],[X+1.9,0,Z+3.05],[X-4.6,0,Z-.4],[X,2.95,Z+.4],[X+3.9,1.6,Z+3.38]]};}
  out.anim.push(t=>{for(const r of out.rain)r.offset.y=(t*.45)%1;});
+
+ // ======================= R11: HALCYON PLAZA (Crown east end, replaces the flat cap wall) + promenade to the overlook =======================
+ {const cz=-260,X0=60,X1=106,Z0=-292,Z1=-228,tw=(x,z,w,d,h,c)=>{B.add(x,h/2,z,w,h,d,c);for(let y=4;y<h-2;y+=2.4)for(let k=0;k<Math.floor(w/1.6);k++)if(Math.random()<.4)Gl.add(x-w/2+.8+k*1.6,y,z+(z<cz?d/2+.03:-d/2-.03),.9,1.1,.04,new THREE.Color([0xe8f4ff,0xffe0a0,0x9fe8ff][k%3]).multiplyScalar(.25+Math.random()*.3).getHex());};
+  B.add((X0+X1)/2+.1,-.06,cz,X1-X0-.2,.12,Z1-Z0,0x3e3c46);for(let x=X0+3;x<X1;x+=4)B.add(x,.005,cz,.08,.02,Z1-Z0-1,0x2a2832);for(let z=Z0+3;z<Z1;z+=4)B.add((X0+X1)/2,.006,z,X1-X0-1,.02,.08,0x2a2832);
+  W(59,X1-.5,Z0+.5,Z1-.5);
+  // shops (north + south rows) and the towers between them
+  room(64,72,Z0,-1,{dep:8,h:4.2,H:44,floor:0x8a8690,wall:0x6a6870,front:0x9a9ea8,mass:0x7c8090,lamp:0xffe0a0,win:0xffe0a0,sign:'CAFE HALCYON',sc:0xffe0a0});
+  room(78,86,Z0,-1,{dep:8,h:4.2,H:52,floor:0x3a3644,wall:0x5a5866,front:0x8a8e9a,mass:0x6a7080,lamp:0xc9b2ff,win:0xe8f4ff,sign:'GALLERIA 9',sc:0xc9b2ff});
+  room(64,72,Z1,1,{dep:8,h:4.2,H:40,floor:0x2a2830,wall:0x4a4852,front:0x9ea2ae,mass:0x8a8e9a,lamp:0x9fe8ff,win:0x9fe8ff,sign:'ARGENT TAILOR',sc:0x9fe8ff});
+  tw(55,-292,10,20,62,0x8a8e9a);tw(55,-228,10,20,58,0x7c8090);tw(75,Z0-5,6,10,48,0x9ea2ae);tw(96,Z0-5,20,10,70,0x6a7080);tw(81,Z1+5,18,10,46,0xb0b0b8);tw(104,Z1+5,4,10,40,0x8a8e9a);
+  sign('HALCYON PLAZA',0xffffff,96,14,Z0+.1,1.4,0,{fs:72,li:8,ld:16});sign('VESPER',0x3ff0ff,81,12,Z1-.1,1.1,Math.PI,{fs:64});
+  // balustrade over the drop (east): the under-city lights are 38 m below
+  B.add(X1,.45,cz,.3,.9,Z1-Z0,0x5a5866);Gl.add(X1,.92,cz,.06,.03,Z1-Z0,0x1e3a44);for(let z=Z0+2;z<Z1;z+=3)Mt.add(X1,.6,z,.12,1.2,.12,0xc8c4c8);
+  // holo sculpture, planters, trees, benches
+  B.add(83,.5,cz,5,1,5,0x5a5866);Gh.add(83,1.02,cz,4.6,.04,4.6,0xc9b2ff);Mt.add(83,3,cz,.6,4,.6,0xd8d4d0);out.block.push([80.3,85.7,cz-2.7,cz+2.7]);L(83,3,cz,0xc9b2ff,5,12);
+  {const ring=new THREE.Mesh(new THREE.TorusGeometry(1.6,.05,8,48),new THREE.MeshBasicMaterial({color:new THREE.Color(0xc9b2ff).multiplyScalar(2.2),toneMapped:false}));ring.position.set(83,4.2,cz);scene.add(ring);const r2=ring.clone();r2.scale.setScalar(.7);scene.add(r2);out.anim.push(t=>{ring.rotation.set(t*.5,t*.3,0);r2.rotation.set(-t*.4,0,t*.6);ring.position.y=4.2+Math.sin(t)*.15;});}
+  for(const [x,z] of[[70,-272],[70,-248],[96,-272],[96,-248]]){B.add(x,.45,z,2.4,.9,2.4,0x6a6874);B.add(x,1.6,z,.25,2.2,.25,0x3a3028);B.add(x,3.2,z,2.2,1.6,2.2,0x2a4a3a);B.add(x,4,z,1.4,1,1.4,0x3a5a44);for(let k=0;k<6;k++)Gl.add(x+Math.cos(k)*1.1,3+Math.sin(k*2)*.5,z+Math.sin(k)*1.1,.08,.08,.08,0xfff1c9);out.block.push([x-1.3,x+1.3,z-1.3,z+1.3]);L(x,3.5,z,0xfff1c9,2,6);}
+  for(const [x,z,yw] of[[83,-266.5,Math.PI],[83,-253.5,0]]){B.add(x,.42,z,3,.1,.7,0x4a3a30);B.add(x,.2,z,2.8,.4,.5,0x2a2830);out.block.push([x-1.5,x+1.5,z-.35,z+.35]);const id='hcb'+z;out.seats.push({x,z:z+(yw?-.6:.6),yaw:yw});I({id,x,y:.8,z:z+(yw?-.7:.7),r:1.5,label:'Sit · Halcyon Plaza',act:{type:'sit',x,y:0,z:z+(yw?-.55:.55),yaw:yw}});}
+  for(let i=0;i<8;i++)L(62+i*6,4,i%2?-232:-288,0xfff1d8,3,9);
+  // promenade south (toward the centre) ending at the overlook + the Halcyon Lift
+  W(90.3,97.7,Z1-1,-211.5);W(82.5,X1-.5,-212,-201.5);B.add(94,-.06,-219.5,8,.12,17,0x3e3c46);B.add(94,-.06,-206.5,24,.12,11,0x3e3c46);
+  tw(84,-220,8,16,30,0x8a8e9a);tw(102,-220,8,16,34,0x7c8090);
+  for(const [x,z,w,d] of[[94,-201,24,.3],[82,-206.5,.3,11],[106,-206.5,.3,11]]){B.add(x,.45,z,w,.9,d,0x5a5866);Gl.add(x,.92,z,Math.max(w,.06),.03,Math.max(d,.06),0x1e3a44);}
+  for(let z=-226;z<-212;z+=3.5){Gh.add(90.4,2.6,z,.06,.06,.06,0xfff1c9);Gh.add(97.6,2.6,z,.06,.06,.06,0xfff1c9);}L(94,3,-218,0xfff1d8,3,9);L(94,3,-206,0x9fe8ff,3,10);
+  B.add(100,1.6,-205,3,3.2,3,0x2a2832);Gl.add(100,1.6,-206.52,2.2,2.6,.02,0x1a3a4a);Gh.add(100,3.3,-206.52,2.4,.1,.06,0x3ff0ff);out.block.push([98.4,101.6,-206.6,-203.4]);sign('LIFT',0x3ff0ff,100,3.8,-206.6,.4,Math.PI,{fs:48,light:false});
+  I({id:'halcyonlift',x:100,y:1.4,z:-207.4,r:2.2,label:'Halcyon Lift · down to Saltgate',act:{type:'tp',x:42,y:0,z:-4.5,yaw:Math.PI,msg:'The glass car drops through the deck. For a moment the whole under-city slides past, lit like a circuit board. Then Saltgate.'}});
+  I({id:'halcyonup',x:44,y:1.4,z:-6.6,r:2,label:'Halcyon Lift · up to Crown Heights',act:{type:'tp',x:100,y:0,z:-209,yaw:Math.PI,msg:'Up through the rain, through the deck, into the quiet air of Crown Heights.'}});
+  B.add(44,1.6,-7.9,2.4,3.2,1.2,0x2a2832);Gl.add(44,1.6,-7.28,1.8,2.6,.02,0x1a3a4a);Gh.add(44,3.3,-7.28,2,.1,.06,0x3ff0ff);sign('LIFT · CROWN',0x3ff0ff,44,3.8,-7.25,.35,0,{fs:48,light:false});out.block.push([42.8,45.2,-8.5,-7.3]);
+  out.lanes.crown.push([62,-238,104,-238],[62,-282,104,-282],[94,-230,94,-213],[84,-204,104,-204],[64,-260,78,-260]);}
+ // ======================= R11: ASHLINE L-ALLEY to the NET MARKET (north toward the centre, on the water) =======================
+ {const N=253.5,tw=(x,z,w,d,h,c,fz)=>{B.add(x,h/2,z,w,h,d,c);for(let y=2.6;y<h-1;y+=1.9)for(let k=0;k<3;k++)if(Math.random()<.5)Gl.add(x+(fz==='x'?(w/2+.03)*(x<42?1:-1):-w/2+1+k*(w-2)/2),y,z+(fz==='x'?-d/2+1+k*(d-2)/2:0),fz==='x'?.04:.6,.8,fz==='x'?.6:.04,new THREE.Color([0xffb06b,0xffc98a,0xff9fd6][k]).multiplyScalar(.2+Math.random()*.3).getHex());};
+  W(38.4,45.6,225.4,N+.6);B.add(42,-.06,239.7,8,.12,28,0x1c1812);
+  tw(33,234.8,10,17.6,9.5,0x2e2a26,'x');tw(52,234.8,12,17.6,10.5,0x342018,'x');
+  for(let z=229;z<252;z+=3.2){for(let x=38.6;x<45.5;x+=.9)Gh.add(x,4.4+Math.sin((x-38)/7*Math.PI)*-.3,z,.16,.2,.16,[0xff8a3d,0xffc070][Math.floor(z)%2]);B.add(38.2,4.5,z,.12,.12,.2,0x3a3640);B.add(45.8,4.5,z,.12,.12,.2,0x3a3640);}
+  L(42,4,236,0xff8a3d,3,8);L(42,4,247,0xffc070,3,8);sign('NET MARKET →',0xff8a3d,38.1,3.2,232,.5,Math.PI/2,{fs:48,light:false});
+  // the square, on a quay over the sea
+  W(28.4,63.6,206.4,225.8);B.add(46,-.45,216,36,.9,20,0x2a2420);for(let x=29;x<64;x+=.6)B.add(x,.01,216,.5,.03,19.6,0x3a2e24);
+  room(34,41,206,-1,{dep:7,h:3.4,H:10,floor:0x22201a,wall:0x3a3028,front:0x2a2420,mass:0x3a2a22,lamp:0xffc070,win:0xffb06b,sign:'NET & TACKLE',sc:0xffc070});
+  room(50,57,206,-1,{dep:7,h:3.4,H:12,floor:0x1c1a18,wall:0x342018,front:0x2a2420,mass:0x2e2a26,lamp:0x5dff9b,win:0xffc98a,sign:'EEL HOUSE',sc:0x5dff9b});
+  tw(31,201,6,10,11,0x342018);tw(45.5,201,9,10,9,0x2e2a26);tw(60.5,201,7,10,13,0x3a2a22);tw(25,216,6,20,10,0x2e2a26,'x');tw(31,229.5,6,7,9,0x3a3028);tw(59,229.5,10,7,8,0x342018);
+  for(const [x,col] of[[33,0xff4d3d],[40,0x2a5a7a],[47,0xffc070],[54,0x5dff9b]]){B.add(x,.45,217,3.2,.9,1.6,0x4a3a2a);B.add(x,2.4,217,3.6,.08,2.4,col);for(const dx of[-1.6,1.6])B.add(x+dx,1.2,217.9,.08,2.4,.08,0x3a3028);for(let k=0;k<5;k++)Gh.add(x-1.2+k*.6,.98,217,.4,.08,.2,[0xc8d0d8,0xff8a6a,0xd0c890][k%3]);out.block.push([x-1.7,x+1.7,216.1,217.9]);L(x,2,217,0xffc070,2.2,6);}
+  B.add(63.85,.45,216,.25,.9,19.6,0x4a3a2a);for(let z=207;z<226;z+=2.4){B.add(63.85,.6,z,.3,1.2,.3,0x2a2420);Gl.add(63.85,1.25,z,.1,.08,.1,0x6a4a20);}for(let z=207;z<226;z+=3)B.add(64.2,-.9,z,.4,1.8,.4,0x2a2420);
+  out.seats.push({x:62.6,z:212,yaw:Math.PI/2});I({id:'netquay',x:62.4,y:.8,z:212,r:1.5,label:'Sit · watch the flooded city',act:{type:'sit',x:62.6,y:0,z:212,yaw:Math.PI/2}});
+  for(let x=30;x<63;x+=4)Gh.add(x,4.2+Math.sin(x)*.3,222,.22,.3,.22,[0xff4d5e,0xff8a3d,0xffc070][x%3]);sign('NET MARKET',0xffc070,45.5,7,206.1,.9,0,{fs:64,li:6});
+  out.lanes.docks.push([42,251,42,228],[30,212,60,212],[30,222,60,222]);}
  B.build(scene);Gl.build(scene);Gh.build(scene);Mt.build(scene);
  out.inRoom=(x,z,y)=>out.rooms.some(r=>x>r[0]&&x<r[1]&&z>r[2]&&z<r[3]&&y<r[4]);
  return out;}
