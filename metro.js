@@ -28,7 +28,7 @@ export function buildRide(scene,CITY,makeHuman,walkable){
  const pax=[];const looks=[{cls:'mid',top:0x3a3a48},{cls:'rich',top:0xd8d4cc,sex:'f'},{cls:'poor',top:0x3a3028},{robot:'Enemy_EyeDrone',glow:{color:0xffe14d}}];
  const spots=[[-1,-5],[1,-1.5],[-1,3],[1,5.5]];
  const ensurePax=()=>{if(pax.length)return;looks.forEach((l,i)=>{const h=makeHuman(l);const [s,z]=spots[i];// R13c: the sit clip carries its hips ~.8 m up; place sitters so hips land on the raised seat (.76) and feet on the floor
-  h.obj.position.set(l.robot?s*(Wd/2-.5):s*(Wd/2-.37),l.robot?.75:-.05,z);h.obj.rotation.y=s>0?-Math.PI/2:Math.PI/2;h.play(l.robot?'idle':'sit');car.add(h.obj);pax.push(h);});};
+  h.obj.position.set(l.robot?s*(Wd/2-.5):s*(Wd/2-.42),l.robot?.75:-.05,z);h.obj.rotation.y=s>0?-Math.PI/2:Math.PI/2;h.play(l.robot?'idle':'sit');car.add(h.obj);pax.push(h);});};
  const R={car,active:null};
  R.start=(from,to)=>{ensurePax();const a=CITY.stations[from]?.z??z0+30,b=CITY.stations[to].z;const D=Math.abs(b-a),dir=Math.sign(b-a)||1,v=22,acc=3.2;const ta=v/acc,da=.5*acc*ta*ta;
   const T=D>2*da?2*ta+(D-2*da)/v:2*Math.sqrt(D/acc);R.active={a,dir,D,v,acc,ta,da,T,t:0,to};car.visible=true;car.rotation.y=dir>0?0:Math.PI;place(0);return R.active;};
