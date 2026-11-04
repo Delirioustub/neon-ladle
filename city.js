@@ -9,11 +9,11 @@ MATS.STONE=STONE;MATS.STONE2=STONE2;MATS.GRIME=GRIME;
 export const NEW_D={
  crown:{name:'Crown Heights · upper city',cls:'rich',cx:0,cz:-260,rot:0,len:120,hw:12,kind:'street',hmin:38,hmax:88,cables:.12,roadMat:STONE2,walkMat:STONE,t1:0x8c8a94,t2:0x7a7884,
   wall:[0x8a8e9a,0x9ea2ae,0x6a7080,0x5a6070,0xb0b0b8,0x7c8090],neon:[0xffffff,0x9fe8ff,0xffe0a0,0x3ff0ff,0xc9b2ff],
-  hor:['ORRIN MUTUAL','AURELIA','HALCYON','MAISON VEIL','KESSLER & SONS','PRISM','LUMEN','SKYDECK','OBSIDIAN','GALLERIA 9','VANTA'],vert:['銀行','宝石','美術','天空','黄金','真珠','証券'],
+  hor:['AURELIA','HALCYON','MAISON VEIL','KESSLER & SONS','PRISM','SKYDECK','OBSIDIAN','GALLERIA 9','VANTA','ÉCLAT','NOVA CLINIC','SERAPH','CASSIAN','IVORY & ASH','MERIDIAN','SOLACE SPA','HELIX','LA CORVÉE','ATLAS PRIVATE','OPALINE','VERDANT','STRATA','CELESTE','MONOLITH','AUREUM BANK','KIRIN','THE GILT','POLARIS','ARGENT','SABLE','LUXE OPTICS','HAUTE','ZENITH','CORDELIA','ALABASTER','QUILL & CO','MIRA','ELYSIAN','ORCHID ROOM','CIRRUS AIR','VESPER'],vert:['銀行','宝石','美術','天空','黄金','真珠','証券','香水','画廊','時計','茶室','花','月光','雅'],
   gaps:[{side:-1,a:-6,b:6},{side:1,a:20,b:28},{side:1,a:-34,b:-26}],caps:[-1,1],portal:-1,parent:null},
  docks:{name:'Ashline Docks · the low city',cls:'poor',cx:0,cz:260,rot:0,len:100,hw:6.5,kind:'alley',hmin:7,hmax:14,cables:2.4,walkMat:GRIME,t1:0x15120e,t2:0x1c1812,
   wall:[0x3a2a22,0x2e2a26,0x342018,0x2a2c2a,0x3a3028,0x40342a],neon:[0xff4d3d,0xff8a3d,0x5dff9b,0xffc070,0xff3fa4],
-  hor:['RUSTED HOOK','PARTS & PAWN','FISH','NOODLE 5¢','CHEAP SLEEP','REPAIRS','BOOZE','CLINIC','BATTERIES','PRAYER'],vert:['質屋','魚','修理','酒','宿','薬'],
+  hor:['FISH','NOODLE 5¢','CHEAP SLEEP','REPAIRS','BOOZE','CLINIC','BATTERIES','PRAYER','NETS & ROPE','DOC KAYE','EELS','SCRAP','SOUP','HOT BATHS','WIRE','FERRY','ROOMS','LUCKY 8','DIVE GEAR','TEETH','CHARMS','RICE'],vert:['質屋','魚','修理','酒','宿','薬','湯','米','網','運'],
   forceH:[{side:-1,a:-50,b:12,h:7.5},{side:1,a:-32,b:20,h:7.5}],gaps:[{side:1,a:-46,b:-38},{side:-1,a:22,b:29}],caps:[-1],portal:-1,parent:null},
  home:{name:'Home',cls:'mid',cx:0,cz:800,rot:0,len:60,hw:3,virtual:true,parent:null},
  causeway:{name:'Ring Causeway',cls:'mid',cx:-74,cz:0,rot:Math.PI/2,len:530,hw:4,virtual:true,parent:null},
@@ -41,7 +41,7 @@ export function buildCity(scene,cand){
   L(cx,h-.8,fz+dir*dep*.3,o.lamp||0xffd9a0,4.5,9);L(cx,h-.8,fz+dir*dep*.75,o.lamp2||o.lamp||0xffc890,4,8);
   W(x0+.35,x1-.35,fz-dir*.2,zb-dir*.35);W(cx-dw/2+.2,cx+dw/2-.2,fz-dir*1.2,fz+dir*.6);
   // R8: lit door frame + threshold glow so every enterable storefront reads as a door
-  {const dc=o.sc||o.lamp||0xffd9a0,fzz=fz-dir*.15;Gh.add(cx-dw/2+.04,(h-.7)/2,fzz,.07,h-.7,.07,dc);Gh.add(cx+dw/2-.04,(h-.7)/2,fzz,.07,h-.7,.07,dc);Gh.add(cx,h-.72,fzz,dw,.07,.07,dc);Gl.add(cx,.035,fz-dir*.7,dw-.2,.01,.6,new THREE.Color(dc).multiplyScalar(.35).getHex());
+  {const dc=o.sc||o.lamp||0xffd9a0,fzz=fz-dir*.15;Gh.add(cx-dw/2+.04,(h-.7)/2,fzz,.07,h-.7,.07,dc);Gh.add(cx+dw/2-.04,(h-.7)/2,fzz,.07,h-.7,.07,dc);Gh.add(cx,h-.72,fzz,dw,.07,.07,dc);Gl.add(cx,.05,fz-dir*.7,dw-.2,.01,.6,new THREE.Color(dc).multiplyScalar(.35).getHex());
    out.doors.push({x:cx,z:fz,dir,name:o.sign?o.sign.split(' ').map(w=>w[0]+w.slice(1).toLowerCase()).join(' '):'Inside',col:dc});}
   out.rooms.push([x0,x1,Math.min(fz,zb),Math.max(fz,zb),h]);if(o.sign)sign(o.sign,o.sc||0xffffff,cx,h+.8,fz-dir*.16,.7,dir<0?0:Math.PI,{fs:64,li:6});
   return {cx,zm,zb,fz,dir,h};}
@@ -49,15 +49,15 @@ export function buildCity(scene,cand){
  {const cz=-260,N=cz-12,S=cz+12;W(-59,59,N+.3,S-.3);
   // Orrin Tower lobby (north gap) + elevator to the sky terrace
   const lob=room(-6,6,N,-1,{dep:9,h:6,H:46,floor:0x8a8690,ceil:0x2a2830,wall:0x6a6870,front:0x9a9ea8,mass:0x7c8090,lamp:0xfff1d8,win:0xe8f4ff,sign:'ORRIN MUTUAL',sc:0xb04dff});
-  Mt.add(0,.03,lob.zm,11,.02,8.6,0xc8c4c8);B.add(0,.55,N-5.5,4.2,1.1,1,0x2a2832);Gh.add(0,1.12,N-5.5,4,.04,.9,0xc9b2ff);B.add(0,3.4,N-8.85,6,4,.1,0x1a1824);Gl.add(0,3.4,N-8.8,5.6,3.6,.02,0x2a1048);
+  Mt.add(0,.055,lob.zm,11,.02,8.6,0xc8c4c8);B.add(0,.55,N-5.5,4.2,1.1,1,0x2a2832);Gh.add(0,1.12,N-5.5,4,.04,.9,0xc9b2ff);B.add(0,3.4,N-8.85,6,4,.1,0x1a1824);Gl.add(0,3.4,N-8.8,5.6,3.6,.02,0x2a1048);
   sign('YOUR FUTURE, FINANCED',0xc9b2ff,0,3.4,N-8.75,.45,0,{light:false,fs:48});
   for(const x of[-4.2,4.2]){Mt.add(x,1.4,N-8.7,1.6,2.8,.1,0x8a8a92);Gh.add(x,2.95,N-8.6,.5,.06,.04,0x9fe8ff);}
   out.staff.push({k:'Receptionist',x:0,z:N-6.3,ry:0,look:{sex:'f',skin:0xf0d0b8,top:0xe8e4e0,pants:0x2a2a3a,hair:{style:'bun',color:0x2a1a10},glow:{where:'collar',color:0xc9b2ff}},lines:["Welcome to Orrin Mutual. Appointments only above floor three. The sky terrace is open to the public until curfew. Mostly to remind you what you can't afford.","Mr. Orrin doesn't take walk-ins. He doesn't take anything, actually. He gives. Loans."]});
   I({id:'elev',x:-4.2,y:1.4,z:N-8.2,r:2.2,label:'Elevator · Sky terrace',act:{type:'tp',x:-3,y:46,z:N-2,yaw:Math.PI,msg:'Forty-six floors in eleven seconds. Your ears pop.'}});
   I({id:'elev2',x:4.2,y:1.4,z:N-8.2,r:2.2,label:'Elevator · Sky terrace',act:{type:'tp',x:3,y:46,z:N-2,yaw:Math.PI,msg:'Forty-six floors in eleven seconds. Your ears pop.'}});
   // sky terrace on top of the tower block (y=46)
-  {const y=46,z0=N-.2,z1=N-10;B.add(0,y-.05,(z0+z1)/2,12.4,.1,10.2,0x3a3a44);W(-5.6,5.6,z1+.4,z0-.4,y);
-   for(const [x0,z,ww,dd] of[[0,z0,12,.1],[0,z1,12,.1],[-6,(z0+z1)/2,.1,10],[6,(z0+z1)/2,.1,10]]){Mt.add(x0,y+.55,z,ww,1.1,dd,0x9fb0c0);Gh.add(x0,y+1.12,z,ww+.05,.04,dd+.05,0x9fe8ff);}
+  {const y=46,z0=N-.2,z1=N-10;B.add(0,y-.02,(z0+z1)/2,12.4,.1,10.2,0x3a3a44);W(-5.6,5.6,z1+.4,z0-.4,y);
+   for(const [x0,z,ww,dd] of[[0,z0,12,.1],[0,z1,12,.1],[-6,(z0+z1)/2,.1,10],[6,(z0+z1)/2,.1,10]]){Mt.add(x0,y+.2,z,ww,.4,dd,0x9fb0c0);Gh.add(x0,y+1.05,z,ww+.05,.04,dd+.05,0x9fe8ff);const n=Math.round(Math.max(ww,dd)/2);for(let i=0;i<=n;i++){const f=i/n-.5;Mt.add(x0+(ww>1?f*ww:0),y+.62,z+(dd>1?f*dd:0),.05,.85,.05,0x9fb0c0);}}// R9: low parapet + open rail so you can look down to the street
    for(const [x,z] of[[-4,z1+1.5],[4,z1+1.5],[-4,z0-2],[4,z0-2]]){B.add(x,y+.4,z,1.2,.8,1.2,0x2a2a2a);B.add(x,y+1.4,z,1.1,1.2,1.1,0x1f4a38);L(x,y+1.5,z,0x5dff9b,2,5);}
    B.add(0,y+.25,z1+2,3,.1,.7,0x6a5a48);out.seats.push({x:0,z:z1+2.3,y,yaw:0});I({id:'skybench',x:0,y:y+.8,z:z1+2.4,r:1.8,label:'Sit · look out',act:{type:'sit',x:0,y,z:z1+2.6,yaw:Math.PI}});
    Mt.add(2.5,y+1.1,z0-.6,.15,1,.15,0x8a8a92);Mt.add(2.5,y+1.6,z0-.7,.2,.2,.5,0x8a8a92);

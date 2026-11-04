@@ -25,7 +25,7 @@ const saveSet=()=>{try{localStorage.setItem('nlSettings',JSON.stringify(SET));}c
 const canvas=$('c');const R=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance'});
 R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.15;
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x120a22);scene.fog=new THREE.FogExp2(0x241236,.03);
-const cam=new THREE.PerspectiveCamera(66,2,.08,220);scene.add(cam);
+const cam=new THREE.PerspectiveCamera(66,2,.15,220);scene.add(cam);
 const hemi=new THREE.HemisphereLight(0x5a4a9a,0x120818,.6);scene.add(hemi);
 const moon=new THREE.DirectionalLight(0x6a7aff,.35);moon.position.set(-10,30,10);scene.add(moon);
 const fill=new THREE.PointLight(0xb8a8ff,2.2,8,1.3);scene.add(fill);
