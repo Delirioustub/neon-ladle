@@ -15,9 +15,10 @@ export const NEW_D={
   wall:[0x3a2a22,0x2e2a26,0x342018,0x2a2c2a,0x3a3028,0x40342a],neon:[0xff4d3d,0xff8a3d,0x5dff9b,0xffc070,0xff3fa4],
   hor:['RUSTED HOOK','PARTS & PAWN','FISH','NOODLE 5¢','CHEAP SLEEP','REPAIRS','BOOZE','CLINIC','BATTERIES','PRAYER'],vert:['質屋','魚','修理','酒','宿','薬'],
   forceH:[{side:-1,a:-50,b:12,h:7.5},{side:1,a:-32,b:20,h:7.5}],gaps:[{side:1,a:-46,b:-38},{side:-1,a:22,b:29}],caps:[-1],parent:null},
+ home:{name:'Home',cls:'mid',cx:0,cz:800,rot:0,len:60,hw:3,virtual:true,parent:null},
  metro:{name:'Ring Line',cls:'mid',cx:0,cz:700,rot:0,len:16,hw:1.5,virtual:true,parent:null}};
 Object.assign(DISTRICTS,NEW_D);
-export function regionOf(x,z){if(z<-200)return'crown';if(z>200&&z<450)return'docks';if(z>600)return'metro';return'mid';}
+export function regionOf(x,z){if(z>760)return'home';if(z<-200)return'crown';if(z>200&&z<450)return'docks';if(z>600)return'metro';return'mid';}
 export function buildCity(scene,cand){
  const out={districts:{},walk:[],inter:[],rooms:[],staff:[],anim:[],steam:[],stations:{},lanes:{crown:[],docks:[]},seats:[]};
  const B=new Batch(new THREE.MeshLambertMaterial()),Gl=new Batch(new THREE.MeshBasicMaterial({toneMapped:false})),Gh=new Batch(new THREE.MeshBasicMaterial({toneMapped:false}));Gl.mat.userData.boost=1;Gh.mat.userData.boost=2.6;
@@ -142,6 +143,16 @@ export function buildCity(scene,cand){
   L(-4,2,cz,0xfff1d8,2.2,7);L(4,2,cz,0xfff1d8,2.2,7);W(-7.6,7.6,cz-.95,cz+.95);out.rooms.push([-8,8,cz-1.6,cz+1.6,2.4]);out.car={cz};
   for(const [x,s,sex] of[[-5,-1,'f'],[-1.5,1,'m'],[3,-1,'m'],[5.5,1,'f']])out.staff.push({k:'Passenger',x,z:cz+s*1.05,ry:s<0?0:Math.PI,sit:1,rand:1,sex,lines:['They don\'t look up from their glowing palm.','"Next stop\'s mine. Don\'t take my seat when I stand. It\'s still mine."','A quiet nod. Their reflection in the window looks more tired than they do.']});
   for(const x of[-3.2,.5,4.2])I({id:'carseat'+x,x,y:.9,z:cz-.95,r:1.3,label:'Sit',act:{type:'sit',x,y:.1,z:cz-1.05,yaw:0}});}
+ // ======================= apartments (interiors at z≈800) =======================
+ out.apts={};const APT=[['docks','Ashline capsule','Above the Rusted Hook. Damp, cheap, yours.',40,-30,0x3a2a22,0xff8a3d,[-16,N0(260)+.6]],['mid','Saltgate walk-up','Two rooms over a pachinko parlor on Saltgate Street.',160,0,0x2e2836,0xff3fa4,[-36,-7.4]],['crown','Crown Heights loft','Floor 31. Heated floors. Rain is a view, not a problem.',900,30,0x8a8690,0x9fe8ff,[44,-248.6]]];
+ function N0(cz){return cz+6.5;}
+ for(const [key,name,blurb,price,x,wall,col,door] of APT){const z=800,w=7,d=5;B.add(x,0,z,w,.1,d,0x2a2420);B.add(x,3,z,w,.1,d,0x1a1820);B.add(x-w/2,1.5,z,.15,3,d,wall);B.add(x+w/2,1.5,z,.15,3,d,wall);B.add(x,1.5,z+d/2,w,3,.15,wall);B.add(x-2.4,1.5,z-d/2,2.2,3,.15,wall);B.add(x+2.4,1.5,z-d/2,2.2,3,.15,wall);B.add(x,.4,z-d/2,2.6,.8,.15,wall);B.add(x,2.7,z-d/2,2.6,.6,.15,wall);
+  const cv=document.createElement('canvas');cv.width=256;cv.height=128;const g=cv.getContext('2d');const gr=g.createLinearGradient(0,0,0,128);gr.addColorStop(0,key==='crown'?'#1a2238':'#120a22');gr.addColorStop(1,'#2a1438');g.fillStyle=gr;g.fillRect(0,0,256,128);
+  for(let i=0;i<40;i++){const bx=Math.random()*256,bw=8+Math.random()*24,bh=(key==='crown'?20:50)+Math.random()*70;g.fillStyle='#0a0812';g.fillRect(bx,128-bh,bw,bh);for(let k=0;k<6;k++){g.fillStyle=['#ffc98a','#3ff0ff','#ff3fa4','#ffe14d'][k%4];g.globalAlpha=.6;g.fillRect(bx+Math.random()*bw,128-Math.random()*bh,2,2);g.globalAlpha=1;}}
+  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;const win=new THREE.Mesh(new THREE.PlaneGeometry(2.5,1.4),new THREE.MeshBasicMaterial({map:t,toneMapped:false}));win.position.set(x,1.5,z-d/2-.05);scene.add(win);
+  B.add(x+2.4,.3,z+1.4,1.8,.5,1.9,0x3a3040);B.add(x+2.4,.6,z+1.4,1.7,.12,1.8,0xd8d0c8);L(x,2.6,z,0xffd9a0,3,7);L(x,1.6,z-2,col,2,6);
+  W(x-w/2+.35,x+w/2-.35,z-d/2+.35,z+d/2-.35);out.rooms.push([x-w/2,x+w/2,z-d/2,z+d/2,3]);
+  out.apts[key]={key,name,blurb,price,x,z,door,col,slots:[[x-2.8,0,z+1.9],[x+2.9,0,z-1.9],[x-2.9,0,z-1.6],[x,2.95,z],[x+.5,1.6,z+2.38]]};}
  B.build(scene);Gl.build(scene);Gh.build(scene);Mt.build(scene);
  out.inRoom=(x,z,y)=>out.rooms.some(r=>x>r[0]&&x<r[1]&&z>r[2]&&z<r[3]&&y<r[4]);
  return out;}

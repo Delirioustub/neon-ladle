@@ -153,7 +153,7 @@ for(const c of CITY.inter)interact.push({id:c.id,pos:()=>new THREE.Vector3(c.x,c
 function tp(x,y,z,yaw){fade();setTimeout(()=>{P.x=x;P.y=y;P.z=z;if(yaw!==undefined)P.yaw=yaw;P.sit=null;},350);}
 function cityAct(a){if(a.type==='tp'){tp(a.x,a.y,a.z,a.yaw);if(a.msg)setTimeout(()=>toast(a.msg),700);}
  else if(a.type==='sit'){P.x=a.x;P.z=a.z;P.y=a.y;P.yaw=a.yaw;P.sit=1;toast('Sitting · move to stand');}
- else if(a.type==='read')inspect(a.t,a.x);else if(a.type==='metro')metro(a.from);}
+ else if(a.type==='read')inspect(a.t,a.t==='Wardline scan'?(lookClass()==='high'?'The arch hums. A soft chime: RESIDENT-GRADE ATTIRE · WELCOME BACK. Nobody looks twice at you.':lookClass()==='low'?'The arch hums, then buzzes. VISITOR · LOW CITY ORIGIN · MONITORED. Two drones swing your way and hang there.':a.x):a.x);else if(a.type==='metro')metro(a.from);}
 function metro(from){const st=CITY.stations;const opts=Object.keys(st).filter(k=>k!==from).map(k=>({t:`Ride to ${st[k].name}${S.cash>=5?' · ¢5':''}`,fx:()=>{if(S.cash>=5){S.cash-=5;}else toast('You hop the turnstile. Nobody stops you. This time.');ride(k);}}));
  opts.push({t:'Not now'});say('Ring Line',['Stairs down into warm, stale air. A chime, a voice older than the city: "Ring Line. Mind the gap. Mind your business."'],opts);}
 function ride(to){fade();setTimeout(()=>{P.x=-3;P.z=CITY.car.cz+.3;P.y=0;P.yaw=-Math.PI/2;P.sit=null;riding={to,t:11};toast('Next stop · '+CITY.stations[to].name);},350);}
@@ -166,10 +166,62 @@ const SHOPS={
  bar:{hi:"Hesk wipes a glass with a dirtier rag.",items:[['Ashline lager',4,null,'Tastes like a battery and a long day. Perfect.'],['Buy Hesk a drink (hear a rumor)',6,null,null,1]]},
  pawn:{hi:"Ninefingers taps the counter. Nine times.",items:[['Patched black umbrella',10,{umbrella:0x1a1a22}],['Hooded rain shell',30,{hat:'hood',coat:{color:0x2a2c22,len:.45}}],['Cracked visor',15,{glow:{where:'visor',color:0x5dff9b}}]]}};
 const RUMORS=["The barges leave the Ashline pier at three in the morning. No lights. They come back lighter.","Orrin Mutual buys debts nobody can pay. Then the debtors stop being anybody's problem.","Wardline doesn't patrol down here. They just count us.","There's an old Ring Line tunnel that doesn't show on the map. You can hear it from the Line 9 platform.","Somebody's paying good money for couriers who can't read."];
-function staffTalk(s0){const sh=s0.shop&&SHOPS[s0.shop];if(!sh){say(s0.k,[pick(s0.lines)],[{t:'"Thanks."'}]);return;}
+function staffTalk(s0){const sh=s0.shop&&SHOPS[s0.shop];if(sh&&s0.shop==='bar'&&lookClass()==='high'&&!S.flags.heskCoat){S.flags.heskCoat=1;say(s0.k,['Nice coat. Lose it down here or somebody will lose it for you.'],[{t:'"Noted."'}]);return;}if(!sh){say(s0.k,[pick(s0.lines)],[{t:'"Thanks."'}]);return;}
  const opts=sh.items.map(([n,c,look,txt,rum])=>({t:`${n} · ¢${c}`,fx:()=>{if(S.cash<c){toast('Not enough cash');return;}S.cash-=c;if(look){S.look=Object.assign(S.look||{},look);rebuildPlayer();toast(`Bought ${n} · switch to third person to see it`);}else if(rum)setTimeout(()=>say(s0.k,[pick(RUMORS)],[{t:'"Huh."'}]),50);else toast(txt);save();}}));
  opts.push({t:'"Just looking."'});say(s0.k,[(s0.lines?pick(s0.lines)+' ':'')+sh.hi],opts);}
 function tickStaff(dt){for(const st of staff){const d=Math.hypot(st.s0.x-cam.position.x,st.s0.z-cam.position.z);st.h.obj.visible=d<45;if(d<25)st.h.mixer.update(dt);}}
+// ================= R3: look class, character creator, jobs, apartments =================
+function lookClass(){const l=S.look||{};if(l.hat==='hood')return'low';if(l.coat&&l.coat.shiny&&l.coat.len>=.7)return'high';return'mid';}
+let creating=false;const CC={sex:['f','m'],skin:[0xf0d0b8,0xe0b898,0xc89070,0x8a5a40,0x5a3828],hairF:['bob','bun','long','short','buzz'],hairM:['short','buzz','spiky','beard'],hairC:[0x101010,0x2a1a10,0x6a4a2a,0xc0b0a0,0xff3fa4,0x3ff0ff,0x5dff9b],coat:[[0x3a2440,.45,1],[0x16161c,.6,1],[0x2a2c22,.45,0],[0x5a2030,.72,1],null],glow:[0xff3fa4,0x3ff0ff,0x5dff9b,0xffe14d,null],height:[.96,1,1.04]};
+function cyc(a,v,d){const i=a.indexOf(v);return a[((i<0?0:i)+d+a.length)%a.length];}
+function openCreator(first){creating=true;S.look=S.look||{};const el=$('cc');el.classList.remove('hide');const L=()=>Object.assign({},BASE_LOOK,S.look);
+ const rows=[['Body',()=>L().sex==='m'?'Masc':'Fem',d=>{S.look.sex=L().sex==='m'?'f':'m';S.look.hair={style:(S.look.sex==='m'?CC.hairM:CC.hairF)[0],color:L().hair.color};}],
+  ['Skin',()=>'tone '+(CC.skin.indexOf(L().skin)+1||1),d=>{S.look.skin=cyc(CC.skin,L().skin,d);}],
+  ['Hair',()=>L().hair.style,d=>{S.look.hair={style:cyc(L().sex==='m'?CC.hairM:CC.hairF,L().hair.style,d),color:L().hair.color};}],
+  ['Hair colour',()=>'#'+L().hair.color.toString(16).padStart(6,'0'),d=>{S.look.hair={style:L().hair.style,color:cyc(CC.hairC,L().hair.color,d)};}],
+  ['Coat',()=>L().coat?'#'+L().coat.color.toString(16).padStart(6,'0'):'none',d=>{const a=CC.coat;const i=a.findIndex(c=>c&&L().coat&&c[0]===L().coat.color);const n=a[((i<0?a.length-1:i)+d+a.length)%a.length];S.look.coat=n?{color:n[0],len:n[1],shiny:n[2]}:null;}],
+  ['Glow trim',()=>L().glow?'#'+L().glow.color.toString(16).padStart(6,'0'):'none',d=>{const a=CC.glow;const i=a.findIndex(c=>L().glow&&c===L().glow.color);const n=a[((i<0?a.length-1:i)+d+a.length)%a.length];S.look.glow=n?{where:'strip',color:n}:null;}],
+  ['Height',()=>({0.96:'Shorter',1:'Average',1.04:'Taller'})[L().scale||1],d=>{S.look.scale=cyc(CC.height,L().scale||1,d);}]];
+ const draw=()=>{el.querySelector('.ccr').innerHTML=rows.map((r,i)=>`<div class="row"><button data-i="${i}" data-d="-1">‹</button><span>${r[0]}<br><small>${r[1]()}</small></span><button data-i="${i}" data-d="1">›</button></div>`).join('');
+  el.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{rows[+b.dataset.i][2](+b.dataset.d);rebuildPlayer();draw();});};draw();
+ $('ccDone').onclick=()=>{creating=false;el.classList.add('hide');save();if(first)beginStory();};}
+function tickCreator(dt){if(!creating)return;player.obj.visible=true;player.obj.position.set(P.x,P.y,P.z);player.obj.rotation.y=P.yaw+Math.PI;player.play('idle');player.mixer.update(dt);
+ const f=new THREE.Vector3(-Math.sin(P.yaw),0,-Math.cos(P.yaw)),r=new THREE.Vector3(Math.cos(P.yaw),0,-Math.sin(P.yaw));cam.position.set(P.x+f.x*2.4-r.x*.6,P.y+1.4,P.z+f.z*2.4-r.z*.6);cam.lookAt(P.x-r.x*.55,P.y+1.0,P.z-r.z*.55);}
+S.rep=S.rep||{tide:0,wardline:0,civ:0,orrin:0};const FN={tide:'Ashline Tide (gang)',wardline:'Wardline (police)',civ:'Civilians',orrin:'Orrin Mutual'};
+const SPOTS=[[-30,5,'Saltgate west end'],[34,-6,'Saltgate east end'],[23,-36,'Lantern Market'],[-22,28,'Line 9 Approach'],[-30,60,'Line 9 Plaza'],[52,20,'Velvet Canal east bank'],[64,-25,'Velvet Canal north'],[-40,-252,'Crown boulevard west'],[30,-268,'Crown, by the Galleria'],[12,-252,'Crown fountain'],[-30,256,'Ashline alley'],[20,264,'Ashline market row'],[62,259,'Ashline pier'],[-35,249,'Ashline rooftops',7.5],[5,271,'Ashline south roofs',7.5]];
+const BOARDS=[{id:'tide',x:-37.2,y:1.3,z:265.6,label:"Hesk's back-room board · Ashline Tide",f:['tide','civ']},{id:'ward',x:-14,y:1.3,z:-7.7,label:'Wardline tip terminal',f:['wardline','civ']},{id:'orrin',x:-48,y:1.3,z:-271.4,label:'Orrin courier kiosk',f:['orrin','civ']}];
+const JOBT={courier:{n:'Courier run',d:(a,b)=>[`Pick up the package · ${a[2]}`,`Deliver it · ${b[2]}`],pay:[30,70]},
+ investigate:{n:'Investigation',d:(a,b,c)=>[`Look for evidence · ${a[2]}`,`Follow the second lead · ${b[2]}`,`Search · ${c[2]}`],pay:[60,120]},
+ fix:{n:'Repair job',d:a=>[`Fix the dead relay · ${a[2]}`],pay:[25,45]}};
+const FLAV={tide:{courier:"A sealed tin for a Tide runner. Don't shake it.",investigate:"Someone's been skimming Tide turf money. Find out who.",fix:"Tide's camera relay died. Fix it before Wardline notices."},
+ wardline:{courier:'Evidence transfer. The official van "broke down."',investigate:"Missing-person tip. Officially nobody's working it. Unofficially, you are.",fix:'A patrol beacon is out. Wardline pays contractors, slowly.'},
+ civ:{courier:"Medicine for a neighbor who can't leave the house.",investigate:'A mother wants to know where her son goes at night.',fix:"The block's water pump relay keeps tripping."},
+ orrin:{courier:'A locked case, no questions. Orrin tips well for silence.',investigate:'Audit a "delinquent account." Find where the debtor hides.',fix:'Calibrate an Orrin advert. The smile flickers.'}};
+function genJob(fs){const fac=pick(fs),type=pick(Object.keys(JOBT)),sp=[...SPOTS].sort(()=>Math.random()-.5).slice(0,3),T=JOBT[type];let pay=Math.round(rnd(...T.pay));if(fac==='orrin'&&lookClass()==='low')pay=Math.round(pay*.8);if(fac==='tide'&&lookClass()==='high')pay=Math.round(pay*.85);return {fac,type,sp:sp.map(p=>p.slice()),pay,flav:FLAV[fac][type]};}
+function mountJob(j){const T=JOBT[j.type],ds=T.d(...j.sp);Q.job={t:`${T.n} · ${FN[j.fac].split(' (')[0]}`,steps:ds.map((d,i)=>({d,at:[j.sp[i][0],j.sp[i][1]],on:'job:'+i})),done:()=>{S.cash+=j.pay;S.rep[j.fac]=(S.rep[j.fac]||0)+1;toast(`Paid ¢${j.pay} · ${FN[j.fac]} standing ${S.rep[j.fac]}`);S.jobsDone=(S.jobsDone||0)+1;delete S.jobDef;setTimeout(()=>{delete Q.job;delete S.q.job;save();},50);}};}
+if(S.jobDef&&typeof S.q.job==='number')mountJob(S.jobDef);else{delete S.q.job;delete S.jobDef;}
+const jobMarker=new THREE.Mesh(new THREE.OctahedronGeometry(.22),new THREE.MeshBasicMaterial({color:new THREE.Color(0xffe14d).multiplyScalar(2),toneMapped:false}));scene.add(jobMarker);jobMarker.visible=false;
+const jobI={id:'jobpt',pos:()=>{const p=S.jobDef.sp[S.q.job];return new THREE.Vector3(p[0],(p[3]||0)+1.1,p[1]);},r:2.2,label:'',
+ fn:()=>{const j=S.jobDef,i=S.q.job;const msg=j.type==='investigate'?pick(['A smear of blue paint and a dropped Orrin keycard sleeve.','Footprints in the wet grime. Too many for one person.','A receipt: Ring Line, 03:12, ASHLINE. Every night this week.','Someone scratched a moth into the wall. Fresh.']):j.type==='fix'?'You pry the panel, bridge two corroded leads, and the relay hums back to life.':i?"Handed over. They don't say thanks. They do pay.":'The package is heavier than it looks.';toast(msg);emit('job:'+i);},cond:()=>{if(!S.jobDef||typeof S.q.job!=='number')return false;const j=S.jobDef;jobI.label=j.type==='courier'?(S.q.job?'Deliver the package':'Pick up the package'):j.type==='fix'?'Fix the relay':'Search for evidence';return true;}};interact.push(jobI);
+for(const b of BOARDS){interact.push({id:'board'+b.id,pos:()=>new THREE.Vector3(b.x,b.y,b.z),r:2.4,label:b.label,fn:()=>jobBoard(b),cond:()=>true});const m=new THREE.Mesh(new THREE.BoxGeometry(1.1,1.4,.08),new THREE.MeshBasicMaterial({color:new THREE.Color(b.id==='tide'?0xff8a3d:b.id==='ward'?0x3f8aff:0xc9b2ff).multiplyScalar(.6),toneMapped:false}));m.position.set(b.x,1.4,b.z+(b.z>200?.6:-.6));scene.add(m);cand.push({x:b.x,y:2,z:b.z,col:0xffe0a0,int:2,dist:5});}
+function jobBoard(b){if(S.jobDef){say('Job board',[`You're already on a job: ${Q.job.t}. ${S.jobDef.flav}`],[{t:'Keep at it'},{t:'Abandon the job',fx:()=>{delete S.jobDef;delete Q.job;delete S.q.job;if(S.track==='job')S.track=null;toast('Job abandoned');}}]);return;}
+ const offers=[genJob(b.f),genJob(b.f),genJob(b.f)];say('Job board',['Three postings flicker on the cracked screen.'],offers.map(j=>({t:`${JOBT[j.type].n} · ${FN[j.fac].split(' (')[0]} · ¢${j.pay}`,fx:()=>{S.jobDef=j;mountJob(j);S.q.job=0;S.track='job';toast(`Job taken · <b>${Q.job.t}</b><br>${j.flav}`);save();}})).concat([{t:'Leave'}]));}
+S.apts=S.apts||{};S.decor=S.decor||{};const DECOR=[['Nothing',null],['Potted fern',0x2a6a40],['Neon tube (pink)',0xff3fa4],['Neon tube (cyan)',0x3ff0ff],['Paper lantern',0xffb06b],['Rug',0x6a2a3a],['Vinyl crate',0x3a3a48]];
+const decorG={};function buildDecor(key){const A=CITY.apts[key];if(decorG[key])scene.remove(decorG[key]);const g=new THREE.Group();scene.add(g);decorG[key]=g;
+ A.slots.forEach((p,si)=>{const it=DECOR[(S.decor[key]||[])[si]||0];if(!it[1])return;const c=it[1],name=it[0];let m;
+  if(name.startsWith('Neon'))m=new THREE.Mesh(new THREE.BoxGeometry(1.2,.06,.06),new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(2.5),toneMapped:false}));
+  else if(name==='Paper lantern')m=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(1.6),toneMapped:false}));
+  else if(name==='Rug')m=new THREE.Mesh(new THREE.BoxGeometry(2,.02,1.3),new THREE.MeshLambertMaterial({color:c}));
+  else m=new THREE.Mesh(new THREE.BoxGeometry(.45,name==='Potted fern'?.9:.4,.45),new THREE.MeshLambertMaterial({color:c}));
+  m.position.set(p[0],p[1]+(p[1]>2?-.2:p[1]>1?0:name==='Potted fern'?.45:.2),p[2]);if(name==='Rug')m.position.set(A.x-.6,.06,A.z+.2);g.add(m);});}
+for(const k in CITY.apts){const A=CITY.apts[k];buildDecor(k);const out=A.door[1]>200?-1.4:1.4;
+ interact.push({id:'aptdoor'+k,pos:()=>new THREE.Vector3(A.door[0],1.2,A.door[1]),r:2.4,label:`Door · ${A.name}`,fn:()=>{if(S.apts[k]){tp(A.x,0,A.z-1.4,Math.PI);return;}say('Ring Realty',[`${A.name}. ${A.blurb} One-time lease: ¢${A.price}.`],[{t:`Lease it · ¢${A.price}`,fx:()=>{if(S.cash<A.price){toast('Not enough cash. Take some jobs.');return;}S.cash-=A.price;S.apts[k]=1;toast(`The keys are yours · ${A.name}`);save();}},{t:'"Maybe later."'}]);},cond:()=>true});
+ const dm=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.2,.06),new THREE.MeshBasicMaterial({color:new THREE.Color(A.col).multiplyScalar(.35),toneMapped:false}));dm.position.set(A.door[0],1.1,A.door[1]);scene.add(dm);
+ interact.push({id:'aptout'+k,pos:()=>new THREE.Vector3(A.x,1.2,A.z-2.2),r:1.8,label:'Leave the apartment',fn:()=>tp(A.door[0],0,A.door[1]+out,out>0?0:Math.PI),cond:()=>true});
+ interact.push({id:'aptbed'+k,pos:()=>new THREE.Vector3(A.x+2.4,.9,A.z+1.4),r:2,label:'Bed · sleep',fn:()=>{if(S.min<20*60&&S.min>=10*60){inspect('Bed','Too early to sleep. The city is still awake out there.');return;}S.day++;S.min=10*60;S.talkedDay={};S.asked={};fade();toast(`Day ${S.day} · you wake to rain on the window`);save();},cond:()=>true});
+ interact.push({id:'aptdec'+k,pos:()=>new THREE.Vector3(A.x-1.5,1.2,A.z+1.2),r:2.4,label:'Decorate',fn:()=>decorate(k),cond:()=>true});}
+function decorate(k){const A=CITY.apts[k];const names=['Corner by the door','Window corner','Left wall','Ceiling','Over the bed'];
+ say('Decorate',[`${A.name}. Tap a spot to change what's there.`],names.map((n,si)=>({t:`${n}: ${DECOR[(S.decor[k]||[])[si]||0][0]}`,then:()=>{S.decor[k]=S.decor[k]||[];S.decor[k][si]=((S.decor[k][si]||0)+1)%DECOR.length;buildDecor(k);save();decorate(k);}})).concat([{t:'Done'}]));}
 // ================= kitchen / shop =================
 let pots=[],ready=[],customers=[],spawnT=2;
 const price=k=>DISH[k].p+(k==='miso'?(S.flags.goodFish?6:0)+(S.flags.misoPremium?8:0):0);
@@ -233,7 +285,7 @@ function walkable(x,z){const m=.3;const py=P.y||0;if(py<.5&&Math.abs(x)<4&&z<-5.
  for(const r of W.walk)if(Math.abs((r[4]||0)-py)<.6&&x>r[0]+m&&x<r[1]-m&&z>r[2]+m&&z<r[3]-m)return true;return false;}
 let viewTP=SET.view==='tp';Input.on('toggleView',()=>{viewTP=!viewTP;SET.view=viewTP?'tp':'fp';saveSet();});
 const fwd=new THREE.Vector3(),camTP=new THREE.Vector3();let zone='';
-function tickPlayer(dt){const lk=Input.consumeLook();if(!dlgOpen&&!menuOpen()){P.yaw-=lk.dx*.0055;P.pitch=Math.max(-1.1,Math.min(1.05,P.pitch-lk.dy*.0045));}
+function tickPlayer(dt){if(creating){Input.consumeLook();return;}const lk=Input.consumeLook();if(!dlgOpen&&!menuOpen()){P.yaw-=lk.dx*.0055;P.pitch=Math.max(-1.1,Math.min(1.05,P.pitch-lk.dy*.0045));}
  let mx=Input.move.x,my=Input.move.y;if(dlgOpen||menuOpen())mx=my=0;const m=Math.min(1,Math.hypot(mx,my));if(P.sit&&m>.35){P.sit=null;}
  if(m>.08&&!P.sit&&!riding){const s=Math.sin(P.yaw),c=Math.cos(P.yaw);const vx=(-s*-my+c*mx),vz=(-c*-my-s*mx);const sp=(m>.85?3.6:2.4)*dt;const nx=P.x+vx*sp,nz=P.z+vz*sp;
   if(walkable(nx,P.z))P.x=nx;if(walkable(P.x,nz))P.z=nz;P.bob+=dt*m*9;}
@@ -276,10 +328,10 @@ function openMenu(t){$('menu').classList.remove('hide');document.querySelectorAl
  if(t=='n'){h+=S.notes.length?S.notes.slice().reverse().map(n=>`<div class="row"><span>${n}</span></div>`).join(''):'<div class="row"><span><small>Your notes will collect here as you learn what happened to Dess.</small></span></div>';}
  if(t=='p'){for(const k in CAST){const met=S.rel[k]!==undefined||S.talkedDay[k]||k==='dess'&&S.q.m6!==undefined;if(k==='dess'&&!met)continue;const r=Math.round(relv(k)/2);const fav=Object.keys(Q).find(id=>Q[id].giver===k&&Q[id].lock&&S.q[id]===undefined);
   h+=`<div class="row person"><img src="portraits/${k}.jpg" alt=""><span><b>${met?CAST[k].n:'???'}</b><br><small>${met?CAST[k].role:'not met yet'}</small><br><small class="where">${met?CAST[k].home:''}</small>${fav&&met?`<br><small class="cur">Favor at ♥6</small>`:''}</span><span class="meter">${met?'●'.repeat(r)+'○'.repeat(5-r):''}</span></div>`;}}
- if(t=='l'){h+=`<div class="row"><span>Cash<br><small>Day ${S.day} · ${S.servedTotal} bowls served</small></span><span style="color:#ffd98a">¢${S.cash}</span></div><div class="row"><span>Debt to Orrin Mutual<br><small>${S.flags.interestFrozen?'Interest frozen by court order':'0.2% interest nightly'}</small></span><span>¢${S.debt}</span></div>`;
+ if(t=='l'){h+=Object.keys(FN).map(f=>`<div class="row"><span>${FN[f]}<br><small>standing</small></span><span>${S.rep[f]||0}</span></div>`).join('')+`<div class="row"><span>Your look<br><small>how the city reads you: ${({high:'upper city',mid:'street',low:'low city'})[lookClass()]}</small></span><button id="edLook">Edit look</button></div>`;h+=`<div class="row"><span>Cash<br><small>Day ${S.day} · ${S.servedTotal} bowls served</small></span><span style="color:#ffd98a">¢${S.cash}</span></div><div class="row"><span>Debt to Orrin Mutual<br><small>${S.flags.interestFrozen?'Interest frozen by court order':'0.2% interest nightly'}</small></span><span>¢${S.debt}</span></div>`;
   const ups=[['pay','Pay ¢1,500 toward the debt',1500,()=>{S.debt=Math.max(0,S.debt-1500);emit('pay');if(!S.debt)chapter('Debt free','The Neon Ladle belongs to you. Free and clear.');},()=>S.debt>0],['burner','Second burner (cook 2 at once, faster)',400,()=>S.up.burners=2,()=>S.up.burners<2],['stools','Two more stools',300,()=>S.up.stools=5,()=>S.up.stools<5],['sign','Fix the flickering sign (more walk-ins)',250,()=>{S.up.sign=1;},()=>!S.up.sign],['chili','Recipe: Static Chili Tan',600,()=>S.up.menu.push('chili'),()=>!S.up.menu.includes('chili')]];
   ups.forEach(([id,n,c,fx,cond])=>{if(cond&&!cond())return;h+=`<div class="row"><span>${n}</span><button data-u="${id}">¢${c.toLocaleString()}</button></div>`;});M.innerHTML=h;
-  M.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>{const u=ups.find(x=>x[0]==b.dataset.u);if(S.cash<u[2]){toast('Not enough cash');return;}S.cash-=u[2];u[3]();save();openMenu('l');});return;}
+  $('edLook').onclick=()=>{$('menu').classList.add('hide');openCreator(false);};M.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>{const u=ups.find(x=>x[0]==b.dataset.u);if(S.cash<u[2]){toast('Not enough cash');return;}S.cash-=u[2];u[3]();save();openMenu('l');});return;}
  if(t=='o'){const sl=(id,l,v)=>`<div class="row"><span>${l}</span><input type="range" id="${id}" min="0" max="100" value="${Math.round(v*100)}"></div>`;
   h+=sl('vMaster','Master volume',SET.master)+sl('vRain','Rain',SET.rain)+sl('vAmb','City ambience',SET.amb)+
   `<div class="row"><span>Camera</span><button id="oView">${viewTP?'Third person':'First person'}</button></div>`+sl('oSens','Look sensitivity',SET.sens/2)+
@@ -323,13 +375,14 @@ ENV.onThunder=()=>{if(!audio)return;const A=audio.AC,t=A.currentTime+.4+Math.ran
 cam.position.set(0,1.6,-2);ENV.update(0,(S.min/60)%24,0,S);LP.update(10,cam);for(let i=0;i<20;i++)LP.update(.5,cam);cubeCam.position.set(0,.4,-2);cubeCam.update(R,scene);
 scene.traverse(o=>{if(o.material&&o.material.isMeshStandardMaterial&&o.material.metalness>.3){o.material.envMap=cubeRT.texture;o.material.envMapIntensity=.9;}});
 for(const k in npcs)tickNPCs(0);
-window.__S=S;window.__P=P;window.__G={cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,stepOf,get near(){return near;}};
+window.__S=S;window.__P=P;window.__G={jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,stepOf,get near(){return near;}};
 $('load').classList.add('hide');$('start').classList.remove('hide');
 $('start').onclick=async()=>{$('title').classList.add('gone');setTimeout(()=>$('title').remove(),900);$('hud').classList.remove('hide');startAudio();
  try{await document.documentElement.requestFullscreen?.();await screen.orientation?.lock?.('landscape');}catch(e){}
- if(!S.flags.intro){S.flags.intro=1;save();say('Saltgate Ward',['Veyra City. Saltgate Ward. It hasn\'t stopped raining in three years.','Your Aunt Dess vanished a week ago. She left you her noodle bar, The Neon Ladle, a twenty-thousand-credit debt to Orrin Mutual, and a note: "Line 9 still hums."','Left thumb walks. Drag on the right to look around. Look at someone and tap to talk.'],[{t:'Step into the rain',fx:()=>qStart('m1')}]);}
+ if(!S.flags.intro){openCreator(true);}
  else if(S.flags.fromV1&&!S.flags.v1note){S.flags.v1note=1;toast('Your v1 progress carried over');if(S.q.m4==='done'&&S.q.m5===undefined){chapter('Chapter Two','Line 9 Still Hums');qStart('m5');}}};
 if(S.q.m4==='done'&&S.q.m5===undefined&&S.flags.intro)qStart('m5');
+function beginStory(){S.flags.intro=1;save();say('Veyra City',["Veyra. It hasn't stopped raining in three years. The upper city stays dry under a canopy you can't see. Everyone else gets wet.",'You came in on the Ring Line with ¢120 and one message from your aunt Dess, a fixer who ran deals out of a Saltgate noodle bar called the Neon Ladle: "Come. Line 9 still hums." By the time you arrived, she was gone.',"Nobody here knows your name yet. Take jobs from the gangs, the Wardline, the towers or the street. Find out who keeps disappearing, and why.",'Left thumb walks. Drag on the right to look. Look at something and tap. Job boards are in Saltgate, Ashline and Crown Heights. The Ring Line connects them.'],[{t:'Step into the rain',fx:()=>qStart('m1')}]);}
 // ================= main loop =================
 let last=performance.now(),T=0,saveT=0,slowT=0,flickT=0;
 function frame(now){const dt=Math.min(.05,(now-last)/1000)*(window.__G.ts||1);last=now;T+=dt;
@@ -337,7 +390,7 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000)*(window.__G.ts||1);la
  ENV.update(dt,(S.min/60)%24,gH,S);LP.mul=ENV.lampMul;if(P.y>20)scene.fog.density*=.4;else if(riding)scene.fog.density*=.3;rain.m.geometry.setDrawRange(0,Math.round(rain.n*2*Math.min(1,ENV.st.rain*1.1)));rain.m.material.opacity=.18+.2*ENV.st.rain;
  envBake-=gH;if(envBake<=0){envBake=1.5;const vis=[];cubeCam.position.set(P.x,P.y+.4,P.z);cubeCam.update(R,scene);}
  const hh=Math.floor(S.min/60)%24,mm=Math.floor(S.min%60);$('clock').textContent=`Day ${S.day} · ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${fmtWeather(ENV.st.w)}`;$('shop').textContent=S.open?'Ladle open':S.min>=26*60?'Curfew':'Ladle closed';$('cash').textContent='¢'+S.cash.toLocaleString();
- tickNPCs(dt);tickStaff(dt);tickShop(dt);tickCustomers(dt);tickPeds(dt);pickTarget();tickWaypoint(T);
+ tickNPCs(dt);tickStaff(dt);tickCreator(dt);if(S.jobDef&&typeof S.q.job==='number'){const p=S.jobDef.sp[S.q.job];jobMarker.visible=true;jobMarker.position.set(p[0],(p[3]||0)+1.3+Math.sin(T*2)*.1,p[1]);jobMarker.rotation.y=T;}else jobMarker.visible=false;tickShop(dt);tickCustomers(dt);tickPeds(dt);pickTarget();tickWaypoint(T);
  slowT-=dt;if(slowT<=0){slowT=.5;tickStreaming();tickAudio();}
  LP.update(dt,cam);const indoor=(P.z>67.8&&P.z<80&&P.x<-16)||CITY.inRoom(P.x,P.z,P.y+1);rain.m.visible=!indoor&&!riding;rain.update(dt,cam.position,P.y);for(const a of CITY.anim)a(T,crack);tickRide(dt);steam.update(dt);traffic.update(dt);
  trainT-=dt;if(trainT<=0){train.position.x+=dt*16;if(train.position.x>40){train.position.x=-90;trainT=rnd(25,45);}}

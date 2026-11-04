@@ -16,3 +16,6 @@
   License: Creative Commons Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/). Changes: the models were tinted toward a night palette and re-lit in engine.
   Files are in `/vox` and `/v1/vox`.
 - Everything else in v1 is the same as above: three.js (MIT), procedural world, synthesized audio, and original story.
+
+## R3
+- Character creator, job boards (Tide/Wardline/Orrin), apartment leasing + decorating, look-based faction perception. All procedural, no new assets.
