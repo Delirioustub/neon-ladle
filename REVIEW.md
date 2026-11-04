@@ -117,3 +117,10 @@ Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain 
 - All of these pass: story (all main steps, BAD []), r10b_presence (0), r9_reset, r7_migration, r8_drive (18/18, scenery 0), r11b_walks (0), r9_props (56 prop hits, all room interiors, down from 61), r10_shots, r12_*, r13_ride. There were no console errors.
 - **Fixed:** the harness in `tools/test/story.js` called `.join` on string NPC targets, so the story test crashed. Fixed in the test only; game code is unchanged.
 - **Open:** `r7_seams` shows 12 near-miss gaps of 0.3–0.5 m inside the apartment studios at z≈800. These are furniture spacing, not routes. One run reported a flaky 4-crossing fail at the Docks shop door (25.3, 253.8), probably from a moving cart or ped; it did not reproduce on rerun. r10 WHITEBOX flags the Crown station canopy at (-53, 3, -252.5). Headless FPS is meaningless under SwiftShader, and nothing has been profiled on a device.
+
+## R14b
+- Review (Muse, r11) triage: C1 umbrella shaft gap fixed (shaft base at local 0, length = hand→top); D1 HUD writes, E1 credits, E2 orphan voice files, E4 debt card, E5 hand-off cross-comments were fixed in r13c; C2 not a bug (prop AABBs are already inflated by the 0.3 m player radius in walkable()); E3 not a bug (HP regenerates to 100 at 4/s outside fights, so persisting it changes nothing).
+- Train: sitters moved 5 cm off the backrest (hips centred on the seat; measured hips y .68-.72 vs seat .70, feet .04-.12); window glass already lit (r13c).
+- Androids/cyborgs/Juno: synthetic skin (pale porcelain or chrome), shader seam lines on face/neck, glowing eyes, plated hair. Clothing neon seams are baked in the tint shader (side stripes, belt, soles, chest band, collar by class/gang) — no extra draw calls.
+- Vehicles: cars.js loads Quaternius cars + Pixor hover car; Crown parked cars keep their collision AABBs; sky lanes over Saltgate and the causeway use hover cars and hovering cars, tinted per district with neon sill strips/underglow.
+- Tests: r9_reset PASS, r9_props 54 hits (interiors), r10b_presence BAD 0, r11b_walks FAILS 0, r8_drive FAILS 0 / SCENERY 0, r7_story BAD [] all quests done.
