@@ -18,7 +18,7 @@ Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain 
 | `input.js` | Touch stick and look, plus keyboard (WASD/E/V/M/Esc). |
 | `ladle.js`, `props.js` | Optional noodle-bar side gig and props. |
 | `voice.js` | Kokoro-generated voice lines (`audio/voice/`) and district street ambience. |
-| `sw.js` | Network-first service worker. Bump `C` on every deploy (currently `nl-r7`). |
+| `sw.js` | Network-first service worker. Bump `C` on every deploy (currently `nl-r8b`). |
 | `tools/voice/` | `extract.mjs` (pull lines) and `gen.py` (Kokoro TTS). |
 | `tools/test/` | Headless Playwright tests (see below). |
 
@@ -69,3 +69,7 @@ Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain 
 - The causeway test pins heading. It doesn't model a player steering into the side barriers at speed. Wardline checkpoint stops in Crown can still feel like a wall (it's a dialog, by design).
 - The apartment mirror reuses the character creator (no cost, no undo).
 - Large single-file `game.js` (dense one-line style). A module split would help maintainers.
+- **Indoor camera:** third person auto-switches to first person inside any room (`CITY.inRoom`), and restores on exit. The TP camera no longer sits inside the player's head in apartments.
+- **"Working the Ladle" HUD:** the shift now auto-closes if you walk more than 45 m from the Ladle, so the status can't stick on while you're in the apartment or on the causeway.
+- **Verified:** `r8_drive.py` walk and bike crossings Causeway↔Crown/Saltgate/Ashline: 0 fails, 0 scenery boxes on deck. `r8_umbrella.py` and `r8_shots.py`: no errors.
+- **Known:** the `r8-door-home` test shot is taken from too far away to show the Enter prompt (other door prompts verified).
