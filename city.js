@@ -119,7 +119,9 @@ export function buildCity(scene,cand){
   // waterfront (east end): pier, containers, cranes, moored boat
   W(48,72,cz-3,cz+3);B.add(60,-.1,cz,24,.2,6,0x3a2e24);for(let x=49;x<72;x+=.6)B.add(x,.02,cz,.5,.04,5.8,0x4a3a2a);
   const wat=new THREE.Mesh(new THREE.PlaneGeometry(220,160),MATS.WATER);wat.rotation.x=-Math.PI/2;wat.position.set(120,-.9,cz);scene.add(wat);
-  for(let i=0;i<14;i++){const x=52+(i%4)*5,z=cz+(i<8?-8:8)+(Math.floor(i/4)%2)*2.6,yy=1.3+Math.floor(i/8)*2.6;B.add(x,yy,z,4.8,2.5,2.4,[0x8a2a20,0x2a5a7a,0x6a6a2a,0x3a6a3a,0x7a4a2a][i%5]);}
+  // R10: containers used to stack by index (i>=8 got y=3.9 on the other side, with nothing under them) and stood over open water. Now: a concrete quay with pilings each side of the pier, bottom tier on the quay, top tier only on top of a bottom container.
+  {const CC=[0x8a2a20,0x2a5a7a,0x6a6a2a,0x3a6a3a,0x7a4a2a];let k=0;for(const sd of[-1,1]){B.add(60,-.35,cz+sd*8.4,20,.7,7.6,0x3c3a38);for(let x=51;x<70;x+=3)B.add(x,-.9,cz+sd*11.9,.5,1.6,.5,0x2a2420);
+   for(let c=0;c<4;c++)for(let r=0;r<2;r++){const x=52.5+c*5,z=cz+sd*(6.6+r*2.6);B.add(x,1.25,z,4.8,2.5,2.4,CC[k++%5]);B.add(x,.02,z,4.6,.06,2.2,0x101010);if((c+r+(sd>0?1:0))%3===0)B.add(x+(r?.3:-.2),3.76,z,4.8,2.5,2.4,CC[(k+2)%5]);}}}
   for(const [x,z] of[[64,cz-14],[84,cz+12]]){B.add(x,14,z,1.2,28,1.2,0x5a4020);B.add(x+6,27.5,z,16,1,1,0x5a4020);Gh.add(x+13.5,27,z,.4,.4,.4,0xff2020);L(x+13,27,z,0xff2020,2,10);}
   B.add(76,.2,cz+4,8,1.2,3,0x2a2622);B.add(75,1.3,cz+4,3,1.2,2.2,0x3a3028);Gl.add(75,1.4,cz+2.88,1.8,.5,.02,0xffb06b);L(75,1.8,cz+2.4,0xffb06b,3,7);
   for(let x=50;x<72;x+=5)for(const s of[-1,1]){B.add(x,.8,cz+s*2.9,.12,1.6,.12,0x4a3a2a);Gh.add(x,1.7,cz+s*2.9,.2,.25,.2,0xffc070);}L(62,2,cz,0xffc070,4,10);

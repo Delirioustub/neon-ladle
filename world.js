@@ -58,7 +58,7 @@ export function corridor(scene,cfg,cand){const NE=cfg.neon||NEON,HT0=cfg.hor||ho
  // ---- buildings ----
  for(const s of[-1,1]){let x=-L;while(x<L-1){let w=sr(4.5,8.5);if(x+w>L)w=L-x;const g=gaps.find(g=>g.side===s&&x+w>g.a&&x<g.b);if(g){if(x<g.a){w=g.a-x;}else{x=g.b;continue;}}if(w<1.5){x+=w;continue;}
    const cx=x+w/2,fh=(cfg.forceH||[]).find(f=>f.side===s&&cx>f.a&&cx<f.b),h=fh?fh.h:sr(cfg.hmin||13,cfg.hmax||34),fz=s*hw,depth=10,wall=spick(cfg.wall||WALL);const isLadle=cfg.ladle&&s<0&&x<0&&x+w>0;
-   lit.add(cx,h/2,fz+s*depth/2,w-.05,h,depth,wall);
+   lit.add(cx,h/2,fz+s*depth/2,w-.05,h,depth,wall);(cfg._fh||(cfg._fh=[])).push([s,x,x+w,h]);
    if(!isLadle){const shopCol=spick(NE);const open=srand()<.7;
     if(open){glow.add(cx,1.35,fz-s*.02,w*.7,2.2,.05,new THREE.Color(shopCol).multiplyScalar(.13).getHex());for(let k=0;k<4;k++)lit.add(cx+sr(-w*.3,w*.3),sr(.6,1.8),fz+s*.3,sr(.3,.8),sr(.3,1),.3,0x15121c);addLight(cx,1.6,fz-s*1.4,shopCol,2.5,6);}
     else for(let y=.2;y<2.6;y+=.18)lit.add(cx,y,fz-s*.05,w*.72,.1,.06,0x3d3a46);
@@ -81,7 +81,9 @@ export function corridor(scene,cfg,cand){const NE=cfg.neon||NEON,HT0=cfg.hor||ho
    x+=w;}}
  for(const e of cfg.caps||[]){const ex=e*(L+4),pt=cfg.portal===e;if(pt){const Z=hw+10;lit.add(ex,20,-(Z+3.5)/2,8,40,Z-3.5,0x1b1824);lit.add(ex,20,(Z+3.5)/2,8,40,Z-3.5,0x1b1824);lit.add(ex,23.4,0,8,33.2,7,0x1b1824);lit.add(ex,.01,0,8,.02,7,0x2a2630);glowHot.add(ex-e*4.06,6.85,0,.08,.1,7,0x3ff0ff);glowHot.add(ex+e*4.06,6.85,0,.08,.1,7,0x3ff0ff);}else lit.add(ex,20,0,8,40,hw*2+20,0x1b1824);for(let k=0;k<40;k++){const yy=sr(3,38),zz=sr(-hw,hw),cc=new THREE.Color(spick(winCols)).multiplyScalar(sr(.1,.4)).getHex();if(!(pt&&yy<7.6&&Math.abs(zz)<4))glow.add(ex-e*4.05,yy,zz,.6,.85,.04,cc);}if(e)sign(VT(),spick(NE),ex-e*4.2,8,0,5,{vert:true,cjk:true,ry:Math.PI/2,li:6});}
  // overhead cables + lanterns
- for(let i=0;i<cfg.len/3.5*(cfg.cables??1);i++){const x0=sr(-L,L),x1=x0+sr(-6,6),y0=sr(5,14),y1=y0+sr(-2,2),sag=sr(.6,2);const pts=[];for(let t=0;t<=1.001;t+=.05)pts.push(new THREE.Vector3(x0+(x1-x0)*t,y0+(y1-y0)*t-Math.sin(t*Math.PI)*sag,-hw+.1+(hw*2-.2)*t));
+ // R10: cables used to span y 5..16 between any two x, so above low roofs (Docks h 7..14) or across side-street gaps they ended in midair. Each end now must land on a facade at least 1.5 m below its roofline, and gets a wall bracket.
+ const FH=cfg._fh||[];delete cfg._fh;const roofAt=(s,x)=>{const f=FH.find(f=>f[0]===s&&x>f[1]+.3&&x<f[2]-.3);return f?f[3]:0;};
+ for(let i=0;i<cfg.len/3.5*(cfg.cables??1);i++){const x0=sr(-L,L),x1=x0+sr(-6,6),hA=roofAt(-1,x0),hB=roofAt(1,x1);let y0=sr(5,14),y1=y0+sr(-2,2);const sag=sr(.6,2);y0=Math.min(y0,hA-1.5);y1=Math.min(y1,hB-1.5);if(y0<4.6||y1<4.6)continue;lit.add(x0,y0,-hw+.12,.14,.14,.24,0x3a3640);lit.add(x1,y1,hw-.12,.14,.14,.24,0x3a3640);const pts=[];for(let t=0;t<=1.001;t+=.05)pts.push(new THREE.Vector3(x0+(x1-x0)*t,y0+(y1-y0)*t-Math.sin(t*Math.PI)*sag,-hw+.1+(hw*2-.2)*t));
   G.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),CABLE));
   if(srand()<(kind==='alley'?.7:.35)){const col=spick([0xff4d5e,0xff8a3d,0xff3fa4,0xffc070]);for(let k=2;k<pts.length-2;k+=2){const p=pts[k];glowHot.add(p.x,p.y-.25,p.z,.22,.3,.22,col);}addLight(pts[10].x,pts[10].y-1,pts[10].z,col,3,8);}}
  // street furniture

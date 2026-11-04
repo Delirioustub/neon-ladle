@@ -27,7 +27,10 @@ export function initR5(G){const {S,THREE,scene,P,cam,npcs,toast,note,rel,say}=G;
  pt('r5pillar',-1.5,47.2,-273.5,2.6,'Touch the maintenance pillar','The canopy');
  pt('r5pods',0,1.3,548,6,'Look at the pods','Node 14');
  // visible props for story points
- {const m=new THREE.Mesh(new THREE.BoxGeometry(1,.7,2.2),new THREE.MeshLambertMaterial({color:0xd8dce0}));m.position.set(68,.35,259);scene.add(m);
+ {// R10: was a bare untextured white box on the pier walkway. Now a weathered steel cold-crate with ribs, latches and a status lamp.
+  const cr=new THREE.Group();cr.position.set(68,0,259);scene.add(cr);const bm=(w,h,d,x,y,z,c,b)=>{const q=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),b?new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(2),toneMapped:false}):new THREE.MeshStandardMaterial({color:c,roughness:.75,metalness:.5}));q.position.set(x,y,z);cr.add(q);};
+  bm(1,.62,2.2,0,.35,0,0x3d4a52);bm(1.04,.06,2.24,0,.68,0,0x2a3238);for(let z=-.9;z<1;z+=.3)bm(1.03,.5,.05,0,.35,z,0x55646c);bm(.06,.1,.18,.52,.5,-.5,0x8a8a80);bm(.06,.1,.18,.52,.5,.5,0x8a8a80);bm(.02,.08,.08,.52,.58,0,0x5dff9b,1);bm(.9,.05,.9,0,.02,0,0x1a1c1e);bm(1.12,.05,1.3,.02,.72,-.35,0x3a4630);bm(.05,.4,1.3,-.56,.52,-.35,0x3a4630);
+  if(G.CITY&&G.CITY.block)G.CITY.block.push([67.5,68.5,257.9,260.1]);
   const mast=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,4,6),new THREE.MeshLambertMaterial({color:0x4a4a52}));mast.position.set(-35,7.5+2,249);scene.add(mast);
   const tip=new THREE.Mesh(new THREE.SphereGeometry(.12,8,6),new THREE.MeshBasicMaterial({color:new THREE.Color(0xb04dff).multiplyScalar(2.5),toneMapped:false}));tip.position.set(-35,11.6,249);scene.add(tip);G.cand.push({x:-35,y:11,z:249,col:0xb04dff,int:2,dist:6});
   const pil=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,3.2,12),new THREE.MeshStandardMaterial({color:0xb8c0cc,metalness:.9,roughness:.25}));pil.position.set(-1.5,47.6,-273.6);scene.add(pil);

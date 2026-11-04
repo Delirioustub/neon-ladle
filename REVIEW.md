@@ -18,7 +18,7 @@ Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain 
 | `input.js` | Touch stick and look, plus keyboard (WASD/E/V/M/Esc). |
 | `ladle.js`, `props.js` | Optional noodle-bar side gig and props. |
 | `voice.js` | Kokoro-generated voice lines (`audio/voice/`) and district street ambience. |
-| `sw.js` | Network-first service worker. Bump `C` on every deploy (currently `nl-r9a`). |
+| `sw.js` | Network-first service worker. Bump `C` on every deploy (currently `nl-r10a`). |
 | `tools/voice/` | `extract.mjs` (pull lines) and `gen.py` (Kokoro TTS). |
 | `tools/test/` | Headless Playwright tests (see below). |
 
@@ -82,3 +82,11 @@ Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain 
 - **"Working the Ladle" HUD:** the shift now auto-closes if you walk more than 45 m from the Ladle, so the status can't stick on while you're in the apartment or on the causeway.
 - **Verified:** `r8_drive.py` walk and bike crossings Causeway↔Crown/Saltgate/Ashline: 0 fails, 0 scenery boxes on deck. `r8_umbrella.py` and `r8_shots.py`: no errors.
 - **Known:** the `r8-door-home` test shot is taken from too far away to show the Enter prompt (other door prompts verified).
+
+## r10 fixes
+- **Peds through walls:** hand-authored straight lanes crossed facades/side-street blocks. `clipLanes()` (first tick) splits every lane into runs that pass `walkable()` every 0.4 m; peds use runs >= 5 m.
+- **Floating containers (Docks):** top tier was stacked by index on the opposite side with nothing beneath, all over open water. Now a concrete quay with pilings each side of the pier; top tier only rests on a bottom container.
+- **Cables ending in midair:** cable ends now must land on a facade >= 1.5 m below its roof (none across side-street gaps), with wall brackets.
+- **Backwards signs:** `twoSideSigns()` makes every DoubleSide textured sign plane front-sided plus a 180-deg back twin (546 signs).
+- **White box on pier:** r5 story prop "Look under the tarp" was a bare Lambert box; now a steel cold-crate with tarp, solid.
+- Test: `r10_shots.py` (shots, ped runs, sign count, door-block and untextured-bright-box scan).
