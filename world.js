@@ -105,7 +105,7 @@ export function buildWorld(scene,cand){const out={districts:{},flick:[],vents:[]
  for(const k in DISTRICTS){if(DISTRICTS[k].cls)continue;seed=7+k.length*131+k.charCodeAt(0);const d=corridor(scene,DISTRICTS[k],cand);out.districts[k]=d;out.flick.push(...d.flick);out.vents.push(...d.vents);out.steamPts.push(...d.steamPts);}
  // walkable rectangles (world AABBs)
  const rect=(x0,x1,z0,z1)=>out.walk.push([Math.min(x0,x1),Math.max(x0,x1),Math.min(z0,z1),Math.max(z0,z1)]);
- rect(-47.5,49,-8.2,8.2);rect(21.2,26.8,-48,-8);rect(-26.6,-17.4,7.5,41);rect(-38.5,-5.5,40.5,67.6);
+ rect(-47.5,49,-8.2,8.2);rect(21.2,26.8,-48,-7.2);rect(-26.6,-17.4,7.2,41.8);rect(-38.5,-5.5,40.5,67.6);// R6: joins overlap >0.6m so the 0.3m margin never seals a seam
  rect(48,54.2,-43.5,43.5);rect(61.8,67.6,-43.5,43.5);for(const b of[-25,0,25])rect(48,67.6,b-1.6,b+1.6);
  // ---- The Neon Ladle (main street, x≈0 north) ----
  const A=out.districts.main.api;const {lit,glow,glowHot,sign,addLight}=A;

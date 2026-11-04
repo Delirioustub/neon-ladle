@@ -13,8 +13,9 @@ import {loadRig,makeHuman} from './chars.js';
 import {Input,initInput} from './input.js';
 import {DISH,CAST,PLACES,SCHED,PATROL,CHAT,TOPICS,makeQuests} from './story.js';
 import {makeActs} from './story5.js';
+import {initLadle} from './ladle.js';
 import {initR5} from './r5.js';
-let R5=null;
+let R5=null,LADLE=null;
 const $=id=>document.getElementById(id);
 // ================= settings (device-agnostic; persisted) =================
 const SET=Object.assign({low:0,scale:1,master:.8,rain:.8,amb:.7,view:'fp',sens:1},JSON.parse(localStorage.getItem('nlSettings')||'{}'));
@@ -37,6 +38,7 @@ function pixelRatio(){return Math.min(devicePixelRatio,SET.low?1:1.5)*SET.scale;
 function vpSize(){const r=R.domElement.getBoundingClientRect();const vv=window.visualViewport;return [Math.max(1,Math.round(Math.max(r.width,innerWidth,vv?vv.width:0))),Math.max(1,Math.round(Math.max(r.height,innerHeight,vv?vv.height:0)))];}
 let VW=innerWidth,VH=innerHeight;function resize(){const [w,h]=vpSize();VW=w;VH=h;R.setPixelRatio(pixelRatio());composer.setPixelRatio(pixelRatio());R.setSize(w,h,false);composer.setSize(w,h);bloom.resolution.set(w/2,h/2);cam.aspect=w/h;cam.updateProjectionMatrix();}
 const resizeSoon=()=>{resize();[60,250,600,1200].forEach(t=>setTimeout(resize,t));};addEventListener('resize',resizeSoon);addEventListener('orientationchange',resizeSoon);addEventListener('pageshow',resizeSoon);document.addEventListener('visibilitychange',()=>{if(!document.hidden)resizeSoon();});window.visualViewport&&visualViewport.addEventListener('resize',resizeSoon);if(window.ResizeObserver)new ResizeObserver(()=>resize()).observe(R.domElement);resize();
+let lastVP='';setInterval(()=>{const k=innerWidth+'x'+innerHeight+'x'+(window.visualViewport?visualViewport.height:0)+'x'+R.domElement.clientHeight;if(k!==lastVP){lastVP=k;resize();}},700);// R6: iOS sometimes reports a short viewport at launch and never fires resize
 const rain=makeRain(scene,SET.low?1500:2600);const steam=makeSteam(scene,[new THREE.Vector3(-1.2,1.6,-7.5),new THREE.Vector3(1.2,1.6,-7.5),...W.vents,...W.steamPts.slice(0,SET.low?3:8),...CITY.steam.slice(0,SET.low?4:10)]);const traffic=makeTraffic(scene);
 // elevated Line 9 train
 const train=new THREE.Group();{const bm=new THREE.MeshLambertMaterial({color:0x2a2838}),wm=new THREE.MeshBasicMaterial({color:new THREE.Color(0xffe0b0).multiplyScalar(1.8),toneMapped:false}),sm=new THREE.MeshBasicMaterial({color:new THREE.Color(0x3ff0ff).multiplyScalar(2),toneMapped:false});
@@ -134,7 +136,7 @@ const interact=[];// {id,pos:()=>Vector3,r,label,fn,cond}
 function addI(id,x,y,z,r,label,fn,cond=()=>true){interact.push({id,pos:()=>new THREE.Vector3(x,y,z),r,label,fn,cond});}
 addI('kitchen',3.6,1.2,-6.3,2.4,'Kitchen',()=>openCook());
 addI('home',-6.2,1.2,-8.4,2.2,'Home · sleep',()=>sleep());
-addI('fuse',24,1,-46.6,2.2,'Fuse box',()=>{if(stepOf('m3')===Q.m3.steps[2]){inspect('Fuse box','Behind the fuses: a greasy tin. Inside, Dess\'s handwriting: "Midnight Miso. Toast the paste. Never trust Orrin. Line 9 still hums."');emit('interact:fuse');}else inspect('Fuse box','A rusted fuse box humming in the rain. Someone scratched a little ladle into the paint.');});
+addI('fuse',24,1,-46.6,2.2,'Fuse box',()=>{if(stepOf('m1')===Q.m1.steps[3]){inspect('Fuse box','Behind the fuses: a greasy tin. Inside, Dess\'s handwriting: "Midnight Miso. Toast the paste. Never trust Orrin. Line 9 still hums."');emit('interact:fuse');}else inspect('Fuse box','A rusted fuse box humming in the rain. Someone scratched a little ladle into the paint.');});
 const POSTERS=[[-20,1.6,-8.5,'TOMAS REYE, 34. Dock loader. Last seen: The Neon Ladle, Saltgate.'],[21.3,1.6,-24,'AIKO VENN, 27. Line cook. Last seen near the old Line 9 stairs.'],[-17.1,1.6,26,'"GRANDPA" OSU, 71. Retired. Regular at Saltgate noodle bars. Owes nobody, says his daughter. Orrin says otherwise.']];
 POSTERS.forEach(([x,y,z,t],i)=>addI('poster'+i,x,y,z,2,'Missing poster',()=>{inspect('Missing',t);if(S.q.s3===0&&!S.flags['poster'+i]){S.flags['poster'+i]=1;emit('count:poster');}}));
 const JBOX=[[24,-46],[-36,62],[66,-38]];JBOX.forEach(([x,z],i)=>addI('jbox'+i,x,1.2,z,2,'Junction box',()=>{if(S.q.s7===0&&!S.flags['jbox'+i]){S.flags['jbox'+i]=1;toast('Relay spliced');emit('count:jbox');}else inspect('Junction box','Humming. Warm. A sticker of a moth on the lid.');},()=>S.q.s7===0||i>0));
@@ -190,7 +192,7 @@ function openCreator(first){creating=true;S.look=S.look||{};const el=$('cc');el.
  const draw=()=>{el.querySelector('.ccr').innerHTML=rows.map((r,i)=>`<div class="row"><button data-i="${i}" data-d="-1">‹</button><span>${r[0]}<br><small>${r[1]()}</small></span><button data-i="${i}" data-d="1">›</button></div>`).join('');
   el.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{rows[+b.dataset.i][2](+b.dataset.d);rebuildPlayer();draw();});};draw();
  $('ccDone').onclick=()=>{creating=false;el.classList.add('hide');save();if(first)beginStory();};}
-function tickCreator(dt){if(!creating)return;player.obj.visible=true;player.obj.position.set(P.x,P.y,P.z);player.obj.rotation.y=P.yaw+Math.PI;player.play('idle');player.mixer.update(dt);
+function tickCreator(dt){if(!creating)return;player.obj.visible=true;player.obj.position.set(P.x,P.y,P.z);player.obj.rotation.y=P.yaw+Math.PI;player.play('idle');(player.mixer.update(dt),player.obj.userData.umb&&player.obj.userData.umb.userData.fit());
  const f=new THREE.Vector3(-Math.sin(P.yaw),0,-Math.cos(P.yaw)),r=new THREE.Vector3(Math.cos(P.yaw),0,-Math.sin(P.yaw));cam.position.set(P.x+f.x*2.4-r.x*.6,P.y+1.4,P.z+f.z*2.4-r.z*.6);cam.lookAt(P.x-r.x*.55,P.y+1.0,P.z-r.z*.55);}
 S.rep=S.rep||{tide:0,wardline:0,civ:0,orrin:0};const FN={tide:'Ashline Tide (gang)',wardline:'Wardline (police)',civ:'Civilians',orrin:'Orrin Mutual'};
 const SPOTS=[[-30,5,'Saltgate west end'],[34,-6,'Saltgate east end'],[23,-36,'Lantern Market'],[-22,28,'Line 9 Approach'],[-30,60,'Line 9 Plaza'],[52,20,'Velvet Canal east bank'],[64,-25,'Velvet Canal north'],[-40,-252,'Crown boulevard west'],[30,-268,'Crown, by the Galleria'],[12,-252,'Crown fountain'],[-30,256,'Ashline alley'],[20,264,'Ashline market row'],[62,259,'Ashline pier'],[-35,249,'Ashline rooftops',7.5],[5,271,'Ashline south roofs',7.5]];
@@ -230,7 +232,7 @@ function decorate(k){const A=CITY.apts[k];const names=['Corner by the door','Win
 // ================= kitchen / shop =================
 let pots=[],ready=[],customers=[],spawnT=2;
 const price=k=>DISH[k].p+(k==='miso'?(S.flags.goodFish?6:0)+(S.flags.misoPremium?8:0):0);
-function openCook(){if(!S.open){if(S.q.m1===undefined||S.q.m1===0){inspect('The Neon Ladle','The shutters won\'t budge. You need the keys first. Mara Voss, the building agent, should be close by.');return;}
+function openCook(){if(!S.open){if(S.q.m1===undefined||S.q.m1===0){inspect('The Neon Ladle','Dess\'s old haunt, shutters down. Mara Voss, the building agent, holds the keys. Talk to her first.');return;}
   if(S.min>=26*60){inspect('Curfew','It\'s past curfew. Get some sleep. Your door is just west of the Ladle.');return;}
   S.open=true;S.served=0;emit('interact:kitchen');toast('The Ladle is open');W.ladleSign.material.color.setScalar(2.2);save();}
  $('cook').classList.remove('hide');renderCook();}
@@ -263,7 +265,7 @@ function tickCustomers(dt){customers=customers.filter(c=>{const p=c.h.obj.positi
   if(c.seated&&!c.leave){if(!c.served){c.pat-=dt;if(c.pat<=0){c.leave=true;toast('A customer left hungry');}}}
   else{const tx=c.leave?(p.x<0?-24:24):sx,tz=c.leave?2:(c.near?-5.05:-4.2);const dx=tx-p.x,dz=tz-p.z,d=Math.hypot(dx,dz);
    if(d<.12&&!c.leave){if(!c.near)c.near=1;else{c.seated=true;c.h.play('sit');p.set(sx,0,-5.05);c.h.obj.rotation.y=Math.PI;}}else{if(c.seated){c.seated=false;}c.h.play('walk');p.x+=dx/d*dt*1.35;p.z+=dz/d*dt*1.35;turn(c.h.obj,Math.atan2(dx,dz),dt);}}
-  c.h.mixer.update(dt);
+  c.h.mixer.update(dt);{const um=c.h.obj.userData.umb;um&&um.userData.fit();}
   c.tag.style.display=c.seated&&!c.served&&!c.leave?'block':'none';if(c.seated&&!c.served){c.tag.innerHTML=`${DISH[c.order].n}<i style="width:${c.pat/c.patMax*100}%"></i>`;place(c.tag,p.x,2.0,p.z);}
   if(c.leave&&Math.abs(p.x)>=23.5){scene.remove(c.h.obj);c.tag.remove();return false;}return true;});}
 function turn(o,a,dt){let d=a-o.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));o.rotation.y+=d*Math.min(1,dt*8);}
@@ -286,7 +288,9 @@ function tickNPCs(dt){for(const k in npcs){const n=npcs[k],o=n.obj;const pl=plac
   const tg=tags[k];const show=o.visible&&d<7&&!dlgOpen;tg.style.display=show?'block':'none';if(show)place(tg,o.position.x,2.05,o.position.z);}}
 // ================= player / camera =================
 const P={x:-3.5,z:-1.5,y:0,yaw:0,pitch:.05,bob:0,sit:null};if(S.P){Object.assign(P,S.P);P.y=P.y||0;P.sit=null;}S.onBike=0;
-function walkable(x,z){const m=.3;const py=P.y||0;if(py<.5&&Math.abs(x)<4&&z<-5.5&&z>-9)return false;if(x>-18.4&&x<-15.6&&z>5.8&&z<7.8)return false;
+function walkable(x,z){const m=.3;const py=P.y||0;if(py<.5&&Math.abs(x)<3.85&&z<-5.55&&z>-6.95)return false;// counter (kitchen behind it is open from both ends)
+ if(py<.5&&z<-7.1&&z>-7.9)for(const i of[-2.4,0,2.4])if(Math.abs(x-i)<.45)return false;// stock pots
+ if(x>-18.4&&x<-15.6&&z>5.8&&z<7.8)return false;
  for(const r of W.walk)if(Math.abs((r[4]||0)-py)<.6&&x>r[0]+m&&x<r[1]-m&&z>r[2]+m&&z<r[3]-m)return true;return false;}
 let viewTP=SET.view==='tp';Input.on('toggleView',()=>{viewTP=!viewTP;SET.view=viewTP?'tp':'fp';saveSet();});
 const fwd=new THREE.Vector3(),camTP=new THREE.Vector3();let zone='';
@@ -297,7 +301,7 @@ function tickPlayer(dt){if(creating){Input.consumeLook();return;}const lk=Input.
   if(walkable(nx,P.z))P.x=nx;if(walkable(P.x,nz))P.z=nz;P.bob+=dt*m*9;}
  const eye=P.y+(onB?1.42:P.sit?1.12:1.62)+(onB?BK.g.position.y-P.y-.1:0)+Math.sin(P.bob)*.035*Math.min(1,m*2)+(riding?Math.sin(T*7)*.012:0);
  fwd.set(-Math.sin(P.yaw)*Math.cos(P.pitch),Math.sin(P.pitch),-Math.cos(P.yaw)*Math.cos(P.pitch));
- player.obj.position.set(P.x,P.y,P.z);player.obj.rotation.y=P.yaw+Math.PI;if(onB){player.obj.position.set(BK.g.position.x+Math.sin(S.bike.h)*.15,BK.g.position.y+.35,BK.g.position.z+Math.cos(S.bike.h)*.15);player.obj.rotation.y=S.bike.h+Math.PI;}player.play(P.sit||onB?'sit':m>.08?(m>.85?'jog':'walk'):'idle');player.obj.visible=viewTP;if(viewTP)player.mixer.update(dt);
+ player.obj.position.set(P.x,P.y,P.z);player.obj.rotation.y=P.yaw+Math.PI;if(onB){player.obj.position.set(BK.g.position.x+Math.sin(S.bike.h)*.15,BK.g.position.y+.35,BK.g.position.z+Math.cos(S.bike.h)*.15);player.obj.rotation.y=S.bike.h+Math.PI;}player.play(P.sit||onB?'sit':m>.08?(m>.85?'jog':'walk'):'idle');player.obj.visible=viewTP;if(viewTP)(player.mixer.update(dt),player.obj.userData.umb&&player.obj.userData.umb.userData.fit());
  if(viewTP){const back=new THREE.Vector3(Math.sin(P.yaw),0,Math.cos(P.yaw));const want=new THREE.Vector3(P.x,P.y+(onB?2.2:1.95),P.z).addScaledVector(back,onB?4.2+bsp*.04:2.6).add(new THREE.Vector3(Math.cos(P.yaw)*.55,0,-Math.sin(P.yaw)*.55));
   {const hx=P.x,hz=P.z;let f=1;for(let i=1;i<=10;i++){const t=i/10,x=hx+(want.x-hx)*t,z=hz+(want.z-hz)*t;if(!walkable(x,z)||CITY.inRoom(x,z,want.y)!==CITY.inRoom(hx,hz,want.y)){f=Math.max(.12,(i-1.6)/10);break;}}if(f<1){want.x=hx+(want.x-hx)*f;want.z=hz+(want.z-hz)*f;want.y-=(1-f)*.35;camTP.copy(want);}}camTP.lerp(want,1-Math.exp(-dt*8));cam.position.copy(camTP);cam.lookAt(cam.position.x+fwd.x,cam.position.y+fwd.y-.12,cam.position.z+fwd.z);}
  else{cam.position.set(P.x,eye,P.z);camTP.copy(cam.position);cam.lookAt(P.x+fwd.x,eye+fwd.y,P.z+fwd.z);}
@@ -382,7 +386,7 @@ const BK=(()=>{const g=new THREE.Group(),col=0xff3fa4;const body=new THREE.MeshS
  add(new THREE.BoxGeometry(.3,.18,.04),new THREE.MeshBasicMaterial({color:0x08101a}),0,1.04,-.92,-.6);const scr=add(new THREE.BoxGeometry(.16,.08,.01),gl(0x3ff0ff),0,.98,-.86,-.6);
  for(const z of[-.62,.55]){add(new THREE.CylinderGeometry(.26,.3,.16,16),dark,0,.32,z);add(new THREE.CylinderGeometry(.22,.22,.02,16),gl(col),0,.23,z);}
  for(const s of[-1,1])add(new THREE.BoxGeometry(.02,.04,1.3),gl(col),s*.235,.6,0);add(new THREE.BoxGeometry(.34,.06,.02),gl(0xfff1d8),0,.72,-1.12);add(new THREE.BoxGeometry(.3,.06,.02),gl(0xff2040),0,.7,.76);
- const beam=new THREE.Mesh(new THREE.ConeGeometry(1.6,9,14,1,true),new THREE.MeshBasicMaterial({color:new THREE.Color(0xfff1d8).multiplyScalar(.5),transparent:true,opacity:.05,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false,side:THREE.DoubleSide}));beam.rotation.x=-Math.PI/2;beam.position.set(0,.7,-5.6);g.add(beam);
+ const beam=new THREE.Mesh(new THREE.ConeGeometry(1.6,9,14,1,true),new THREE.MeshBasicMaterial({color:new THREE.Color(0xfff1d8).multiplyScalar(.5),transparent:true,opacity:.05,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false,side:THREE.DoubleSide}));beam.rotation.x=Math.PI/2;beam.position.set(0,.7,-5.6);g.add(beam);
  g.traverse(o=>{if(o.isMesh)o.castShadow=false;});scene.add(g);return {g,scr,beam};})();
 S.bike=S.bike||{x:-41,z:4.6,y:0,h:Math.PI/2};const bk={v:0,yr:0,look:0,lookT:0,roll:0,shake:0,on:false};
 function placeBike(){BK.g.position.set(S.bike.x,S.bike.y+.08,S.bike.z);BK.g.rotation.set(0,S.bike.h,0);}placeBike();
@@ -457,7 +461,7 @@ ENV.onThunder=()=>{if(!audio)return;const A=audio.AC,t=A.currentTime+.4+Math.ran
 cam.position.set(0,1.6,-2);ENV.update(0,(S.min/60)%24,0,S);LP.update(10,cam);for(let i=0;i<20;i++)LP.update(.5,cam);cubeCam.position.set(0,.4,-2);cubeCam.update(R,scene);
 scene.traverse(o=>{if(o.material&&o.material.isMeshStandardMaterial&&o.material.metalness>.3){o.material.envMap=cubeRT.texture;o.material.envMapIntensity=.9;}});
 for(const k in npcs)tickNPCs(0);
-Object.assign(G,{Q,stepOf,onList,qAdv,emit,interact,say,fade,W,CITY,cand,makeHuman,walkable,regionOf,lookClass,CAST,Input,THREE,scene,P,cam,npcs,dlg:()=>dlgOpen,riding:()=>!!riding||bk.on&&Math.abs(bk.v)>4});R5=initR5(G);window.R5=R5;
+Object.assign(G,{Q,stepOf,onList,qAdv,emit,interact,say,fade,W,CITY,cand,makeHuman,walkable,regionOf,lookClass,CAST,Input,THREE,scene,P,cam,npcs,dlg:()=>dlgOpen,riding:()=>!!riding||bk.on&&Math.abs(bk.v)>4});R5=initR5(G);window.R5=R5;LADLE=initLadle(G);
 if(S.q.m8==='done'&&S.q.m9===undefined)setTimeout(()=>{chapter('Act Three','The Weather Men');qStart('m9');},2500);
 window.__S=S;window.__P=P;window.__G={R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,stepOf,get near(){return near;}};
 $('load').classList.add('hide');$('start').classList.remove('hide');
@@ -465,6 +469,9 @@ $('start').onclick=async()=>{$('title').classList.add('gone');setTimeout(()=>$('
  try{await document.documentElement.requestFullscreen?.();await screen.orientation?.lock?.('landscape');}catch(e){}
  if(!S.flags.intro){openCreator(true);}
  else if(S.flags.fromV1&&!S.flags.v1note){S.flags.v1note=1;toast('Your v1 progress carried over');if(S.q.m4==='done'&&S.q.m5===undefined){chapter('Chapter Two','Line 9 Still Hums');qStart('m5');}}};
+// R6 save migration: the old Ladle-owner chain (m1 keys → m2 First Bowls → m3 broth) folds into the newcomer opening
+if(typeof S.q.m2==='number'||typeof S.q.m3==='number'||S.q.m2==='done'||S.q.m3==='done'){const fuse=S.q.m3==='done';delete S.q.m2;delete S.q.m3;if(S.q.m4===undefined){if(fuse){S.q.m1='done';qStart('m4');}else{S.q.m1=0;S.track='m1';}}else S.q.m1='done';}
+if(typeof S.q.m1==='number'&&S.q.m1>=4)S.q.m1=3;if(typeof S.q.m4==='number'&&S.q.m4>0)S.q.m4=0;if(typeof S.q.m8==='number'&&S.q.m8>0)S.q.m8=0;
 if(S.q.m4==='done'&&S.q.m5===undefined&&S.flags.intro)qStart('m5');
 function beginStory(){S.flags.intro=1;save();say('Veyra City',["Veyra. It hasn't stopped raining in three years. The upper city stays dry under a canopy you can't see. Everyone else gets wet.",'You came in on the Ring Line with ¢120 and one message from your aunt Dess, a fixer who ran deals out of a Saltgate noodle bar called the Neon Ladle: "Come. Line 9 still hums." By the time you arrived, she was gone.',"Nobody here knows your name yet. Take jobs from the gangs, the Wardline, the towers or the street. Find out who keeps disappearing, and why.",'Left thumb walks. Drag on the right to look. Look at something and tap. Job boards are in Saltgate, Ashline and Crown Heights. The Ring Line connects them.'],[{t:'Step into the rain',fx:()=>qStart('m1')}]);}
 // ================= main loop =================
@@ -473,8 +480,8 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000)*(window.__G.ts||1);la
  tickPlayer(dt);let gH=0;if(!dlgOpen&&!menuOpen()){S.min+=dt*1;gH=dt/60;if(S.min>=34*60){S.min-=24*60;S.day++;S.talkedDay={};S.asked={};}}
  ENV.update(dt,(S.min/60)%24,gH,S);LP.mul=ENV.lampMul*(R5?R5.lampMul:1);if(P.y>20)scene.fog.density*=.4;else if(P.x<-66&&P.x>-82&&Math.abs(P.z)>8)scene.fog.density*=.42;else if(riding)scene.fog.density*=.3;rain.m.geometry.setDrawRange(0,Math.round(rain.n*2*Math.min(1,ENV.st.rain*1.1)));rain.m.material.opacity=.18+.2*ENV.st.rain;
  envBake-=gH;if(envBake<=0){envBake=1.5;const vis=[];cubeCam.position.set(P.x,P.y+.4,P.z);cubeCam.update(R,scene);}
- const hh=Math.floor(S.min/60)%24,mm=Math.floor(S.min%60);$('clock').textContent=`Day ${S.day} · ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${fmtWeather(ENV.st.w)}`;$('shop').textContent=S.open?'Ladle open':S.min>=26*60?'Curfew':'Ladle closed';$('cash').textContent='¢'+S.cash.toLocaleString();
- tickNPCs(dt);R5&&R5.tick(dt,T);tickStaff(dt);tickCreator(dt);if(S.jobDef&&typeof S.q.job==='number'){const p=S.jobDef.sp[S.q.job];jobMarker.visible=true;jobMarker.position.set(p[0],(p[3]||0)+1.3+Math.sin(T*2)*.1,p[1]);jobMarker.rotation.y=T;}else jobMarker.visible=false;tickShop(dt);tickCustomers(dt);tickPeds(dt);pickTarget();tickWaypoint(T);
+ const hh=Math.floor(S.min/60)%24,mm=Math.floor(S.min%60);$('clock').textContent=`Day ${S.day} · ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${fmtWeather(ENV.st.w)}`;$('shop').textContent=S.open?'Working the Ladle':S.min>=26*60?'Curfew':'';$('shop').style.display=$('shop').textContent?'':'none';$('cash').textContent='¢'+S.cash.toLocaleString();
+ tickNPCs(dt);R5&&R5.tick(dt,T);LADLE&&LADLE.tick(dt);tickStaff(dt);tickCreator(dt);if(S.jobDef&&typeof S.q.job==='number'){const p=S.jobDef.sp[S.q.job];jobMarker.visible=true;jobMarker.position.set(p[0],(p[3]||0)+1.3+Math.sin(T*2)*.1,p[1]);jobMarker.rotation.y=T;}else jobMarker.visible=false;tickShop(dt);tickCustomers(dt);tickPeds(dt);pickTarget();tickWaypoint(T);
  slowT-=dt;if(slowT<=0){slowT=.5;tickStreaming();tickAudio();}
  LP.update(dt,cam);const indoor=(P.z>67.8&&P.z<80&&P.x<-16)||CITY.inRoom(P.x,P.z,P.y+1);rain.m.visible=!indoor&&!riding;rain.update(dt,cam.position,P.y);for(const a of CITY.anim)a(T,crack);tickRide(dt);steam.update(dt);traffic.update(dt);
  trainT-=dt;if(trainT<=0){train.position.x+=dt*16;if(train.position.x>40){train.position.x=-90;trainT=rnd(25,45);}}
@@ -483,4 +490,4 @@ function frame(now){const dt=Math.min(.05,(now-last)/1000)*(window.__G.ts||1);la
  saveT+=dt;if(saveT>5){saveT=0;const rg=regionOf(P.x,P.z);if(rg!=='home'&&rg!=='metro')S.lastOut={x:P.x,z:P.z};if(!riding)S.P={x:P.x,z:P.z,y:P.y,yaw:P.yaw,pitch:P.pitch};save();}if(mapOpen){mapT-=dt;if(mapT<=0){mapT=.25;drawMap();}}for(const a of CW.anim)a(T,dt);CW.follow&&CW.follow(P.x,P.z);
  composer.render(dt);requestAnimationFrame(frame);}
 requestAnimationFrame(frame);
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),5*60e3);}).catch(()=>{});let rl=0;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(rl++)return;try{save()}catch(e){}location.reload();});}

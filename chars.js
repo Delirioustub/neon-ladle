@@ -14,7 +14,7 @@ const RIM=new THREE.Color(0x8a6cff);
 function rim(mat,str=.55,col=RIM){mat.onBeforeCompile=s=>{s.uniforms.rimC={value:col};s.uniforms.rimS={value:str};
  s.fragmentShader=s.fragmentShader.replace('#include <common>','#include <common>\nuniform vec3 rimC;uniform float rimS;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n{float r=1.0-saturate(dot(normalize(vNormal),normalize(vViewPosition)));totalEmissiveRadiance+=rimC*rimS*r*r*r;}');};
  mat.customProgramCacheKey=()=>'rim'+str;return mat;}
-const std=(c,r=.75,m=.05,str=.5)=>rim(new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m}),str);
+const std=(c,r=.92,m=0,str=.5)=>rim(new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m}),str);
 const glow=c=>new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(2.2),toneMapped:false});
 // region masks by dominant bone
 const R_={top:/spine|clavicle|upperarm|neck/,sleeve:/spine|clavicle|upperarm|lowerarm|neck/,coatL:/spine|clavicle|upperarm|lowerarm|pelvis|thigh/,pants:/pelvis|thigh|calf|spine_01/,shorts:/pelvis|thigh/,boots:/foot|ball|calf/,gloves:/hand|index|middle|ring|pinky|thumb/,apron:/spine_01|spine_02|pelvis|thigh/};
@@ -46,7 +46,7 @@ export function makeHuman(look){const sex=look.sex||'f';const root=SkeletonUtils
  const bones={};root.traverse(o=>{if(o.isBone)bones[o.name]=o;});
  const sk=bodyMesh(root);
  root.traverse(o=>{if(!o.isMesh||o.userData.shell)return;const mats=Array.isArray(o.material)?o.material:[o.material];o.material=mats.map(m=>{const n=m.clone();
-   if(/Superhero/.test(m.name)){n.color=new THREE.Color(look.skin||0xd8b8a0).multiplyScalar(1.15);n.roughness=.62;n.metalness=look.android?.55:0;if(look.android){n.map=null;n.color=new THREE.Color(look.skin);n.roughness=.35;}rim(n,.45);}
+   if(/Superhero/.test(m.name)){n.color=new THREE.Color(look.skin||0xd8b8a0).multiplyScalar(1.15);n.roughness=.9;n.metalness=look.android?.55:0;if(look.android){n.map=null;n.color=new THREE.Color(look.skin);n.roughness=.35;}rim(n,.45);}
    else if(/Hair/.test(m.name)){n.color=new THREE.Color(look.hair?.color??0x1a1410);if(look.android)o.visible=false;}
    return n;});if(o.material.length===1)o.material=o.material[0];});
  // clothing shells (inner to outer)
@@ -89,7 +89,13 @@ export function makeHuman(look){const sex=look.sex||'f';const root=SkeletonUtils
   if(gr.t==='cyber'){add(HC,new THREE.Mesh(new THREE.BoxGeometry(.012,.05,.05),g),[.093,headY-.12,.02]);}
   if(gr.t==='belt')add(SC,new THREE.Mesh(new THREE.TorusGeometry(.15,.015,4,20),std(0x111,.4,.5)),[0,headY-.72,0],[Math.PI/2,0,0]);}
  if(look.umbrella){const u=new THREE.Group();const c=new THREE.Mesh(new THREE.ConeGeometry(.55,.22,12,1,true),new THREE.MeshLambertMaterial({color:look.umbrella,side:THREE.DoubleSide,transparent:true,opacity:.75,emissive:new THREE.Color(look.umbrella).multiplyScalar(.3)}));c.position.y=.75;u.add(c);const st=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,.75),std(0x222));st.position.y=.37;u.add(st);
-  const hr=bones.hand_r;if(hr){const cr=carrier(root,hr);cr.add(u);u.position.set(-.22,headY-.85,.1);H.userData.umb=u;}}
+  st.position.y=0;st.geometry.translate(0,.5,0);st.scale.y=1;c.position.y=0;
+  const hr=bones.hand_r;if(hr){root.add(u);H.userData.umb=u;
+   // R6: the shaft runs from the right hand to a point centred over the head; the canopy stays (nearly) level above the head
+   const hv=new THREE.Vector3(),top=new THREE.Vector3(0,headY+.32,.04),grip0=new THREE.Vector3(-.16,headY-.62,.2),dir=new THREE.Vector3(),UP=new THREE.Vector3(0,1,0),q=new THREE.Quaternion();
+   u.userData.fit=()=>{hr.updateWorldMatrix(true,false);hv.setFromMatrixPosition(hr.matrixWorld);root.worldToLocal(hv);hv.lerp(grip0,.55);
+    dir.subVectors(top,hv);const L=dir.length();dir.multiplyScalar(1/L);st.position.copy(hv);st.quaternion.setFromUnitVectors(UP,dir);st.scale.y=L+.02;
+    c.position.copy(top);c.position.y+=.08;q.setFromUnitVectors(UP,dir);c.quaternion.identity().slerp(q,.2);};u.userData.fit();}}
  // culling: skinned meshes test a padded bind-pose sphere, so off-screen people cost no draw calls
  H.traverse(o=>{if(o.isMesh){const g=o.geometry;if(!g.boundingSphere)g.computeBoundingSphere();if(o.isSkinnedMesh){o.boundingSphere=g.boundingSphere.clone();o.boundingSphere.radius+=.45;}o.frustumCulled=true;if(!o.isSkinnedMesh&&g.boundingSphere.radius<.09)(H.userData.small||(H.userData.small=[])).push(o);}});
  const mixer=new THREE.AnimationMixer(root);const acts={};const ts=look.tempo||1;
@@ -100,5 +106,5 @@ export function makeHuman(look){const sex=look.sex||'f';const root=SkeletonUtils
   n.play();if(o)o.crossFadeTo(n,fade,false);else n.fadeIn(fade);cur=k;};play('idle',0);mixer.update(Math.random()*3);
  let acc=0,fc=Math.floor(Math.random()*4),far=false;
  // distance LOD: full-rate animation up close, every 2nd/4th frame further out; tiny trinkets vanish past 26m
- const lod=(d,dt)=>{acc+=dt;fc++;const n=d<14?1:d<28?2:4;if(fc%n===0||acc>.25){mixer.update(acc);acc=0;}const f=d>26;if(f!==far){far=f;for(const o of H.userData.small||[])o.visible=!f;}};
+ const lod=(d,dt)=>{acc+=dt;fc++;const n=d<14?1:d<28?2:4;if(fc%n===0||acc>.25){mixer.update(acc);acc=0;const um=H.userData.umb;if(um&&um.userData.fit)um.userData.fit();}const f=d>26;if(f!==far){far=f;for(const o of H.userData.small||[])o.visible=!f;}};
  return {obj:H,mixer,play,bones,acts,lod,get anim(){return cur;}};}
