@@ -6,6 +6,8 @@ R=[];SC=[]
 ROUTES=[(n,-73,zc+dz,-40) for n,zc in [('saltgate',0),('crown',-260),('docks',260)] for dz in (-2.2,0,2.2)]
 def steps(pg,shot,lp):
  pg.click('#ccDone');pg.wait_for_timeout(800)
+ # R11b: software GL renders the full scene at ~3 fps at 844x390, so the real loop crawled (dt clamps at .05) and 18 routes took >40 min (looked hung). Drive at a tiny viewport + low settings.
+ if os.environ.get('MODE')!='shots':pg.set_viewport_size({'width':240,'height':120});pg.evaluate("()=>{__G.SET.low=true;__G.LP&&0}")
  pg.evaluate("import('./input.js').then(m=>window.__IN=m.Input)");pg.wait_for_timeout(300)
  pg.evaluate("()=>{__G.R5.clear();__G.R5.force=()=>{};}")
  closer="()=>{const d=document.querySelector('#dlg');if(d&&!d.classList.contains('hide')){const b=[...document.querySelectorAll('#dopts button')];if(b.length)b[b.length-1].click();}__G.R5.clear();}"
@@ -23,7 +25,7 @@ def steps(pg,shot,lp):
     if px[0]>best+.05:best=px[0];stall=0
     else:stall+=1
     if stall>40:break
-   pg.evaluate("__IN.move.y=0");ok=px[0]>=tx;R.append((mode,name,z,ok,[round(v,2) for v in px]))
+   pg.evaluate("__IN.move.y=0");ok=px[0]>=tx;R.append((mode,name,z,ok,[round(v,2) for v in px]));print(R[-1],i,flush=True)
    if not ok:shot(f'r8-stuck-{mode}-{name}-{z}')
  pg.evaluate("()=>{__G.dismountBike(true)}")
  pg.evaluate(open(os.path.join(os.path.dirname(__file__),'scenery.js')).read())

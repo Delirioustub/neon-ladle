@@ -213,7 +213,7 @@ export function buildCity(scene,cand){
  // ======================= R11: HALCYON PLAZA (Crown east end, replaces the flat cap wall) + promenade to the overlook =======================
  {const cz=-260,X0=60,X1=106,Z0=-292,Z1=-228,tw=(x,z,w,d,h,c)=>{B.add(x,h/2,z,w,h,d,c);for(let y=4;y<h-2;y+=2.4)for(let k=0;k<Math.floor(w/1.6);k++)if(Math.random()<.4)Gl.add(x-w/2+.8+k*1.6,y,z+(z<cz?d/2+.03:-d/2-.03),.9,1.1,.04,new THREE.Color([0xe8f4ff,0xffe0a0,0x9fe8ff][k%3]).multiplyScalar(.25+Math.random()*.3).getHex());};
   B.add((X0+X1)/2+.1,-.06,cz,X1-X0-.2,.12,Z1-Z0,0x3e3c46);for(let x=X0+3;x<X1;x+=4)B.add(x,.005,cz,.08,.02,Z1-Z0-1,0x2a2832);for(let z=Z0+3;z<Z1;z+=4)B.add((X0+X1)/2,.006,z,X1-X0-1,.02,.08,0x2a2832);
-  W(59,X1-.5,Z0+.5,Z1-.5);
+  W(59,60.8,-271.6,-248.4);W(60.4,X1-.5,Z0+.5,Z1-.5);// R11b: the plaza rect used to start at x 59 along its whole depth, overlapping the old street-end towers (x 50..60) by ~1 m
   // shops (north + south rows) and the towers between them
   room(64,72,Z0,-1,{dep:8,h:4.2,H:44,floor:0x8a8690,wall:0x6a6870,front:0x9a9ea8,mass:0x7c8090,lamp:0xffe0a0,win:0xffe0a0,sign:'CAFE HALCYON',sc:0xffe0a0});
   room(78,86,Z0,-1,{dep:8,h:4.2,H:52,floor:0x3a3644,wall:0x5a5866,front:0x8a8e9a,mass:0x6a7080,lamp:0xc9b2ff,win:0xe8f4ff,sign:'GALLERIA 9',sc:0xc9b2ff});
@@ -231,7 +231,7 @@ export function buildCity(scene,cand){
   // promenade south (toward the centre) ending at the overlook + the Halcyon Lift
   W(90.3,97.7,Z1-1,-211.5);W(82.5,X1-.5,-212,-201.5);B.add(94,-.06,-219.5,8,.12,17,0x3e3c46);B.add(94,-.06,-206.5,24,.12,11,0x3e3c46);
   tw(84,-220,8,16,30,0x8a8e9a);tw(102,-220,8,16,34,0x7c8090);
-  for(const [x,z,w,d] of[[94,-201,24,.3],[82,-206.5,.3,11],[106,-206.5,.3,11]]){B.add(x,.45,z,w,.9,d,0x5a5866);Gl.add(x,.92,z,Math.max(w,.06),.03,Math.max(d,.06),0x1e3a44);}
+  for(const [x,z,w,d] of[[86.2,-201,8.4,.3],[101.8,-201,8.4,.3],[82,-206.5,.3,11],[106,-206.5,.3,11]]){B.add(x,.45,z,w,.9,d,0x5a5866);Gl.add(x,.92,z,Math.max(w,.06),.03,Math.max(d,.06),0x1e3a44);}
   for(let z=-226;z<-212;z+=3.5){Gh.add(90.4,2.6,z,.06,.06,.06,0xfff1c9);Gh.add(97.6,2.6,z,.06,.06,.06,0xfff1c9);}L(94,3,-218,0xfff1d8,3,9);L(94,3,-206,0x9fe8ff,3,10);
   B.add(100,1.6,-205,3,3.2,3,0x2a2832);Gl.add(100,1.6,-206.52,2.2,2.6,.02,0x1a3a4a);Gh.add(100,3.3,-206.52,2.4,.1,.06,0x3ff0ff);out.block.push([98.4,101.6,-206.6,-203.4]);sign('LIFT',0x3ff0ff,100,3.8,-206.6,.4,Math.PI,{fs:48,light:false});
   I({id:'halcyonlift',x:100,y:1.4,z:-207.4,r:2.2,label:'Halcyon Lift · down to Saltgate',act:{type:'tp',x:42,y:0,z:-4.5,yaw:Math.PI,msg:'The glass car drops through the deck. For a moment the whole under-city slides past, lit like a circuit board. Then Saltgate.'}});
@@ -250,7 +250,7 @@ export function buildCity(scene,cand){
   room(50,57,206,-1,{dep:7,h:3.4,H:12,floor:0x1c1a18,wall:0x342018,front:0x2a2420,mass:0x2e2a26,lamp:0x5dff9b,win:0xffc98a,sign:'EEL HOUSE',sc:0x5dff9b});
   tw(31,201,6,10,11,0x342018);tw(45.5,201,9,10,9,0x2e2a26);tw(60.5,201,7,10,13,0x3a2a22);tw(25,216,6,20,10,0x2e2a26,'x');tw(31,229.5,6,7,9,0x3a3028);tw(59,229.5,10,7,8,0x342018);
   for(const [x,col] of[[33,0xff4d3d],[40,0x2a5a7a],[47,0xffc070],[54,0x5dff9b]]){B.add(x,.45,217,3.2,.9,1.6,0x4a3a2a);B.add(x,2.4,217,3.6,.08,2.4,col);for(const dx of[-1.6,1.6])B.add(x+dx,1.2,217.9,.08,2.4,.08,0x3a3028);for(let k=0;k<5;k++)Gh.add(x-1.2+k*.6,.98,217,.4,.08,.2,[0xc8d0d8,0xff8a6a,0xd0c890][k%3]);out.block.push([x-1.7,x+1.7,216.1,217.9]);L(x,2,217,0xffc070,2.2,6);}
-  B.add(63.85,.45,216,.25,.9,19.6,0x4a3a2a);for(let z=207;z<226;z+=2.4){B.add(63.85,.6,z,.3,1.2,.3,0x2a2420);Gl.add(63.85,1.25,z,.1,.08,.1,0x6a4a20);}for(let z=207;z<226;z+=3)B.add(64.2,-.9,z,.4,1.8,.4,0x2a2420);
+  B.add(63.85,.45,211.3,.25,.9,10.2,0x4a3a2a);B.add(63.85,.45,224.7,.25,.9,2.2,0x4a3a2a);for(let z=207;z<226;z+=2.4){if(z>216&&z<224)continue;B.add(63.85,.6,z,.3,1.2,.3,0x2a2420);Gl.add(63.85,1.25,z,.1,.08,.1,0x6a4a20);}for(let z=207;z<226;z+=3)B.add(64.2,-.9,z,.4,1.8,.4,0x2a2420);
   out.seats.push({x:62.6,z:212,yaw:Math.PI/2});I({id:'netquay',x:62.4,y:.8,z:212,r:1.5,label:'Sit · watch the flooded city',act:{type:'sit',x:62.6,y:0,z:212,yaw:Math.PI/2}});
   for(let x=30;x<63;x+=4)Gh.add(x,4.2+Math.sin(x)*.3,222,.22,.3,.22,[0xff4d5e,0xff8a3d,0xffc070][x%3]);sign('NET MARKET',0xffc070,45.5,7,206.1,.9,0,{fs:64,li:6});
   out.lanes.docks.push([42,251,42,228],[30,212,60,212],[30,222,60,222]);}

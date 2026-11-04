@@ -30,7 +30,7 @@ const cam=new THREE.PerspectiveCamera(66,2,.15,220);scene.add(cam);
 const hemi=new THREE.HemisphereLight(0x5a4a9a,0x120818,.6);scene.add(hemi);
 const moon=new THREE.DirectionalLight(0x6a7aff,.35);moon.position.set(-10,30,10);scene.add(moon);
 const fill=new THREE.PointLight(0xb8a8ff,2.2,8,1.3);scene.add(fill);
-const cand=[];const W=buildWorld(scene,cand);const CITY=buildCity(scene,cand);W.walk.push(...CITY.walk);CITY.block.push(...W.block);Object.assign(W.districts,CITY.districts);dressCity(W.districts,cand,Object.values(CITY.apts||{}).map(a=>a.door).concat((CITY.doors||[]).map(d=>Array.isArray(d)?d:[d.x,d.z]).filter(d=>d&&isFinite(d[0]))),CITY.block);buildLayers(scene,W.walk);const LP=makeLightPool(scene,cand,SET.low?10:18);
+const cand=[];const W=buildWorld(scene,cand);const CITY=buildCity(scene,cand);W.walk.push(...CITY.walk);CITY.block.push(...W.block);Object.assign(W.districts,CITY.districts);dressCity(W.districts,cand,Object.values(CITY.apts||{}).map(a=>a.door).concat((CITY.doors||[]).map(d=>Array.isArray(d)?d:[d.x,d.z]).concat((CITY.inter||[]).map(i=>[i.x,i.z])).filter(d=>d&&isFinite(d[0]))),CITY.block);buildLayers(scene,W.walk,CITY.block,cand);const LP=makeLightPool(scene,cand,SET.low?10:18);
 const cubeRT=new THREE.WebGLCubeRenderTarget(256,{type:THREE.HalfFloatType});const cubeCam=new THREE.CubeCamera(.5,120,cubeRT);scene.add(cubeCam);
 const composer=new EffectComposer(R);composer.addPass(new RenderPass(scene,cam));
 const bloom=new UnrealBloomPass(new THREE.Vector2(512,256),.75,.5,.72);composer.addPass(bloom);composer.addPass(new OutputPass());
@@ -306,7 +306,7 @@ function tickNPCs(dt){for(const k in npcs){const n=npcs[k],o=n.obj;const pl=plac
   if(n.talking){const a=Math.atan2(P.x-o.position.x,P.z-o.position.z);turn(o,a,dt);}
   else if(n.route.length){const t=n.route[0];o.position.y=0;const dx=t.x-o.position.x,dz=t.z-o.position.z,d=Math.hypot(dx,dz);if(d<.15){n.route.shift();if(!n.route.length)n.arrived=true;}else{const sp=(k==='ilse'?1.15:1.35)*dt;o.position.x+=dx/d*Math.min(sp,d);o.position.z+=dz/d*Math.min(sp,d);turn(o,Math.atan2(dx,dz),dt);n.h.play(k==='mara'?'formal':'walk');}}
   else{const pp=placePos(n.place);if(pp){if(pp[2]==='sit'){o.position.set(pp[0]+SEAT_D*Math.sin(pp[3]),SEAT_Y,pp[1]+SEAT_D*Math.cos(pp[3]));o.rotation.y=pp[3];}else if(o.position.y)o.position.y=0;else turn(o,pp[3],dt);n.h.play(pp[2]);}}
-  const d=Math.hypot(o.position.x-cam.position.x,o.position.z-cam.position.z);o.visible=d<70;// R10b: was o.visible&&d<70, so an NPC culled once (player >70 m away) stayed invisible forever: Kip/Ilse vanished on a fresh game after the Line 9 tripif(o.visible)n.h.lod(d,dt);
+  const d=Math.hypot(o.position.x-cam.position.x,o.position.z-cam.position.z);o.visible=d<70;if(o.visible)n.h.lod(d,dt);// R10b: was o.visible&&d<70, so an NPC culled once (player >70 m away) stayed invisible forever: Kip/Ilse vanished on a fresh game after the Line 9 trip
   const tg=tags[k];const show=o.visible&&d<7&&!dlgOpen;tg.style.display=show?'block':'none';if(show)place(tg,o.position.x,2.05,o.position.z);}}
 // ================= player / camera =================
 const P={x:-3.5,z:-1.5,y:0,yaw:0,pitch:.05,bob:0,sit:null};if(S.P){Object.assign(P,S.P);P.y=P.y||0;P.sit=null;}S.onBike=0;
@@ -319,14 +319,20 @@ function walkable(x,z){const m=.3;const py=P.y||0;if(py<.5&&Math.abs(x)<3.85&&z<
 let WG=null,WGn=-1;const WC=4;let BG=null,BGn=-1;// R9: solid props bucketed (cell padded by body radius)
 function bgrid(){if(BGn===CITY.block.length)return BG;BG=new Map();BGn=CITY.block.length;for(const b of CITY.block){for(let i=Math.floor((b[0]-.4)/WC);i<=Math.floor((b[1]+.4)/WC);i++)for(let j=Math.floor((b[2]-.4)/WC);j<=Math.floor((b[3]+.4)/WC);j++){const k=i*4096+j;let a=BG.get(k);if(!a)BG.set(k,a=[]);a.push(b);}}return BG;}
 function wgrid(){if(WGn===W.walk.length)return WG;WG=new Map();WGn=W.walk.length;for(const r of W.walk){for(let i=Math.floor(r[0]/WC);i<=Math.floor(r[1]/WC);i++)for(let j=Math.floor(r[2]/WC);j<=Math.floor(r[3]/WC);j++){const k=i*4096+j;let a=WG.get(k);if(!a)WG.set(k,a=[]);a.push(r);}}return WG;}
-function inWalk(x,z,py){const a=wgrid().get(Math.floor(x/WC)*4096+Math.floor(z/WC));if(!a)return false;for(const r of a)if(Math.abs((r[4]||0)-py)<.6&&x>=r[0]&&x<=r[1]&&z>=r[2]&&z<=r[3])return true;return false;}
+// R11b: a walk rect may carry a ramp/stair profile r[5]={ax:'x'|'z',a,b,ya,yb}: its floor height runs ya->yb from a to b along ax (clamped). The player and bike follow it (groundY).
+// R11b(2): or a road slice r[5]={seg:[x0,z0,y0,x1,z1,y1],hw}: a capsule of half-width hw around the centreline, height lerped along it (continuous grade).
+const segT=(q,x,z)=>{const s=q.seg,dx=s[3]-s[0],dz=s[4]-s[1],l=dx*dx+dz*dz||1;return Math.max(0,Math.min(1,((x-s[0])*dx+(z-s[1])*dz)/l));};
+const onSeg=(q,x,z)=>{const s=q.seg,t=segT(q,x,z);return Math.hypot(x-(s[0]+(s[3]-s[0])*t),z-(s[1]+(s[4]-s[1])*t))<=q.hw;};
+const rY=(r,x,z)=>{const q=r[5];if(!q)return r[4]||0;if(q.seg){const t=segT(q,x,z);return q.seg[2]+(q.seg[5]-q.seg[2])*t;}const t=Math.max(0,Math.min(1,((q.ax==='x'?x:z)-q.a)/(q.b-q.a)));return q.ya+(q.yb-q.ya)*t;};
+function inWalk(x,z,py){const a=wgrid().get(Math.floor(x/WC)*4096+Math.floor(z/WC));if(!a)return false;for(const r of a)if(x>=r[0]&&x<=r[1]&&z>=r[2]&&z<=r[3]&&(!r[5]||!r[5].seg||onSeg(r[5],x,z))&&Math.abs(rY(r,x,z)-py)<.6)return true;return false;}
+function groundY(x,z,py){const a=wgrid().get(Math.floor(x/WC)*4096+Math.floor(z/WC));if(!a)return py;let best=null,bd=.6;for(const r of a)if(x>=r[0]&&x<=r[1]&&z>=r[2]&&z<=r[3]&&(!r[5]||!r[5].seg||onSeg(r[5],x,z))){const h=rY(r,x,z),d=Math.abs(h-py);if(d<bd||(d===bd&&r[5])){bd=d;best=h;}}return best===null?py:best;}
 let viewTP=SET.view==='tp';Input.on('toggleView',()=>{viewTP=!viewTP;SET.view=viewTP?'tp':'fp';saveSet();});
 const fwd=new THREE.Vector3(),camTP=new THREE.Vector3();let zone='';
 function tickPlayer(dt){if(creating){Input.consumeLook();return;}const lk=Input.consumeLook();const onB=bk.on&&!riding;if(!dlgOpen&&!menuOpen()&&!mapOpen&&!onB){P.yaw-=lk.dx*.0055;P.pitch=Math.max(-1.1,Math.min(1.05,P.pitch-lk.dy*.0045));}
  let mx=Input.move.x,my=Input.move.y;if(dlgOpen||menuOpen()||mapOpen)mx=my=0;let m=Math.min(1,Math.hypot(mx,my));if(P.sit&&m>.35){P.sit=null;}
  let bsp=0;if(onB){bsp=tickBike(dt,(dlgOpen||menuOpen()||mapOpen)?{dx:0,dy:0}:lk);m=0;}else engineOff();
  if(m>.08&&!P.sit&&!riding&&!onB){const s=Math.sin(P.yaw),c=Math.cos(P.yaw);const vx=(-s*-my+c*mx),vz=(-c*-my-s*mx);const sp=(m>.85?3.6:2.4)*dt;const nx=P.x+vx*sp,nz=P.z+vz*sp;
-  if(walkable(nx,P.z))P.x=nx;if(walkable(P.x,nz))P.z=nz;P.bob+=dt*m*9;}
+  if(walkable(nx,P.z))P.x=nx;if(walkable(P.x,nz))P.z=nz;P.bob+=dt*m*9;if(P.y<.55&&P.y>-1.5)P.y=groundY(P.x,P.z,P.y);}
  const eye=P.y+(onB?1.42:P.sit?1.12:1.62)+(onB?BK.g.position.y-P.y-.1:0)+Math.sin(P.bob)*.035*Math.min(1,m*2)+(riding?Math.sin(T*7)*.012:0);
  fwd.set(-Math.sin(P.yaw)*Math.cos(P.pitch),Math.sin(P.pitch),-Math.cos(P.yaw)*Math.cos(P.pitch));
 const tpNow=viewTP&&(onB||riding||!CITY.inRoom(P.x,P.z,P.y+1));if(tpNow!==tickPlayer.tp){tickPlayer.tp=tpNow;if(tpNow)camTP.set(P.x,P.y+1.95,P.z);}
@@ -437,7 +443,7 @@ function tickBike(dt,lk){const m=Input.move;let mx=m.x,my=m.y;if(dlgOpen||menuOp
  if(ok(nx,nz)){P.x=nx;P.z=nz;}else{let moved=false;if(ok(nx,P.z)){P.x=nx;moved=true;}else if(ok(P.x,nz)){P.z=nz;moved=true;}
   if(moved)bk.v*=Math.exp(-dt*3);else{if(sp>6){bk.shake=.35;toast(pick(['Scraped the wall','Sparks off the fairing','Ouch. The bike forgives you']));}bk.v*=-.2;}}
  if(lk.dx||lk.dy){bk.look=Math.max(-2.4,Math.min(2.4,bk.look-lk.dx*.0055));bk.lookT=1.2;P.pitch=Math.max(-1,Math.min(.8,P.pitch-lk.dy*.0045));}else{bk.lookT-=dt;if(bk.lookT<0&&sp>2){bk.look*=Math.exp(-dt*2.5);P.pitch+=(.0-P.pitch)*Math.min(1,dt*1.5);}}
- P.yaw=S.bike.h+bk.look;S.bike.x=P.x;S.bike.z=P.z;S.bike.y=P.y;bk.roll+=(-bk.yr*.09*Math.min(1,sp/8)-bk.roll)*Math.min(1,dt*5);bk.shake=Math.max(0,bk.shake-dt);
+ P.yaw=S.bike.h+bk.look;if(P.y<.55&&P.y>-1.5)P.y=groundY(P.x,P.z,P.y);S.bike.x=P.x;S.bike.z=P.z;S.bike.y=P.y;bk.roll+=(-bk.yr*.09*Math.min(1,sp/8)-bk.roll)*Math.min(1,dt*5);bk.shake=Math.max(0,bk.shake-dt);
  const hov=Math.sin(T*3.1)*.03+(sp>1?Math.sin(T*17)*.006*Math.min(1,sp/10):0);BK.g.position.set(P.x,P.y+.1+hov,P.z);BK.g.rotation.set(Math.min(.06,Math.max(-.06,-thr*.04)),S.bike.h,bk.roll);
  const fov=66+Math.min(14,sp*.5);if(Math.abs(cam.fov-fov)>.2){cam.fov+=(fov-cam.fov)*Math.min(1,dt*3);cam.updateProjectionMatrix();}
  BK.beam.material.opacity=(.035+.03*Math.min(1,sp/10))*(ENV.lampMul||1);$('spd').innerHTML=Math.round(sp*3.6)+'<small>km/h</small>';
@@ -458,7 +464,7 @@ function drawMap(){const c=$('mapC'),dpr=devicePixelRatio,w=c.clientWidth*dpr,h=
  // grid shimmer
  g.strokeStyle='rgba(127,243,255,.05)';g.lineWidth=1;for(let z=-280;z<=280;z+=20){const [a]=toS(0,z);g.beginPath();g.moveTo(a,0);g.lineTo(a,h);g.stroke();}
  const clsCol=(x,z)=>{const r=regionOf(x,z);return r==='crown'?'159,232,255':r==='docks'?'255,138,61':r==='causeway'?'200,190,255':'255,63,164';};
- for(const r of W.walk){if(r[2]>400)continue;const [sx,sy]=toS(r[0],r[2]),ww=(r[3]-r[2])*k,hh=(r[1]-r[0])*k;const cc=clsCol((r[0]+r[1])/2,(r[2]+r[3])/2);g.fillStyle=r[4]>0?`rgba(${cc},.10)`:`rgba(${cc},.22)`;g.fillRect(sx,sy,ww,hh);if(r[4]>0){g.strokeStyle=`rgba(${cc},.35)`;g.setLineDash([3*dpr,3*dpr]);g.strokeRect(sx,sy,ww,hh);g.setLineDash([]);}}
+ for(const r of W.walk){if(r[2]>400||(r[5]&&r[5].seg))continue;const [sx,sy]=toS(r[0],r[2]),ww=(r[3]-r[2])*k,hh=(r[1]-r[0])*k;const cc=clsCol((r[0]+r[1])/2,(r[2]+r[3])/2);g.fillStyle=r[4]>0?`rgba(${cc},.10)`:`rgba(${cc},.22)`;g.fillRect(sx,sy,ww,hh);if(r[4]>0){g.strokeStyle=`rgba(${cc},.35)`;g.setLineDash([3*dpr,3*dpr]);g.strokeRect(sx,sy,ww,hh);g.setLineDash([]);}}
  for(const r of CITY.rooms){if(r[2]>400)continue;const [sx,sy]=toS(r[0],r[2]);g.strokeStyle='rgba(255,224,160,.45)';g.strokeRect(sx,sy,(r[3]-r[2])*k,(r[1]-r[0])*k);}
  const LB=[];const label=(t,x,z,col,size)=>{let [sx,sy]=toS(x,z);g.font=`600 ${px(size)}px system-ui,sans-serif`;g.textAlign='center';const tw=g.measureText(t).width,th=px(size)*1.15;const hit=yy=>LB.some(b=>Math.abs(b[0]-sx)<(b[2]+tw)/2&&Math.abs(b[1]-yy)<(b[3]+th)/2);let ok=0;for(const dy of[0,th,-th,2*th,-2*th]){if(!hit(sy+dy)){sy+=dy;ok=1;break;}}if(!ok)return;LB.push([sx,sy,tw,th]);g.fillStyle=col;g.shadowColor=col;g.shadowBlur=8*dpr;g.fillText(t,sx,sy);g.shadowBlur=0;};
  const D=[['SALTGATE',0,-12,'#ff8fd0'],['LANTERN MARKET',30,-30,'#ff8fd0'],['LINE 9',-28,26,'#ff8fd0'],['LINE 9 PLAZA',-22,58,'#ff8fd0'],['VELVET CANAL',58,0,'#9fe8ff'],['CROWN HEIGHTS',0,-260,'#d8f4ff'],['ASHLINE DOCKS',0,260,'#ffb07a'],['RING CAUSEWAY',-76,-130,'#c8c0ff'],['RING CAUSEWAY',-76,130,'#c8c0ff']];
@@ -492,7 +498,7 @@ scene.traverse(o=>{if(o.material&&o.material.isMeshStandardMaterial&&o.material.
 for(const k in npcs)tickNPCs(0);
 Object.assign(G,{Q,stepOf,onList,qAdv,emit,interact,say,fade,W,CITY,cand,makeHuman,walkable,regionOf,lookClass,CAST,Input,THREE,scene,P,cam,npcs,dlg:()=>dlgOpen,riding:()=>!!riding||bk.on&&Math.abs(bk.v)>4});R5=initR5(G);window.R5=R5;LADLE=initLadle(G);
 if(S.q.m8==='done'&&S.q.m9===undefined)setTimeout(()=>{chapter('Act Three','The Weather Men');qStart('m9');},2500);
-window.__S=S;window.__P=P;window.__G={CAST,tickNPCs:dt=>tickNPCs(dt),PLACES,R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,inWalk,stepOf,placeFor,placePos,stepTarget,onList,S,get near(){return near;}};
+window.__S=S;window.__P=P;window.__G={groundY,CAST,tickNPCs:dt=>tickNPCs(dt),PLACES,R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,inWalk,stepOf,placeFor,placePos,stepTarget,onList,S,get near(){return near;}};
 $('load').classList.add('hide');$('start').classList.remove('hide');
 $('start').onclick=async()=>{$('title').classList.add('gone');setTimeout(()=>$('title').remove(),900);$('hud').classList.remove('hide');startAudio();
  try{await document.documentElement.requestFullscreen?.();await screen.orientation?.lock?.('landscape');}catch(e){}
@@ -513,7 +519,7 @@ const _txt={};function setText(id,t){if(_txt[id]!==t){_txt[id]=t;$(id).textConte
 let frameErr=0;function frame(now){requestAnimationFrame(frame);try{frameBody(now);}catch(e){if(frameErr++<3)console.error('frame',e);}}
 function frameBody(now){const dt=Math.min(.05,(now-last)/1000)*(window.__G.ts||1);last=now;T+=dt;
  tickPlayer(dt);let gH=0;if(!dlgOpen&&!menuOpen()){S.min+=dt*1;gH=dt/60;if(S.min>=34*60){S.min-=24*60;S.day++;S.talkedDay={};S.asked={};}}
- ENV.update(dt,(S.min/60)%24,gH,S);LP.mul=ENV.lampMul*(R5?R5.lampMul:1);if(P.y>20)scene.fog.density*=.4;else if((P.z<-196&&P.x>58)||(P.z>200&&P.z<230&&P.x>26))scene.fog.density*=.3;// R11: overlooks see the lower tierselse if(P.x<-66&&P.x>-82&&Math.abs(P.z)>8)scene.fog.density*=.42;else if(riding)scene.fog.density*=.3;rain.m.geometry.setDrawRange(0,Math.round(rain.n*2*Math.min(1,ENV.st.rain*1.1)));rain.m.material.opacity=.18+.2*ENV.st.rain;
+ ENV.update(dt,(S.min/60)%24,gH,S);LP.mul=ENV.lampMul*(R5?R5.lampMul:1);if(P.y>20)scene.fog.density*=.4;else if((P.z<-196&&P.x>58)||(P.z>200&&P.z<230&&P.x>26))scene.fog.density*=.3;/* R11: overlooks see the lower tiers */else if(P.x<-66&&P.x>-82&&Math.abs(P.z)>8)scene.fog.density*=.42;else if(riding)scene.fog.density*=.3;rain.m.geometry.setDrawRange(0,Math.round(rain.n*2*Math.min(1,ENV.st.rain*1.1)));rain.m.material.opacity=.18+.2*ENV.st.rain;
  envBake-=gH;if(envBake<=0){envBake=1.5;const vis=[];cubeCam.position.set(P.x,P.y+.4,P.z);cubeCam.update(R,scene);}
  const hh=Math.floor(S.min/60)%24,mm=Math.floor(S.min%60);setText('clock',`Day ${S.day} · ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${fmtWeather(ENV.st.w)}`);if(S.open&&Math.hypot(P.x,P.z+5)>45){closeShop();}$('shop').textContent=S.open?'Working the Ladle':S.min>=26*60?'Curfew':'';{const on=$('shop').textContent?'':'none';$('shop').style.display=on;$('shop').previousElementSibling.style.display=on;}$('cash').textContent='¢'+S.cash.toLocaleString();
  tickNPCs(dt);R5&&R5.tick(dt,T);LADLE&&LADLE.tick(dt);tickStaff(dt);tickCreator(dt);if(S.jobDef&&typeof S.q.job==='number'){const p=S.jobDef.sp[S.q.job];jobMarker.visible=true;jobMarker.position.set(p[0],(p[3]||0)+1.3+Math.sin(T*2)*.1,p[1]);jobMarker.rotation.y=T;}else jobMarker.visible=false;tickShop(dt);tickCustomers(dt);tickPeds(dt);pickTarget();tickWaypoint(T);
