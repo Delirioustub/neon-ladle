@@ -18,7 +18,7 @@ const std=(c,r=.75,m=.05,str=.5)=>rim(new THREE.MeshStandardMaterial({color:c,ro
 const glow=c=>new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(2.2),toneMapped:false});
 // region masks by dominant bone
 const R_={top:/spine|clavicle|upperarm|neck/,sleeve:/spine|clavicle|upperarm|lowerarm|neck/,coatL:/spine|clavicle|upperarm|lowerarm|pelvis|thigh/,pants:/pelvis|thigh|calf|spine_01/,shorts:/pelvis|thigh/,boots:/foot|ball|calf/,gloves:/hand|index|middle|ring|pinky|thumb/,apron:/spine_01|spine_02|pelvis|thigh/};
-const shellCache=new Map();
+const shellCache=new Map(),PAD=new WeakSet();
 // Laplacian-smooth selected vertices (welded by position) so clothes drape instead of shrink-wrapping anatomy
 function smooth(geo,sel,it){const p=geo.attributes.position,n=p.count,key=new Map(),id=new Int32Array(n);
  for(let v=0;v<n;v++){const k=Math.round(p.getX(v)*500)+','+Math.round(p.getY(v)*500)+','+Math.round(p.getZ(v)*500);if(!key.has(k))key.set(k,key.size);id[v]=key.get(k);}
@@ -37,13 +37,13 @@ function shell(sk,sex,mat,region,push,opt={}){
   geo=g.clone();const p=geo.attributes.position,k=push*H/1.8;for(let v=0;v<p.count;v++){let s=k;if(opt.flare){const t=1-(p.getY(v)-bb.min.y)/H;s+=Math.max(0,t-.45)*opt.flare*H;}p.setXYZ(v,p.getX(v)+nor.getX(v)*s,p.getY(v)+nor.getY(v)*s,p.getZ(v)+nor.getZ(v)*s);}
   if(opt.smooth){const sel=new Uint8Array(p.count);for(let v=0;v<p.count;v++){let best=0,bi=0;for(let c=0;c<4;c++){const w=sw.getComponent(v,c);if(w>best){best=w;bi=si.getComponent(v,c);}}sel[v]=/spine|pelvis|clavicle/.test(bones[bi].name)?1:0;}const O=g.attributes.position;smooth(geo,sel,opt.smooth);for(let v=0;v<p.count;v++){const dx=p.getX(v)-O.getX(v),dy=p.getY(v)-O.getY(v),dz=p.getZ(v)-O.getZ(v),nx=nor.getX(v),ny=nor.getY(v),nz=nor.getZ(v),d=dx*nx+dy*ny+dz*nz;if(d<k)p.setXYZ(v,p.getX(v)+(k-d)*nx,p.getY(v)+(k-d)*ny,p.getZ(v)+(k-d)*nz);}}
   const idx=g.index.array,out=[];for(let i=0;i<idx.length;i+=3)if(ok[idx[i]]&&ok[idx[i+1]]&&ok[idx[i+2]])out.push(idx[i],idx[i+1],idx[i+2]);geo.setIndex(out);geo.clearGroups();geo.computeBoundingSphere();shellCache.set(key,geo);}
- const m=new THREE.SkinnedMesh(geo,mat);m.userData.shell=1;m.frustumCulled=false;m.bind(sk.skeleton,sk.bindMatrix);sk.parent.add(m);return m;}
+ const m=new THREE.SkinnedMesh(geo,mat);m.userData.shell=1;m.bind(sk.skeleton,sk.bindMatrix);sk.parent.add(m);return m;}
 // attach in *model space at bind pose*: a carrier group on the bone that cancels the bone's bind transform, so offsets are just (x right, y up, z forward) metres
 function carrier(root,bone){root.updateMatrixWorld(true);const g=new THREE.Group();const inv=new THREE.Matrix4().copy(bone.matrixWorld).invert().multiply(root.matrixWorld);inv.decompose(g.position,g.quaternion,g.scale);bone.add(g);return g;}
 // look: {sex:'m'|'f', skin, top, pants, boots, coat:{color,len,open}, hair:{style,color}, hat, hatColor, glow:{where,color}, gear:[...], slim, bulk, scale, android, apron, umbrella}
 export function makeHuman(look){const sex=look.sex||'f';const root=SkeletonUtils.clone(BASE[sex]);const H=new THREE.Group();H.add(root);
  const sc0=look.scale||1,kid=look.kid||sc0<.9;const s=(kid?sc0:Math.min(1.045,Math.max(.955,sc0)))*(sex==='m'?1.02:.97);/* normalized adult heights ~1.6-1.86m */root.scale.set(s*(look.slim||1)*(look.bulk||1),s,s*(look.slim||1)*(look.bulk||1));
- const bones={};root.traverse(o=>{if(o.isBone)bones[o.name]=o;if(o.isMesh)o.frustumCulled=false;});
+ const bones={};root.traverse(o=>{if(o.isBone)bones[o.name]=o;});
  const sk=bodyMesh(root);
  root.traverse(o=>{if(!o.isMesh||o.userData.shell)return;const mats=Array.isArray(o.material)?o.material:[o.material];o.material=mats.map(m=>{const n=m.clone();
    if(/Superhero/.test(m.name)){n.color=new THREE.Color(look.skin||0xd8b8a0).multiplyScalar(1.15);n.roughness=.62;n.metalness=look.android?.55:0;if(look.android){n.map=null;n.color=new THREE.Color(look.skin);n.roughness=.35;}rim(n,.45);}
@@ -55,10 +55,9 @@ export function makeHuman(look){const sex=look.sex||'f';const root=SkeletonUtils
  else{shell(sk,sex,std(look.body??0x8a96aa,.3,.7,.35),'pants',.004);shell(sk,sex,std(look.body??0x8a96aa,.3,.7,.35),'sleeve',.004);}
  const hb=bones.Head,sb=bones.spine_03,pb=bones.pelvis;const HC=hb?carrier(root,hb):H,SC=sb?carrier(root,sb):H,PC=pb?carrier(root,pb):H;
  if(look.coat){const c=look.coat;const mat=std(c.color,c.shiny?.35:.8,c.shiny?.3:.05,.6);mat.side=THREE.DoubleSide;
-  shell(sk,sex,mat,'sleeve',.022,{minH:.47,smooth:sex==='f'?18:8});
-  if(c.len>.5){// skirt: tapered open-front tube hung from the pelvis
-   const top=sex==='m'?1.0:.98,bot=Math.max(.25,1.9*(1-c.len)),h=top-bot,gap=c.open?.5:.22,rt=sex==='m'?.19:.2,rb=rt+h*.22;
-   const g=new THREE.CylinderGeometry(rt,rb,h,22,3,true,Math.PI*gap/2+Math.PI/2,Math.PI*(2-gap));const sk2=new THREE.Mesh(g,mat);sk2.position.set(0,top-h/2,-.005);sk2.scale.z=.82;PC.add(sk2);}}
+  if(c.len>.5){// long coat: one skinned shell over torso, arms and thighs, so the tails follow the legs instead of clipping through them
+   const bot=Math.max(.25,1.9*(1-c.len));shell(sk,sex,mat,'coatL',.026,{minH:Math.max(.16,bot/1.86),smooth:sex==='f'?18:8,flare:.1});}
+  else shell(sk,sex,mat,'sleeve',.022,{minH:.47,smooth:sex==='f'?18:8});}
  if(look.apron){const ap=new THREE.Mesh(new THREE.CylinderGeometry(.21,.27,.62,14,1,true,-Math.PI*.36,Math.PI*.72),std(look.apron,.9));ap.material.side=THREE.DoubleSide;ap.position.set(0,.72,.0);ap.scale.z=.85;PC.add(ap);const bib=new THREE.Mesh(new THREE.BoxGeometry(.26,.3,.02),std(look.apron,.9));bib.position.set(0,1.3,.15);SC.add(bib);}
  if(look.gloves)shell(sk,sex,std(look.gloves,.5,.2),'gloves',.006);
  // head metrics (bind pose, model space): find head top
@@ -91,10 +90,15 @@ export function makeHuman(look){const sex=look.sex||'f';const root=SkeletonUtils
   if(gr.t==='belt')add(SC,new THREE.Mesh(new THREE.TorusGeometry(.15,.015,4,20),std(0x111,.4,.5)),[0,headY-.72,0],[Math.PI/2,0,0]);}
  if(look.umbrella){const u=new THREE.Group();const c=new THREE.Mesh(new THREE.ConeGeometry(.55,.22,12,1,true),new THREE.MeshLambertMaterial({color:look.umbrella,side:THREE.DoubleSide,transparent:true,opacity:.75,emissive:new THREE.Color(look.umbrella).multiplyScalar(.3)}));c.position.y=.75;u.add(c);const st=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,.75),std(0x222));st.position.y=.37;u.add(st);
   const hr=bones.hand_r;if(hr){const cr=carrier(root,hr);cr.add(u);u.position.set(-.22,headY-.85,.1);H.userData.umb=u;}}
+ // culling: skinned meshes test a padded bind-pose sphere, so off-screen people cost no draw calls
+ H.traverse(o=>{if(o.isMesh){const g=o.geometry;if(!g.boundingSphere)g.computeBoundingSphere();if(o.isSkinnedMesh){o.boundingSphere=g.boundingSphere.clone();o.boundingSphere.radius+=.45;}o.frustumCulled=true;if(!o.isSkinnedMesh&&g.boundingSphere.radius<.09)(H.userData.small||(H.userData.small=[])).push(o);}});
  const mixer=new THREE.AnimationMixer(root);const acts={};const ts=look.tempo||1;
  for(const k in A)if(clips[A[k]]){acts[k]=mixer.clipAction(clips[A[k]]);acts[k].timeScale=(k==='idle'?.85:k==='talk'?.9:1)*ts;}
  if(acts.interact){acts.interact.setLoop(THREE.LoopOnce);acts.interact.clampWhenFinished=true;}
  let cur=null;const play=(k,fade=.4)=>{if(cur===k||!acts[k])return;const n=acts[k];const o=cur&&acts[cur];n.enabled=true;n.reset();
   if(o&&/walk|jog|formal/.test(k)&&/walk|jog|formal/.test(cur)){n.time=o.time/o.getClip().duration*n.getClip().duration;}// keep foot phase between gaits
   n.play();if(o)o.crossFadeTo(n,fade,false);else n.fadeIn(fade);cur=k;};play('idle',0);mixer.update(Math.random()*3);
- return {obj:H,mixer,play,bones,acts,get anim(){return cur;}};}
+ let acc=0,fc=Math.floor(Math.random()*4),far=false;
+ // distance LOD: full-rate animation up close, every 2nd/4th frame further out; tiny trinkets vanish past 26m
+ const lod=(d,dt)=>{acc+=dt;fc++;const n=d<14?1:d<28?2:4;if(fc%n===0||acc>.25){mixer.update(acc);acc=0;}const f=d>26;if(f!==far){far=f;for(const o of H.userData.small||[])o.visible=!f;}};
+ return {obj:H,mixer,play,bones,acts,lod,get anim(){return cur;}};}

@@ -7,6 +7,7 @@ import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {buildWorld,makeLightPool,makeRain,makeSteam,makeTraffic,rnd,pick,DISTRICTS,MATS} from './world.js';
 import {makeEnv,fmtWeather} from './env.js';
 import {buildCity,regionOf} from './city.js';
+import {dressCity} from './props.js';
 import {loadRig,makeHuman} from './chars.js';
 import {Input,initInput} from './input.js';
 import {DISH,CAST,PLACES,SCHED,PATROL,CHAT,TOPICS,makeQuests} from './story.js';
@@ -23,7 +24,7 @@ const cam=new THREE.PerspectiveCamera(66,2,.08,220);scene.add(cam);
 const hemi=new THREE.HemisphereLight(0x5a4a9a,0x120818,.6);scene.add(hemi);
 const moon=new THREE.DirectionalLight(0x6a7aff,.35);moon.position.set(-10,30,10);scene.add(moon);
 const fill=new THREE.PointLight(0xb8a8ff,2.2,8,1.3);scene.add(fill);
-const cand=[];const W=buildWorld(scene,cand);const CITY=buildCity(scene,cand);W.walk.push(...CITY.walk);Object.assign(W.districts,CITY.districts);const LP=makeLightPool(scene,cand,SET.low?10:18);
+const cand=[];const W=buildWorld(scene,cand);const CITY=buildCity(scene,cand);W.walk.push(...CITY.walk);Object.assign(W.districts,CITY.districts);dressCity(W.districts,cand);const LP=makeLightPool(scene,cand,SET.low?10:18);
 const cubeRT=new THREE.WebGLCubeRenderTarget(256,{type:THREE.HalfFloatType});const cubeCam=new THREE.CubeCamera(.5,120,cubeRT);scene.add(cubeCam);
 const composer=new EffectComposer(R);composer.addPass(new RenderPass(scene,cam));
 const bloom=new UnrealBloomPass(new THREE.Vector2(512,256),.75,.5,.72);composer.addPass(bloom);composer.addPass(new OutputPass());
@@ -169,7 +170,7 @@ const RUMORS=["The barges leave the Ashline pier at three in the morning. No lig
 function staffTalk(s0){const sh=s0.shop&&SHOPS[s0.shop];if(sh&&s0.shop==='bar'&&lookClass()==='high'&&!S.flags.heskCoat){S.flags.heskCoat=1;say(s0.k,['Nice coat. Lose it down here or somebody will lose it for you.'],[{t:'"Noted."'}]);return;}if(!sh){say(s0.k,[pick(s0.lines)],[{t:'"Thanks."'}]);return;}
  const opts=sh.items.map(([n,c,look,txt,rum])=>({t:`${n} · ¢${c}`,fx:()=>{if(S.cash<c){toast('Not enough cash');return;}S.cash-=c;if(look){S.look=Object.assign(S.look||{},look);rebuildPlayer();toast(`Bought ${n} · switch to third person to see it`);}else if(rum)setTimeout(()=>say(s0.k,[pick(RUMORS)],[{t:'"Huh."'}]),50);else toast(txt);save();}}));
  opts.push({t:'"Just looking."'});say(s0.k,[(s0.lines?pick(s0.lines)+' ':'')+sh.hi],opts);}
-function tickStaff(dt){for(const st of staff){const d=Math.hypot(st.s0.x-cam.position.x,st.s0.z-cam.position.z);st.h.obj.visible=d<45;if(d<25)st.h.mixer.update(dt);}}
+function tickStaff(dt){for(const st of staff){const d=Math.hypot(st.s0.x-cam.position.x,st.s0.z-cam.position.z);st.h.obj.visible=d<45;if(d<45)st.h.lod(d,dt);}}
 // ================= R3: look class, character creator, jobs, apartments =================
 function lookClass(){const l=S.look||{};if(l.hat==='hood')return'low';if(l.coat&&l.coat.shiny&&l.coat.len>=.7)return'high';return'mid';}
 let creating=false;const CC={sex:['f','m'],skin:[0xf0d0b8,0xe0b898,0xc89070,0x8a5a40,0x5a3828],hairF:['bob','bun','long','short','buzz'],hairM:['short','buzz','spiky','beard'],hairC:[0x101010,0x2a1a10,0x6a4a2a,0xc0b0a0,0xff3fa4,0x3ff0ff,0x5dff9b],coat:[[0x3a2440,.45,1],[0x16161c,.6,1],[0x2a2c22,.45,0],[0x5a2030,.72,1],null],glow:[0xff3fa4,0x3ff0ff,0x5dff9b,0xffe14d,null],height:[.96,1,1.04]};
@@ -267,7 +268,7 @@ const LANES=[[-44,7.4,-24,7.4],[-14,7.5,44,7.5],[-44,-7.6,-5,-7.6],[5,-7.6,19,-7
 const peds=[];const pools=[['mid',SET.low?8:16,LANES,()=>randLook(),1],['crown',SET.low?6:11,CITY.lanes.crown,()=>classLook('rich'),3],['docks',SET.low?6:12,CITY.lanes.docks,()=>classLook('poor'),0]];
 for(const [reg,cnt,lanes,lf,cops] of pools)for(let i=0;i<cnt;i++){const h=makeHuman(i<cops?COP():lf());scene.add(h.obj);const L=lanes[i%lanes.length];const len=Math.hypot(L[2]-L[0],L[3]-L[1]);peds.push({h,L,len,reg,t:Math.random(),dir:Math.random()<.5?1:-1,v:rnd(1,1.45)/len});h.play(i<cops?'formal':'walk');}
 function tickPeds(dt){const reg=regionOf(P.x,P.z);for(const p of peds){if(p.reg!==reg){p.h.obj.visible=false;continue;}p.t+=p.v*p.dir*dt;if(p.t>1){p.t=1;p.dir=-1;}if(p.t<0){p.t=0;p.dir=1;}const L=p.L;const x=L[0]+(L[2]-L[0])*p.t,z=L[1]+(L[3]-L[1])*p.t;const o=p.h.obj;o.position.set(x,0,z);
-  o.rotation.y=Math.atan2((L[2]-L[0])*p.dir,(L[3]-L[1])*p.dir);const d=Math.hypot(x-cam.position.x,z-cam.position.z);o.visible=d<(SET.low?32:44);if(o.visible&&d<30)p.h.mixer.update(dt);else if(o.visible)p.h.mixer.update(dt*.5);}}
+  o.rotation.y=Math.atan2((L[2]-L[0])*p.dir,(L[3]-L[1])*p.dir);const d=Math.hypot(x-cam.position.x,z-cam.position.z);o.visible=d<(SET.low?32:44);if(o.visible)p.h.lod(d,dt);}}
 // ================= NPC schedules =================
 function tickNPCs(dt){for(const k in npcs){const n=npcs[k],o=n.obj;const pl=placeFor(k);
   if(!pl){o.visible=false;continue;}if(k==='dess'&&!o.visible){o.visible=true;const pp=placePos(pl);o.position.set(pp[0],0,pp[1]);n.place=pl;n.arrived=true;}
@@ -277,7 +278,7 @@ function tickNPCs(dt){for(const k in npcs){const n=npcs[k],o=n.obj;const pl=plac
   if(n.talking){const a=Math.atan2(P.x-o.position.x,P.z-o.position.z);turn(o,a,dt);}
   else if(n.route.length){const t=n.route[0];const dx=t.x-o.position.x,dz=t.z-o.position.z,d=Math.hypot(dx,dz);if(d<.15){n.route.shift();if(!n.route.length)n.arrived=true;}else{const sp=(k==='ilse'?1.15:1.35)*dt;o.position.x+=dx/d*Math.min(sp,d);o.position.z+=dz/d*Math.min(sp,d);turn(o,Math.atan2(dx,dz),dt);n.h.play(k==='mara'?'formal':'walk');}}
   else{const pp=placePos(n.place);if(pp){if(pp[2]==='sit'){o.position.set(pp[0],0,pp[1]);o.rotation.y=pp[3];}else turn(o,pp[3],dt);n.h.play(pp[2]);}}
-  const d=Math.hypot(o.position.x-cam.position.x,o.position.z-cam.position.z);o.visible=o.visible&&d<70;if(d<40)n.h.mixer.update(dt);
+  const d=Math.hypot(o.position.x-cam.position.x,o.position.z-cam.position.z);o.visible=o.visible&&d<70;if(o.visible)n.h.lod(d,dt);
   const tg=tags[k];const show=o.visible&&d<7&&!dlgOpen;tg.style.display=show?'block':'none';if(show)place(tg,o.position.x,2.05,o.position.z);}}
 // ================= player / camera =================
 const P={x:-3.5,z:-1.5,y:0,yaw:0,pitch:.05,bob:0,sit:null};if(S.P){Object.assign(P,S.P);P.y=P.y||0;P.sit=null;}
@@ -375,7 +376,7 @@ ENV.onThunder=()=>{if(!audio)return;const A=audio.AC,t=A.currentTime+.4+Math.ran
 cam.position.set(0,1.6,-2);ENV.update(0,(S.min/60)%24,0,S);LP.update(10,cam);for(let i=0;i<20;i++)LP.update(.5,cam);cubeCam.position.set(0,.4,-2);cubeCam.update(R,scene);
 scene.traverse(o=>{if(o.material&&o.material.isMeshStandardMaterial&&o.material.metalness>.3){o.material.envMap=cubeRT.texture;o.material.envMapIntensity=.9;}});
 for(const k in npcs)tickNPCs(0);
-window.__S=S;window.__P=P;window.__G={jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,stepOf,get near(){return near;}};
+window.__S=S;window.__P=P;window.__G={setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,stepOf,get near(){return near;}};
 $('load').classList.add('hide');$('start').classList.remove('hide');
 $('start').onclick=async()=>{$('title').classList.add('gone');setTimeout(()=>$('title').remove(),900);$('hud').classList.remove('hide');startAudio();
  try{await document.documentElement.requestFullscreen?.();await screen.orientation?.lock?.('landscape');}catch(e){}

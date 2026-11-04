@@ -102,7 +102,7 @@ export const DISTRICTS={
  canal:{name:'Velvet Canal',cx:58,cz:0,rot:Math.PI/2,len:88,hw:10,kind:'canal',hmin:12,hmax:28,bridges:[-25,0,25],gaps:[{side:-1,a:-8.7,b:8.7}],caps:[-1,1],parent:'main',join:[50,0]}
 };
 export function buildWorld(scene,cand){const out={districts:{},flick:[],vents:[],steamPts:[],walk:[]};
- for(const k in DISTRICTS){seed=7+k.length*131+k.charCodeAt(0);const d=corridor(scene,DISTRICTS[k],cand);out.districts[k]=d;out.flick.push(...d.flick);out.vents.push(...d.vents);out.steamPts.push(...d.steamPts);}
+ for(const k in DISTRICTS){if(DISTRICTS[k].cls)continue;seed=7+k.length*131+k.charCodeAt(0);const d=corridor(scene,DISTRICTS[k],cand);out.districts[k]=d;out.flick.push(...d.flick);out.vents.push(...d.vents);out.steamPts.push(...d.steamPts);}
  // walkable rectangles (world AABBs)
  const rect=(x0,x1,z0,z1)=>out.walk.push([Math.min(x0,x1),Math.max(x0,x1),Math.min(z0,z1),Math.max(z0,z1)]);
  rect(-47.5,49,-8.2,8.2);rect(21.2,26.8,-48,-8);rect(-26.6,-17.4,7.5,41);rect(-38.5,-5.5,40.5,67.6);

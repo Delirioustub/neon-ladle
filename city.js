@@ -150,7 +150,12 @@ export function buildCity(scene,cand){
   const cv=document.createElement('canvas');cv.width=256;cv.height=128;const g=cv.getContext('2d');const gr=g.createLinearGradient(0,0,0,128);gr.addColorStop(0,key==='crown'?'#1a2238':'#120a22');gr.addColorStop(1,'#2a1438');g.fillStyle=gr;g.fillRect(0,0,256,128);
   for(let i=0;i<40;i++){const bx=Math.random()*256,bw=8+Math.random()*24,bh=(key==='crown'?20:50)+Math.random()*70;g.fillStyle='#0a0812';g.fillRect(bx,128-bh,bw,bh);for(let k=0;k<6;k++){g.fillStyle=['#ffc98a','#3ff0ff','#ff3fa4','#ffe14d'][k%4];g.globalAlpha=.6;g.fillRect(bx+Math.random()*bw,128-Math.random()*bh,2,2);g.globalAlpha=1;}}
   const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;const win=new THREE.Mesh(new THREE.PlaneGeometry(2.5,1.4),new THREE.MeshBasicMaterial({map:t,toneMapped:false}));win.position.set(x,1.5,z-d/2-.05);scene.add(win);
-  B.add(x+2.4,.3,z+1.4,1.8,.5,1.9,0x3a3040);B.add(x+2.4,.6,z+1.4,1.7,.12,1.8,0xd8d0c8);L(x,2.6,z,0xffd9a0,3,7);L(x,1.6,z-2,col,2,6);
+  B.add(x+2.4,.3,z+1.4,1.8,.5,1.9,0x3a3040);B.add(x+2.4,.6,z+1.4,1.7,.12,1.8,0xd8d0c8);L(x,2.6,z,0xffd9a0,6,9);L(x,1.6,z-2,col,4,7);L(x+2.2,2.2,z+1.4,0xffc890,3.5,6);Gl.add(x,2.93,z,1.6,.03,.5,0xffe8c8);
+  // lived-in furniture: kitchenette, desk + monitor, shelf, poster, hanging bulb
+  B.add(x-2.9,.45,z+.2,.9,.9,2.2,0x2a2630);Mt.add(x-2.9,.92,z+.2,.92,.04,2.22,0x8a8a92);Gh.add(x-2.9,1.6,z+.2,.5,.03,1.6,0xffe8c8);B.add(x-3.1,1.9,z+.2,.4,.5,1.8,0x22202a);
+  B.add(x-.9,.75,z+2.2,1.6,.06,.6,0x3a2e2a);B.add(x-1.6,.38,z+2.2,.06,.75,.5,0x2a2222);B.add(x-.2,.38,z+2.2,.06,.75,.5,0x2a2222);B.add(x-.9,1.1,z+2.4,.7,.42,.04,0x101014);Gl.add(x-.9,1.1,z+2.37,.62,.34,.02,key==='crown'?0x9fe8ff:key==='docks'?0x5dff9b:0xff3fa4);
+  for(let k=0;k<3;k++){B.add(x+3.2,.6+k*.6,z-.6,.5,.04,1.4,0x3a3028);for(let j=0;j<4;j++)B.add(x+3.25,.75+k*.6,z-1.1+j*.33,.3,.26,.12,[0x6a2a3a,0x2a4a6a,0xc8b890,0x3a5a3a][(j+k)%4]);}
+  Gh.add(x+.6,2.45,z-.2,.14,.18,.14,0xffd9a0);B.add(x+.6,2.75,z-.2,.01,.5,.01,0x111);L(x+.6,2.3,z-.2,0xffc070,3,5);
   W(x-w/2+.35,x+w/2-.35,z-d/2+.35,z+d/2-.35);out.rooms.push([x-w/2,x+w/2,z-d/2,z+d/2,3]);
   out.apts[key]={key,name,blurb,price,x,z,door,col,slots:[[x-2.8,0,z+1.9],[x+2.9,0,z-1.9],[x-2.9,0,z-1.6],[x,2.95,z],[x+.5,1.6,z+2.38]]};}
  B.build(scene);Gl.build(scene);Gh.build(scene);Mt.build(scene);
