@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#07060f"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<title>Neon Ladle</title><link rel="stylesheet" href="style.css">
+<script type="importmap">{"imports":{"three":"./lib/three.module.js","three/addons/":"./lib/jsm/"}}</script></head><body>
+<canvas id="c"></canvas>
+<div id="tags"></div>
+<div id="hud" class="hide">
+ <div id="tl"><span id="clock">18:00</span><span class="dot">·</span><span id="shop">Closed</span><span class="dot">·</span><span id="cash">¢0</span></div>
+ <div id="tr"><div id="track"></div><button id="menuB" aria-label="menu">≡</button></div>
+ <div id="joy"><div id="knob"></div></div>
+ <button id="act" class="hide"></button>
+ <div id="toasts"></div>
+</div>
+<div id="cook" class="hide"><div id="cookTitle">Kitchen</div><div id="dishes"></div><div id="pots"></div><div id="cookFoot"></div><button class="x" data-close="cook">✕</button></div>
+<div id="dlg" class="hide"><div id="dname"></div><div id="dheart"></div><div id="dtext"></div><div id="dopts"></div></div>
+<div id="menu" class="hide"><div id="tabs"><button data-t="q">Quests</button><button data-t="p">People</button><button data-t="l">Ledger</button><button data-t="o">Options</button></div><div id="mbody"></div><button class="x" data-close="menu">✕</button></div>
+<div id="title"><div class="logo">NEON LADLE</div><div class="sub">a rainy night in Saltgate Ward</div><div id="load">loading the city…</div><button id="start" class="hide">Tap to step inside</button><div class="hint">best in landscape · headphones on</div></div>
+<div id="rotate"><div>↻</div>Turn your phone sideways</div>
+<script type="module" src="game.js"></script></body></html>

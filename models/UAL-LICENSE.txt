@@ -1,0 +1,4 @@
+Universal Animation Library by Quaternius (https://quaternius.com)
+License: CC0 1.0 Universal (Public Domain Dedication)
+https://creativecommons.org/publicdomain/zero/1.0/
+You may use, modify and distribute these assets for any purpose, including commercial, without attribution. Credit is given anyway in CREDITS.md.
