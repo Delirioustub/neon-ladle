@@ -8,7 +8,7 @@
 - **Character portraits (`portraits/*.jpg`):** original images generated with an AI image generator for this project. They depict original characters only.
 - **Engine:** three.js r169 (MIT), including GLTFLoader, SkeletonUtils, BufferGeometryUtils and the UnrealBloom post-processing passes.
 - **Districts (Saltgate, Lantern Market, Line 9 Approach and Plaza, Velvet Canal), neon signs, rain, steam, traffic, the train and the Ladle:** procedurally built for this project.
-- **Audio:** rain, ambience, crowd, canal water and train rumble are synthesized at runtime with WebAudio. No audio files are used.
+- **Audio:** rain, ambience, crowd, canal water and train rumble are synthesized at runtime with WebAudio. (Since R6, voice lines and some ambience also ship as mp3 files; see the R6 section.)
 - **Story, quests, characters, names and text:** original. The game is inspired by the mood of cozy cyberpunk life sims but contains no assets, names or text from Nivalis or Cloudpunk.
 
 ## v1 (`/v1/`)

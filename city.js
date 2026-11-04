@@ -89,7 +89,7 @@ export function buildCity(scene,cand){
    const ph=i*1.7;out.anim.push((t,red)=>{g.position.set(Math.sin(t*.13+ph)*50,7+Math.sin(t*.7+ph),cz+Math.cos(t*.21+ph)*6);g.rotation.y=t*.5;l.material.color.setHex(red&&Math.sin(t*10)>0?0xff2040:0x3f8aff).multiplyScalar(3);});}
   out.lanes.crown=[[-55,cz-9.6,55,cz-9.6],[-55,cz+9.6,55,cz+9.6],[-50,cz-8,50,cz-8],[-45,cz+8.2,45,cz+8.2],[-30,cz-6,30,cz-6],[-40,cz+5.5,-10,cz+5.5],[10,cz+5.5,45,cz+5.5]];
   // Ring Line station (west end)
-  station('crown','CROWN EXCHANGE',-53,cz+7.5,Math.PI/2,0xffffff,true);}
+  station('crown','CROWN EXCHANGE',-53,cz+7.5,Math.PI/2,0xffd9a0,true);}
  // ======================= ASHLINE DOCKS (poor) =======================
  {const cz=260,N=cz-6.5,S=cz+6.5;W(-49,49,N+.3,S-.3);
   // rooftops (y 7.5) + plank bridge + fire ladders
@@ -134,7 +134,7 @@ export function buildCity(scene,cand){
  // ---------- station kiosk: glowing stair head ----------
  function station(key,name,x,z,ry,col,rich,small){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=ry;scene.add(g);
   const mk=(sx,sy,sz,px,py,pz,c,basic)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),basic?new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(2),toneMapped:false}):new THREE.MeshLambertMaterial({color:c}));m.position.set(px,py,pz);g.add(m);};
-  mk(3.4,.1,4.2,0,3,0,rich?0xd8d4d0:0x2a2632);mk(.12,3,.12,-1.6,1.5,-2,0x3a3644);mk(.12,3,.12,1.6,1.5,-2,0x3a3644);mk(.12,3,.12,-1.6,1.5,2,0x3a3644);mk(.12,3,.12,1.6,1.5,2,0x3a3644);
+  mk(3.4,.1,4.2,0,3,0,rich?0x4a4652:0x2a2632);mk(.12,3,.12,-1.6,1.5,-2,0x3a3644);mk(.12,3,.12,1.6,1.5,-2,0x3a3644);mk(.12,3,.12,-1.6,1.5,2,0x3a3644);mk(.12,3,.12,1.6,1.5,2,0x3a3644);
   for(let k=0;k<6;k++)mk(2.8,.08,.5,0,.02-k*.0,-1.6+k*.55,0x1a1820);mk(2.8,.04,.04,0,.08,-1.9,col,1);mk(3.3,.04,.04,0,2.9,2.05,col,1);mk(1.6,.9,.04,0,.6,-2.1,0x101018);
   const st=signTex('RING LINE · '+name,col,{fs:56});const sm=new THREE.Mesh(new THREE.PlaneGeometry(.55*st.aspect,.55),new THREE.MeshBasicMaterial({map:st.t,toneMapped:false,side:THREE.DoubleSide}));sm.position.set(0,3.4,2.1);g.add(sm);
   const sm2=sm.clone();sm2.position.z=-2.1;g.add(sm2);g.updateMatrixWorld();const wp=new THREE.Vector3(0,1.5,0).applyMatrix4(g.matrixWorld);L(wp.x,2.6,wp.z,col,5,10);
