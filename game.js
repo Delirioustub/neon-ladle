@@ -11,6 +11,7 @@ import {dressCity} from './props.js';
 import {buildCauseway} from './causeway.js';
 import {buildLayers} from './layers.js';
 import {loadRig,makeHuman} from './chars.js';
+import {buildRide,GX as RGX,GY as RGY} from './metro.js';
 import {Input,initInput} from './input.js';
 import {DISH,CAST,PLACES,SCHED,PATROL,CHAT,TOPICS,makeQuests} from './story.js';
 import {makeActs} from './story5.js';
@@ -165,10 +166,17 @@ function tp(x,y,z,yaw){if(bk.on)dismountBike(true);fade();setTimeout(()=>{P.x=x;
 function cityAct(a){if(a.type==='tp'){tp(a.x,a.y,a.z,a.yaw);if(a.msg)setTimeout(()=>toast(a.msg),700);}
  else if(a.type==='sit'){P.x=a.x;P.z=a.z;P.y=a.y;P.yaw=a.yaw;P.sit=1;toast('Sitting · move to stand');}
  else if(a.type==='read')inspect(a.t,a.t==='Wardline scan'?(lookClass()==='high'?'The arch hums. A soft chime: RESIDENT-GRADE ATTIRE · WELCOME BACK. Nobody looks twice at you.':lookClass()==='low'?'The arch hums, then buzzes. VISITOR · LOW CITY ORIGIN · MONITORED. Two drones swing your way and hang there.':a.x):a.x);else if(a.type==='metro')metro(a.from);}
-function metro(from){const st=CITY.stations;const opts=Object.keys(st).filter(k=>k!==from).map(k=>({t:`Ride to ${st[k].name}${S.cash>=5?' · ¢5':''}`,fx:()=>{if(S.cash>=5){S.cash-=5;}else toast('You hop the turnstile. Nobody stops you. This time.');ride(k);}}));
+function metro(from){const st=CITY.stations;const pay=()=>{if(S.cash>=5){S.cash-=5;}else toast('You hop the turnstile. Nobody stops you. This time.');};const opts=[];
+ for(const k of Object.keys(st).filter(k=>k!==from)){opts.push({t:`Ride to ${st[k].name}${S.cash>=5?' · ¢5':''}`,fx:()=>{pay();ride(k,from);}});opts.push({t:`⏩ Fast travel to ${st[k].name}`,fx:()=>{pay();ride(k,from,true);}});}
  opts.push({t:'Not now'});say('Ring Line',['Stairs down into warm, stale air. A chime, a voice older than the city: "Ring Line. Mind the gap. Mind your business."'],opts);}
-function ride(to){if(bk.on)dismountBike(true);fade();setTimeout(()=>{P.x=-3;P.z=CITY.car.cz+.3;P.y=0;P.yaw=-Math.PI/2;P.sit=null;riding={to,t:11};toast('Next stop · '+CITY.stations[to].name);},350);}
-function tickRide(dt){if(!riding)return;riding.t-=dt;if(riding.t<=0){const s=CITY.stations[riding.to];riding=null;fade();setTimeout(()=>{P.x=s.spawn[0];P.z=s.spawn[1];P.y=0;P.sit=null;emit('metro');},350);}}
+// R13: the live ride on the elevated guideway (real city through the windows); the old underground car stays as the fast-travel fade
+let RIDE=null;const skipB=document.createElement('button');skipB.id='rideSkip';skipB.textContent='Skip ⏩';skipB.style.cssText='position:fixed;right:14px;bottom:18px;z-index:40;padding:10px 16px;border-radius:12px;border:1px solid #3ff0ff88;background:#0a0814cc;color:#bff8ff;font:600 15px system-ui;display:none';document.body.appendChild(skipB);
+skipB.onclick=()=>{if(riding&&riding.live)arrive();};
+function arrive(){const s=CITY.stations[riding.to];skipB.style.display='none';fade();const r=riding;riding=null;setTimeout(()=>{RIDE&&RIDE.stop();P.x=s.spawn[0];P.z=s.spawn[1];P.y=0;P.sit=null;P.pitch=0;emit('metro');},350);}
+function ride(to,from,fast){if(bk.on)dismountBike(true);fade();
+ if(fast||!from){setTimeout(()=>{P.x=-3;P.z=CITY.car.cz+.3;P.y=0;P.yaw=-Math.PI/2;P.sit=null;riding={to,t:fast?3:11};toast('Next stop · '+CITY.stations[to].name);},350);return;}
+ setTimeout(()=>{RIDE=RIDE||buildRide(scene,CITY,makeHuman,walkable);const r=RIDE.start(from,to);riding={to,live:1,t:r.T+1};P.yaw=-Math.PI/2;P.pitch=.06;P.sit=1;tickRide(0);skipB.style.display='block';toast('Ring Line · next stop '+CITY.stations[to].name+' · tap Skip to fast travel');},350);}
+function tickRide(dt){if(!riding)return;if(riding.live){const done=RIDE.tick(dt);P.x=RGX-1.1;P.z=RIDE.car.position.z-2.6;P.y=RGY;P.sit=1;if(done)arrive();return;}riding.t-=dt;if(riding.t<=0){const s=CITY.stations[riding.to];riding=null;fade();setTimeout(()=>{P.x=s.spawn[0];P.z=s.spawn[1];P.y=0;P.sit=null;emit('metro');},350);}}
 const staff=[];for(const s0 of CITY.staff){const look=s0.rand?Object.assign(randLook(),{sex:s0.sex}):Object.assign({pants:0x1a1a22,boots:0x0c0a0e},s0.look);const h=makeHuman(look);h.obj.position.set(s0.x,s0.sit?.1:0,s0.z);h.obj.rotation.y=s0.ry;scene.add(h.obj);h.play(s0.sit?'sit':'idle');staff.push({h,s0});
  interact.push({id:'staff'+staff.length,pos:()=>new THREE.Vector3(s0.x,1.3,s0.z),r:2.6,label:(s0.shop?'Talk · ':'')+s0.k,fn:()=>staffTalk(s0),cond:()=>true});}
 const SHOPS={
@@ -342,7 +350,7 @@ function tickPlayer(dt){if(creating){Input.consumeLook();return;}const lk=Input.
   if(walkable(nx,P.z))P.x=nx;if(walkable(P.x,nz))P.z=nz;P.bob+=dt*m*9;if(P.y<.55&&P.y>-1.5)P.y=groundY(P.x,P.z,P.y);}
  const eye=P.y+(onB?1.42:P.sit?1.12:1.62)+(onB?BK.g.position.y-P.y-.1:0)+Math.sin(P.bob)*.035*Math.min(1,m*2)+(riding?Math.sin(T*7)*.012:0);
  fwd.set(-Math.sin(P.yaw)*Math.cos(P.pitch),Math.sin(P.pitch),-Math.cos(P.yaw)*Math.cos(P.pitch));
-const tpNow=viewTP&&(onB||riding||!CITY.inRoom(P.x,P.z,P.y+1));if(tpNow!==tickPlayer.tp){tickPlayer.tp=tpNow;if(tpNow)camTP.set(P.x,P.y+1.95,P.z);}
+const tpNow=viewTP&&!(riding&&riding.live)&&(onB||riding||!CITY.inRoom(P.x,P.z,P.y+1));if(tpNow!==tickPlayer.tp){tickPlayer.tp=tpNow;if(tpNow)camTP.set(P.x,P.y+1.95,P.z);}
   player.obj.position.set(P.x,P.y,P.z);player.obj.rotation.y=P.yaw+Math.PI;if(onB){player.obj.position.set(BK.g.position.x+Math.sin(S.bike.h)*.15,BK.g.position.y+.35,BK.g.position.z+Math.cos(S.bike.h)*.15);player.obj.rotation.y=S.bike.h+Math.PI;}player.play(P.sit||onB?'sit':m>.08?(m>.85?'jog':'walk'):'idle');player.obj.visible=tpNow;if(tpNow)(player.mixer.update(dt),player.obj.userData.umb&&player.obj.userData.umb.userData.fit());
  if(tpNow){const back=new THREE.Vector3(Math.sin(P.yaw),0,Math.cos(P.yaw));const want=new THREE.Vector3(P.x,P.y+(onB?2.2:1.95),P.z).addScaledVector(back,onB?4.2+bsp*.04:2.6).add(new THREE.Vector3(Math.cos(P.yaw)*.55,0,-Math.sin(P.yaw)*.55));
   {const hx=P.x,hz=P.z;let f=1;for(let i=1;i<=10;i++){const t=i/10,x=hx+(want.x-hx)*t,z=hz+(want.z-hz)*t;if(!walkable(x,z)||CITY.inRoom(x,z,want.y)!==CITY.inRoom(hx,hz,want.y)){f=Math.max(.12,(i-1.6)/10);break;}}if(f<1){want.x=hx+(want.x-hx)*f;want.z=hz+(want.z-hz)*f;want.y-=(1-f)*.35;camTP.copy(want);}}camTP.lerp(want,1-Math.exp(-dt*8));cam.position.copy(camTP);cam.lookAt(cam.position.x+fwd.x,cam.position.y+fwd.y-.12,cam.position.z+fwd.z);}
@@ -505,7 +513,7 @@ scene.traverse(o=>{if(o.material&&o.material.isMeshStandardMaterial&&o.material.
 for(const k in npcs)tickNPCs(0);
 Object.assign(G,{Q,stepOf,onList,qAdv,emit,interact,say,fade,W,CITY,cand,makeHuman,walkable,regionOf,lookClass,CAST,Input,THREE,scene,P,cam,npcs,dlg:()=>dlgOpen,riding:()=>!!riding||bk.on&&Math.abs(bk.v)>4});R5=initR5(G);window.R5=R5;LADLE=initLadle(G);
 if(S.q.m8==='done'&&S.q.m9===undefined)setTimeout(()=>{chapter('Act Three','The Weather Men');qStart('m9');},2500);
-window.__S=S;window.__P=P;window.__G={groundY,makeHuman,CAST,tickNPCs:dt=>tickNPCs(dt),PLACES,R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,inWalk,stepOf,placeFor,placePos,stepTarget,onList,S,get near(){return near;}};
+window.__S=S;window.__P=P;window.__G={groundY,makeHuman,get RIDE(){return RIDE},ride,get riding(){return riding},CAST,tickNPCs:dt=>tickNPCs(dt),PLACES,R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,inWalk,stepOf,placeFor,placePos,stepTarget,onList,S,get near(){return near;}};
 $('load').classList.add('hide');$('start').classList.remove('hide');
 $('start').onclick=async()=>{$('title').classList.add('gone');setTimeout(()=>$('title').remove(),900);$('hud').classList.remove('hide');startAudio();
  try{await document.documentElement.requestFullscreen?.();await screen.orientation?.lock?.('landscape');}catch(e){}
@@ -526,7 +534,7 @@ const _txt={};function setText(id,t){if(_txt[id]!==t){_txt[id]=t;$(id).textConte
 let frameErr=0;function frame(now){requestAnimationFrame(frame);try{frameBody(now);}catch(e){if(frameErr++<3)console.error('frame',e);}}
 function frameBody(now){const dt=Math.min(.05,(now-last)/1000)*(window.__G.ts||1);last=now;T+=dt;
  tickPlayer(dt);let gH=0;if(!dlgOpen&&!menuOpen()){S.min+=dt*1;gH=dt/60;if(S.min>=34*60){S.min-=24*60;S.day++;S.talkedDay={};S.asked={};}}
- ENV.update(dt,(S.min/60)%24,gH,S);LP.mul=ENV.lampMul*(R5?R5.lampMul:1);if(P.y>20)scene.fog.density*=.4;else if((P.z<-196&&P.x>58)||(P.z>200&&P.z<230&&P.x>26))scene.fog.density*=.3;/* R11: overlooks see the lower tiers */else if(P.x<-66&&P.x>-82&&Math.abs(P.z)>8)scene.fog.density*=.42;else if(riding)scene.fog.density*=.3;rain.m.geometry.setDrawRange(0,Math.round(rain.n*2*Math.min(1,ENV.st.rain*1.1)));rain.m.material.opacity=.18+.2*ENV.st.rain;
+ ENV.update(dt,(S.min/60)%24,gH,S);LP.mul=ENV.lampMul*(R5?R5.lampMul:1);if(P.y>20)scene.fog.density*=.4;else if(riding&&riding.live)scene.fog.density*=.2;/* R13: city through the train windows */else if((P.z<-196&&P.x>58)||(P.z>200&&P.z<230&&P.x>26))scene.fog.density*=.3;/* R11: overlooks see the lower tiers */else if(P.x<-66&&P.x>-82&&Math.abs(P.z)>8)scene.fog.density*=.42;else if(riding)scene.fog.density*=.3;rain.m.geometry.setDrawRange(0,Math.round(rain.n*2*Math.min(1,ENV.st.rain*1.1)));rain.m.material.opacity=.18+.2*ENV.st.rain;
  envBake-=gH;if(envBake<=0){envBake=1.5;const vis=[];cubeCam.position.set(P.x,P.y+.4,P.z);cubeCam.update(R,scene);}
  const hh=Math.floor(S.min/60)%24,mm=Math.floor(S.min%60);setText('clock',`Day ${S.day} · ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${fmtWeather(ENV.st.w)}`);if(S.open&&Math.hypot(P.x,P.z+5)>45){closeShop();}$('shop').textContent=S.open?'Working the Ladle':S.min>=26*60?'Curfew':'';{const on=$('shop').textContent?'':'none';$('shop').style.display=on;$('shop').previousElementSibling.style.display=on;}$('cash').textContent='¢'+S.cash.toLocaleString();
  tickNPCs(dt);R5&&R5.tick(dt,T);LADLE&&LADLE.tick(dt);tickStaff(dt);tickCreator(dt);if(S.jobDef&&typeof S.q.job==='number'){const p=S.jobDef.sp[S.q.job];jobMarker.visible=true;jobMarker.position.set(p[0],(p[3]||0)+1.3+Math.sin(T*2)*.1,p[1]);jobMarker.rotation.y=T;}else jobMarker.visible=false;tickShop(dt);tickCustomers(dt);tickPeds(dt);pickTarget();tickWaypoint(T);
