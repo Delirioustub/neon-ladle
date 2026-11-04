@@ -109,7 +109,7 @@ export function makeQuests(G){const {S,rel,note,toast,flag}=G;
  m8:{t:'Homecoming',main:1,ch:2,steps:[
   {d:'Open the Ladle and serve Dess a Midnight Miso',at:[0,-4.4],on:'serve:dess:miso'},
   {d:'Talk to Dess behind the counter',at:'dess',on:'talk:dess',say:()=>{const l=S.flags.ledger;return [["...","Toast the paste. You did. I can tell.",l==='ilse'?"Tomas came by the clinic today. Sela cried. Don't tell her I told you.":l==='juno'?"Every courier in the city has a duck sticker on their chest now. Did you know that? Solidarity, Juno calls it.":"The street's quieter than it should be. Some stools are always going to be empty, I think.","The Ladle's yours, kid. I'll just be in the back, criticising."],[{t:'"Welcome home."',fx:()=>{rel('dess',2);},adv:1}]];}}],
-  done:()=>{G.chapter('Chapter Two complete','The Ladle has two cooks now. Saltgate keeps raining.');S.up.stools=Math.max(S.up.stools,5);}},
+  done:()=>{G.chapter('Chapter Two complete','The Ladle has two cooks now. Saltgate keeps raining.');S.up.stools=Math.max(S.up.stools,5);setTimeout(()=>{G.chapter('Act Three','The Weather Men');G.start('m9');},5000);}},
  // ---------- side quests ----------
  s1:{t:'Tea Before Rounds',giver:'sela',steps:[{d:'Serve Sela a Kettle Tea when she comes by the Ladle (around 20:00)',at:'sela',on:'serve:sela:tea'}],done:()=>{rel('sela',2);S.cash+=40;}},
  s2:{t:'Drone in the Wires',giver:'kip',steps:[{d:"Find Kip's drone, snagged on an awning at the west end of Saltgate",at:[-30,-6.3],on:'interact:drone'},{d:'Return Mothball to Kip',at:'kip',on:'talk:kip',say:()=>[["MOTHBALL! You absolute legend. I owe you. Digitally."],[{t:'"Keep her out of the wind."',adv:1}]]}],done:()=>{rel('kip',2);S.cash+=60;}},

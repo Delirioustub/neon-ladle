@@ -12,6 +12,9 @@ import {buildCauseway} from './causeway.js';
 import {loadRig,makeHuman} from './chars.js';
 import {Input,initInput} from './input.js';
 import {DISH,CAST,PLACES,SCHED,PATROL,CHAT,TOPICS,makeQuests} from './story.js';
+import {makeActs} from './story5.js';
+import {initR5} from './r5.js';
+let R5=null;
 const $=id=>document.getElementById(id);
 // ================= settings (device-agnostic; persisted) =================
 const SET=Object.assign({low:0,scale:1,master:.8,rain:.8,amb:.7,view:'fp',sens:1},JSON.parse(localStorage.getItem('nlSettings')||'{}'));
@@ -54,7 +57,7 @@ const flag=(k,v)=>{S.flags[k]=v;};
 function chapter(a,b){const c=$('chapter');c.innerHTML=`<b>${a}</b><span>${b}</span>`;c.classList.remove('show');void c.offsetWidth;c.classList.add('show');}
 // ================= quest engine =================
 const G={S,rel,note,toast,flag,chapter,start:qStart,openGate,nextPoster:()=>POSTERS.find((p,i)=>!S.flags['poster'+i])?.slice(0,2),nextJbox:()=>JBOX.find((p,i)=>!S.flags['jbox'+i])};
-const Q=makeQuests(G);
+const Q=makeQuests(G);G.rep=(f,d)=>{};Object.assign(Q,makeActs(G));
 function qStart(id){if(S.q[id]===undefined){S.q[id]=0;if(!S.track||S.q[S.track]==='done'||Q[id].main)S.track=id;toast(`New ${Q[id].main?'story':'side'} quest · <b>${Q[id].t}</b>`);save();}}
 function qAdv(id){const q=Q[id];if(typeof S.q[id]!=='number')return;S.q[id]++;if(S.q[id]>=q.steps.length){S.q[id]='done';toast(`Quest complete · <b>${q.t}</b>`);q.done&&q.done();if(S.track===id)S.track=Object.keys(Q).find(k=>typeof S.q[k]==='number'&&Q[k].main)||Object.keys(Q).find(k=>typeof S.q[k]==='number')||null;}save();}
 const stepOf=id=>typeof S.q[id]==='number'?Q[id].steps[S.q[id]]:null;
@@ -92,7 +95,7 @@ function talk(k){const n=npcs[k];
  const tops=[['dess','Ask about Dess'],['orrin','Ask about Orrin Mutual'],['line9','Ask about Line 9']].filter(([t])=>TOPICS[t][k]&&!(S.asked[k+t]===S.day));
  if(tops.length){const [t,l]=tops[0];opts.push({t:l,then:()=>{S.asked[k+t]=S.day;say(k,[TOPICS[t][k]],[{t:'"Thanks."'}]);}});}
  if(k==='dess'&&S.flags.dessHome)opts.unshift({t:'"Any tips, chef?"',then:()=>say('dess',[pick(["Customers wait longer if you look busy. Look busy.","Tea's a gateway. Nobody leaves after tea. They want soup.","Close before curfew. Wardline doesn't tip."])],[])});
- opts.push({t:'"Night."'});say(k,[line],opts);}
+ R5&&R5.talkOpts(k,opts);opts.push({t:'"Night."'});say(k,[line],opts);}
 // ================= people =================
 await loadRig('models/');
 const npcs={};const tags={};
@@ -113,7 +116,7 @@ function classLook(cls){const l=randLook();if(cls==='rich'){l.hat=Math.random()<
  return l;}
 const COP=()=>({sex:pick(['m','f']),skin:pick(SKIN),top:0x1e2a44,pants:0x141c30,boots:0x08080c,hair:{style:'buzz',color:0x2a1a10},hat:'cap',hatColor:0x141c30,coat:{color:0x1c2640,len:.6,shiny:1},glow:{where:'collar',color:0x3f8aff},gear:[{t:'pads',col:0x141c30}],scale:rnd(.98,1.04)});
 // district graph routing
-function districtAt(x,z){{const r=regionOf(x,z);if(r!=='mid')return r;}if(x>=47.5)return'canal';if(z<-8.3&&x>20&&x<28)return'alley';if(z>8.3&&z<40.6&&x>-28&&x<-16)return'avenue';if(z>=40.4&&x<-4)return'plaza';return'main';}
+function districtAt(x,z){if(z>500&&z<600&&Math.abs(x)<12)return'node14';{const r=regionOf(x,z);if(r!=='mid')return r;}if(x>=47.5)return'canal';if(z<-8.3&&x>20&&x<28)return'alley';if(z>8.3&&z<40.6&&x>-28&&x<-16)return'avenue';if(z>=40.4&&x<-4)return'plaza';return'main';}
 const chain=d=>{const c=[d];while(DISTRICTS[c[c.length-1]].parent)c.push(DISTRICTS[c[c.length-1]].parent);return c;};
 function route(x0,z0,x1,z1){const a=chain(districtAt(x0,z0)),b=chain(districtAt(x1,z1));const pts=[];let common=a.find(d=>b.includes(d));
  for(const d of a){if(d===common)break;pts.push(DISTRICTS[d].join);}const down=[];for(const d of b){if(d===common)break;down.unshift(DISTRICTS[d].join);}pts.push(...down);
@@ -168,9 +171,9 @@ const SHOPS={
  bar:{hi:"Hesk wipes a glass with a dirtier rag.",items:[['Ashline lager',4,null,'Tastes like a battery and a long day. Perfect.'],['Buy Hesk a drink (hear a rumor)',6,null,null,1]]},
  pawn:{hi:"Ninefingers taps the counter. Nine times.",items:[['Patched black umbrella',10,{umbrella:0x1a1a22}],['Hooded rain shell',30,{hat:'hood',coat:{color:0x2a2c22,len:.45}}],['Cracked visor',15,{glow:{where:'visor',color:0x5dff9b}}]]}};
 const RUMORS=["The barges leave the Ashline pier at three in the morning. No lights. They come back lighter.","Orrin Mutual buys debts nobody can pay. Then the debtors stop being anybody's problem.","Wardline doesn't patrol down here. They just count us.","There's an old Ring Line tunnel that doesn't show on the map. You can hear it from the Line 9 platform.","Somebody's paying good money for couriers who can't read."];
-function staffTalk(s0){const sh=s0.shop&&SHOPS[s0.shop];if(sh&&s0.shop==='bar'&&lookClass()==='high'&&!S.flags.heskCoat){S.flags.heskCoat=1;say(s0.k,['Nice coat. Lose it down here or somebody will lose it for you.'],[{t:'"Noted."'}]);return;}if(!sh){say(s0.k,[pick(s0.lines)],[{t:'"Thanks."'}]);return;}
- const opts=sh.items.map(([n,c,look,txt,rum])=>({t:`${n} · ¢${c}`,fx:()=>{if(S.cash<c){toast('Not enough cash');return;}S.cash-=c;if(look){S.look=Object.assign(S.look||{},look);rebuildPlayer();toast(`Bought ${n} · switch to third person to see it`);}else if(rum)setTimeout(()=>say(s0.k,[pick(RUMORS)],[{t:'"Huh."'}]),50);else toast(txt);save();}}));
- opts.push({t:'"Just looking."'});say(s0.k,[(s0.lines?pick(s0.lines)+' ':'')+sh.hi],opts);}
+function staffTalk(s0){if(R5&&R5.staffHook(s0))return;const sh=s0.shop&&SHOPS[s0.shop];if(sh&&s0.shop==='bar'&&lookClass()==='high'&&!S.flags.heskCoat){S.flags.heskCoat=1;say(s0.k,['Nice coat. Lose it down here or somebody will lose it for you.'],[{t:'"Noted."'}]);return;}if(!sh){say(s0.k,[pick(s0.lines)],[{t:'"Thanks."'}]);return;}
+ const pm=R5?R5.priceMul(s0.shop):1;const opts=sh.items.map(([n,c,look,txt,rum])=>(c=Math.max(1,Math.round(c*pm)),{t:`${n} · ¢${c}`,fx:()=>{if(S.cash<c){toast('Not enough cash');return;}S.cash-=c;if(look){S.look=Object.assign(S.look||{},look);rebuildPlayer();toast(`Bought ${n} · switch to third person to see it`);}else if(rum)setTimeout(()=>say(s0.k,[pick(RUMORS)],[{t:'"Huh."'}]),50);else toast(txt);save();}}));
+ R5&&R5.shopOpts(s0,opts);opts.push({t:'"Just looking."'});say(s0.k,[(s0.lines?pick(s0.lines)+' ':'')+sh.hi],opts);}
 function tickStaff(dt){for(const st of staff){const d=Math.hypot(st.s0.x-cam.position.x,st.s0.z-cam.position.z);st.h.obj.visible=d<45;if(d<45)st.h.lod(d,dt);}}
 // ================= R3: look class, character creator, jobs, apartments =================
 function lookClass(){const l=S.look||{};if(l.hat==='hood')return'low';if(l.coat&&l.coat.shiny&&l.coat.len>=.7)return'high';return'mid';}
@@ -200,7 +203,7 @@ const FLAV={tide:{courier:"A sealed tin for a Tide runner. Don't shake it.",inve
  civ:{courier:"Medicine for a neighbor who can't leave the house.",investigate:'A mother wants to know where her son goes at night.',fix:"The block's water pump relay keeps tripping."},
  orrin:{courier:'A locked case, no questions. Orrin tips well for silence.',investigate:'Audit a "delinquent account." Find where the debtor hides.',fix:'Calibrate an Orrin advert. The smile flickers.'}};
 function genJob(fs){const fac=pick(fs),type=pick(Object.keys(JOBT)),sp=[...SPOTS].sort(()=>Math.random()-.5).slice(0,3),T=JOBT[type];let pay=Math.round(rnd(...T.pay));if(fac==='orrin'&&lookClass()==='low')pay=Math.round(pay*.8);if(fac==='tide'&&lookClass()==='high')pay=Math.round(pay*.85);return {fac,type,sp:sp.map(p=>p.slice()),pay,flav:FLAV[fac][type]};}
-function mountJob(j){const T=JOBT[j.type],ds=T.d(...j.sp);Q.job={t:`${T.n} · ${FN[j.fac].split(' (')[0]}`,steps:ds.map((d,i)=>({d,at:[j.sp[i][0],j.sp[i][1]],on:'job:'+i})),done:()=>{S.cash+=j.pay;S.rep[j.fac]=(S.rep[j.fac]||0)+1;toast(`Paid ¢${j.pay} · ${FN[j.fac]} standing ${S.rep[j.fac]}`);S.jobsDone=(S.jobsDone||0)+1;delete S.jobDef;setTimeout(()=>{delete Q.job;delete S.q.job;save();},50);}};}
+function mountJob(j){const T=JOBT[j.type],ds=T.d(...j.sp);Q.job={t:`${T.n} · ${FN[j.fac].split(' (')[0]}`,steps:ds.map((d,i)=>({d,at:[j.sp[i][0],j.sp[i][1]],on:'job:'+i})),done:()=>{S.cash+=j.pay;R5&&R5.jobDone(j);S.rep[j.fac]=(S.rep[j.fac]||0)+1;toast(`Paid ¢${j.pay} · ${FN[j.fac]} standing ${S.rep[j.fac]}`);S.jobsDone=(S.jobsDone||0)+1;delete S.jobDef;setTimeout(()=>{delete Q.job;delete S.q.job;save();},50);}};}
 if(S.jobDef&&typeof S.q.job==='number')mountJob(S.jobDef);else{delete S.q.job;delete S.jobDef;}
 const jobMarker=new THREE.Mesh(new THREE.OctahedronGeometry(.22),new THREE.MeshBasicMaterial({color:new THREE.Color(0xffe14d).multiplyScalar(2),toneMapped:false}));scene.add(jobMarker);jobMarker.visible=false;
 const jobI={id:'jobpt',pos:()=>{const p=S.jobDef.sp[S.q.job];return new THREE.Vector3(p[0],(p[3]||0)+1.1,p[1]);},r:2.2,label:'',
@@ -299,7 +302,7 @@ function tickPlayer(dt){if(creating){Input.consumeLook();return;}const lk=Input.
   {const hx=P.x,hz=P.z;let f=1;for(let i=1;i<=10;i++){const t=i/10,x=hx+(want.x-hx)*t,z=hz+(want.z-hz)*t;if(!walkable(x,z)||CITY.inRoom(x,z,want.y)!==CITY.inRoom(hx,hz,want.y)){f=Math.max(.12,(i-1.6)/10);break;}}if(f<1){want.x=hx+(want.x-hx)*f;want.z=hz+(want.z-hz)*f;want.y-=(1-f)*.35;camTP.copy(want);}}camTP.lerp(want,1-Math.exp(-dt*8));cam.position.copy(camTP);cam.lookAt(cam.position.x+fwd.x,cam.position.y+fwd.y-.12,cam.position.z+fwd.z);}
  else{cam.position.set(P.x,eye,P.z);camTP.copy(cam.position);cam.lookAt(P.x+fwd.x,eye+fwd.y,P.z+fwd.z);}
  fill.position.set(P.x+fwd.x*1.5,P.y+2.4,P.z+fwd.z*1.5);if(riding)cam.rotateZ(Math.sin(T*1.3)*.006);if(onB){cam.rotateZ(bk.roll*.6+(bk.shake>0?Math.sin(T*60)*bk.shake*.03:0));fill.position.set(P.x-Math.sin(S.bike.h)*4,P.y+1.6,P.z-Math.cos(S.bike.h)*4);fill.intensity=2.2+Math.min(2,bsp*.15);}else fill.intensity=2.2;if(!onB&&cam.fov!==66){cam.fov=66;cam.updateProjectionMatrix();}
- const d=districtAt(P.x,P.z);if(d!==zone){if(zone){const z=$('zone');z.textContent=DISTRICTS[d].name;z.classList.remove('show');void z.offsetWidth;z.classList.add('show');}zone=d;emit('enter:'+d);}}
+ const d=districtAt(P.x,P.z);if(d!==zone){if(zone){const z=$('zone');z.textContent=d==='node14'?'Node 14':(DISTRICTS[d]||{name:''}).name;z.classList.remove('show');void z.offsetWidth;z.classList.add('show');}zone=d;emit('enter:'+d);}}
 // aim-based interaction: the thing you're looking at, close by
 let near=null;const tv=new THREE.Vector3();
 function pickTarget(){near=null;let best=1e9;const flat=new THREE.Vector3(fwd.x,0,fwd.z).normalize();
@@ -311,7 +314,7 @@ Input.on('menu',()=>{if(mapOpen){closeMap();return;}menuOpen()?$('menu').classLi
 // waypoint
 const beam=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,40,8,1,true),new THREE.MeshBasicMaterial({color:new THREE.Color(0x7ff3ff).multiplyScalar(1.4),transparent:true,opacity:.22,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));scene.add(beam);
 function tickWaypoint(t){const id=S.track&&typeof S.q[S.track]==='number'?S.track:null;const s=id&&stepOf(id);let tg=s&&stepTarget(s);const wp=$('wp');if(S.wp){tg=new THREE.Vector3(S.wp[0],1.4,S.wp[1]);if(Math.hypot(S.wp[0]-P.x,S.wp[1]-P.z)<4){S.wp=null;toast('Waypoint reached');save();}}
- $('track').innerHTML=id?`<b>${Q[id].t.toUpperCase()}</b>${s.d}`:(S.q.m8==='done'?'<b>CHAPTER TWO COMPLETE</b>Keep the lights on':'');
+ $('track').innerHTML=id?`<b>${Q[id].t.toUpperCase()}</b>${s.d}`:(S.flags.finished?'<b>THE END</b>Veyra is yours to walk':S.q.m8==='done'?'<b>CHAPTER TWO COMPLETE</b>Keep the lights on':'');
  if(!tg){wp.style.display='none';beam.visible=false;return;}const dist=Math.hypot(tg.x-P.x,tg.z-P.z);beam.visible=dist>6;beam.position.set(tg.x,20,tg.z);beam.material.opacity=(.14+Math.sin(t*2.4)*.05)*Math.min(1,(dist-6)/14);tv.copy(tg).project(cam);const behind=tv.z>1;let sx=(tv.x+1)/2*VW,sy=(1-tv.y)/2*VH;
  if(behind){sx=VW-sx;sy=VH-sy;}const mg=40,off=behind||sx<mg||sx>VW-mg||sy<mg||sy>VH-mg;
  if(off){const cx=VW/2,cy=VH/2;let dx=sx-cx,dy=sy-cy;if(behind&&Math.abs(dx)<1)dx=1;const k=Math.min((cx-mg)/Math.abs(dx||1e-3),(cy-mg)/Math.abs(dy||1e-3));sx=cx+dx*k;sy=cy+dy*k;wp.querySelector('i').style.transform=`rotate(${Math.atan2(dy,dx)}rad)`;wp.classList.add('edge');}else{wp.classList.remove('edge');wp.querySelector('i').style.transform='';}
@@ -331,7 +334,7 @@ function openMenu(t){$('menu').classList.remove('hide');document.querySelectorAl
  if(t=='n'){h+=S.notes.length?S.notes.slice().reverse().map(n=>`<div class="row"><span>${n}</span></div>`).join(''):'<div class="row"><span><small>Your notes will collect here as you learn what happened to Dess.</small></span></div>';}
  if(t=='p'){for(const k in CAST){const met=S.rel[k]!==undefined||S.talkedDay[k]||k==='dess'&&S.q.m6!==undefined;if(k==='dess'&&!met)continue;const r=Math.round(relv(k)/2);const fav=Object.keys(Q).find(id=>Q[id].giver===k&&Q[id].lock&&S.q[id]===undefined);
   h+=`<div class="row person"><img src="portraits/${k}.jpg" alt=""><span><b>${met?CAST[k].n:'???'}</b><br><small>${met?CAST[k].role:'not met yet'}</small><br><small class="where">${met?CAST[k].home:''}</small>${fav&&met?`<br><small class="cur">Favor at ♥6</small>`:''}</span><span class="meter">${met?'●'.repeat(r)+'○'.repeat(5-r):''}</span></div>`;}}
- if(t=='l'){h+=Object.keys(FN).map(f=>`<div class="row"><span>${FN[f]}<br><small>standing</small></span><span>${S.rep[f]||0}</span></div>`).join('')+`<div class="row"><span>Your look<br><small>how the city reads you: ${({high:'upper city',mid:'street',low:'low city'})[lookClass()]}</small></span><button id="edLook">Edit look</button></div>`;h+=`<div class="row"><span>Cash<br><small>Day ${S.day} · ${S.servedTotal} bowls served</small></span><span style="color:#ffd98a">¢${S.cash}</span></div><div class="row"><span>Debt to Orrin Mutual<br><small>${S.flags.interestFrozen?'Interest frozen by court order':'0.2% interest nightly'}</small></span><span>¢${S.debt}</span></div>`;
+ if(t=='l'){h+=(R5?R5.lifeHTML():Object.keys(FN).map(f=>`<div class="row"><span>${FN[f]}<br><small>standing</small></span><span>${S.rep[f]||0}</span></div>`).join(''))+`<div class="row"><span>Your look<br><small>how the city reads you: ${({high:'upper city',mid:'street',low:'low city'})[lookClass()]}</small></span><button id="edLook">Edit look</button></div>`;h+=`<div class="row"><span>Cash<br><small>Day ${S.day} · ${S.servedTotal} bowls served</small></span><span style="color:#ffd98a">¢${S.cash}</span></div><div class="row"><span>Debt to Orrin Mutual<br><small>${S.flags.interestFrozen?'Interest frozen by court order':'0.2% interest nightly'}</small></span><span>¢${S.debt}</span></div>`;
   const ups=[['pay','Pay ¢1,500 toward the debt',1500,()=>{S.debt=Math.max(0,S.debt-1500);emit('pay');if(!S.debt)chapter('Debt free','The Neon Ladle belongs to you. Free and clear.');},()=>S.debt>0],['burner','Second burner (cook 2 at once, faster)',400,()=>S.up.burners=2,()=>S.up.burners<2],['stools','Two more stools',300,()=>S.up.stools=5,()=>S.up.stools<5],['sign','Fix the flickering sign (more walk-ins)',250,()=>{S.up.sign=1;},()=>!S.up.sign],['chili','Recipe: Static Chili Tan',600,()=>S.up.menu.push('chili'),()=>!S.up.menu.includes('chili')]];
   ups.forEach(([id,n,c,fx,cond])=>{if(cond&&!cond())return;h+=`<div class="row"><span>${n}</span><button data-u="${id}">¢${c.toLocaleString()}</button></div>`;});M.innerHTML=h;
   $('edLook').onclick=()=>{$('menu').classList.add('hide');openCreator(false);};M.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>{const u=ups.find(x=>x[0]==b.dataset.u);if(S.cash<u[2]){toast('Not enough cash');return;}S.cash-=u[2];u[3]();save();openMenu('l');});return;}
@@ -454,7 +457,9 @@ ENV.onThunder=()=>{if(!audio)return;const A=audio.AC,t=A.currentTime+.4+Math.ran
 cam.position.set(0,1.6,-2);ENV.update(0,(S.min/60)%24,0,S);LP.update(10,cam);for(let i=0;i<20;i++)LP.update(.5,cam);cubeCam.position.set(0,.4,-2);cubeCam.update(R,scene);
 scene.traverse(o=>{if(o.material&&o.material.isMeshStandardMaterial&&o.material.metalness>.3){o.material.envMap=cubeRT.texture;o.material.envMapIntensity=.9;}});
 for(const k in npcs)tickNPCs(0);
-window.__S=S;window.__P=P;window.__G={mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,stepOf,get near(){return near;}};
+Object.assign(G,{Q,stepOf,onList,qAdv,emit,interact,say,fade,W,CITY,cand,makeHuman,walkable,regionOf,lookClass,CAST,Input,THREE,scene,P,cam,npcs,dlg:()=>dlgOpen,riding:()=>!!riding||bk.on&&Math.abs(bk.v)>4});R5=initR5(G);window.R5=R5;
+if(S.q.m8==='done'&&S.q.m9===undefined)setTimeout(()=>{chapter('Act Three','The Weather Men');qStart('m9');},2500);
+window.__S=S;window.__P=P;window.__G={R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,stepOf,get near(){return near;}};
 $('load').classList.add('hide');$('start').classList.remove('hide');
 $('start').onclick=async()=>{$('title').classList.add('gone');setTimeout(()=>$('title').remove(),900);$('hud').classList.remove('hide');startAudio();
  try{await document.documentElement.requestFullscreen?.();await screen.orientation?.lock?.('landscape');}catch(e){}
@@ -466,10 +471,10 @@ function beginStory(){S.flags.intro=1;save();say('Veyra City',["Veyra. It hasn't
 let mapT=0,last=performance.now(),T=0,saveT=0,slowT=0,flickT=0;
 function frame(now){const dt=Math.min(.05,(now-last)/1000)*(window.__G.ts||1);last=now;T+=dt;
  tickPlayer(dt);let gH=0;if(!dlgOpen&&!menuOpen()){S.min+=dt*1;gH=dt/60;if(S.min>=34*60){S.min-=24*60;S.day++;S.talkedDay={};S.asked={};}}
- ENV.update(dt,(S.min/60)%24,gH,S);LP.mul=ENV.lampMul;if(P.y>20)scene.fog.density*=.4;else if(P.x<-66&&P.x>-82&&Math.abs(P.z)>8)scene.fog.density*=.42;else if(riding)scene.fog.density*=.3;rain.m.geometry.setDrawRange(0,Math.round(rain.n*2*Math.min(1,ENV.st.rain*1.1)));rain.m.material.opacity=.18+.2*ENV.st.rain;
+ ENV.update(dt,(S.min/60)%24,gH,S);LP.mul=ENV.lampMul*(R5?R5.lampMul:1);if(P.y>20)scene.fog.density*=.4;else if(P.x<-66&&P.x>-82&&Math.abs(P.z)>8)scene.fog.density*=.42;else if(riding)scene.fog.density*=.3;rain.m.geometry.setDrawRange(0,Math.round(rain.n*2*Math.min(1,ENV.st.rain*1.1)));rain.m.material.opacity=.18+.2*ENV.st.rain;
  envBake-=gH;if(envBake<=0){envBake=1.5;const vis=[];cubeCam.position.set(P.x,P.y+.4,P.z);cubeCam.update(R,scene);}
  const hh=Math.floor(S.min/60)%24,mm=Math.floor(S.min%60);$('clock').textContent=`Day ${S.day} · ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${fmtWeather(ENV.st.w)}`;$('shop').textContent=S.open?'Ladle open':S.min>=26*60?'Curfew':'Ladle closed';$('cash').textContent='¢'+S.cash.toLocaleString();
- tickNPCs(dt);tickStaff(dt);tickCreator(dt);if(S.jobDef&&typeof S.q.job==='number'){const p=S.jobDef.sp[S.q.job];jobMarker.visible=true;jobMarker.position.set(p[0],(p[3]||0)+1.3+Math.sin(T*2)*.1,p[1]);jobMarker.rotation.y=T;}else jobMarker.visible=false;tickShop(dt);tickCustomers(dt);tickPeds(dt);pickTarget();tickWaypoint(T);
+ tickNPCs(dt);R5&&R5.tick(dt,T);tickStaff(dt);tickCreator(dt);if(S.jobDef&&typeof S.q.job==='number'){const p=S.jobDef.sp[S.q.job];jobMarker.visible=true;jobMarker.position.set(p[0],(p[3]||0)+1.3+Math.sin(T*2)*.1,p[1]);jobMarker.rotation.y=T;}else jobMarker.visible=false;tickShop(dt);tickCustomers(dt);tickPeds(dt);pickTarget();tickWaypoint(T);
  slowT-=dt;if(slowT<=0){slowT=.5;tickStreaming();tickAudio();}
  LP.update(dt,cam);const indoor=(P.z>67.8&&P.z<80&&P.x<-16)||CITY.inRoom(P.x,P.z,P.y+1);rain.m.visible=!indoor&&!riding;rain.update(dt,cam.position,P.y);for(const a of CITY.anim)a(T,crack);tickRide(dt);steam.update(dt);traffic.update(dt);
  trainT-=dt;if(trainT<=0){train.position.x+=dt*16;if(train.position.x>40){train.position.x=-90;trainT=rnd(25,45);}}
