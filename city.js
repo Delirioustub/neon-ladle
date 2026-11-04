@@ -1,6 +1,7 @@
 // R2 city expansion: class-stratified streamed districts (Crown Heights / Ashline Docks), enterable interiors,
 // walkable rooftops + ladders, a sky terrace, Ring Line metro stations and an underground train car.
 import * as THREE from 'three';
+import {carSlot} from './cars.js';
 import {corridor,Batch,signTex,DISTRICTS,MATS} from './world.js';
 const STONE=new THREE.MeshStandardMaterial({color:0x6a6872,roughness:.35,metalness:.35});
 const STONE2=new THREE.MeshStandardMaterial({color:0x4a4a54,roughness:.25,metalness:.45});
@@ -79,7 +80,7 @@ export function buildCity(scene,cand){
   B.add(0,.35,cz,6,.7,6,0xb8b4bc);out.block.push([-3,3,cz-3,cz+3]);// R9: fountain basin is solid
   Mt.add(0,.66,cz,5.4,.04,5.4,0x203040);const holo=new THREE.Mesh(new THREE.ConeGeometry(1.6,5,6,1,true),new THREE.MeshBasicMaterial({color:new THREE.Color(0x3ff0ff).multiplyScalar(1.2),transparent:true,opacity:.22,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false,side:THREE.DoubleSide}));holo.position.set(0,3.2,cz);holo.rotation.x=Math.PI;scene.add(holo);out.anim.push(t=>{holo.rotation.y=t*.4;holo.material.opacity=.16+Math.sin(t*2)*.05;});L(0,2,cz,0x3ff0ff,6,12);
   I({id:'fount',x:0,y:1,z:cz+3.4,r:2.2,label:'Holo fountain',act:{type:'read',t:'Crown Plaza',x:'A fountain of light where water used to be. The plaque thanks Orrin Mutual "for keeping the upper city dry." Above the boulevard, the rain falls on a canopy you can\'t see. It mostly works.'}});
-  for(const [x,s] of[[-26,-1],[8,-1],[30,1],[-8,1]]){const z=cz+s*4.2;out.block.push([x-2.2,x+2.2,z-.95,z+.95]);Mt.add(x,.55,z,4.4,.7,1.9,[0xe8e8f0,0x1a1a22,0x8a1a2a,0x2a2a3a][Math.abs(x)%4]);B.add(x+.2,1.05,z,2.4,.5,1.7,0x101018);Gh.add(x+2.21,.6,z,.04,.12,1.5,0xfff1d8);Gh.add(x-2.21,.6,z,.04,.1,1.5,0xff2040);}
+  for(const [x,s] of[[-26,-1],[8,-1],[30,1],[-8,1]]){const z=cz+s*4.2;out.block.push([x-2.2,x+2.2,z-.95,z+.95]);{const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);carSlot(g,x===8?'police':'car','crown',Math.abs(x),Math.PI/2);}}// R14b: Quaternius cars (cars.js)
   // Wardline checkpoint near the station
   {const x=-44;Mt.add(x,2.6,cz-7,.3,5.2,.3,0x9fb0c0);Mt.add(x,2.6,cz+7,.3,5.2,.3,0x9fb0c0);Gh.add(x,5.2,cz,.2,.15,14,0x3f8aff);L(x,4,cz,0x3f8aff,5,12);sign('WARDLINE · SCAN ZONE',0x3f8aff,x,5.8,cz,.5,Math.PI/2,{fs:48,light:false});
    I({id:'scan',x:x+1.5,y:1.4,z:cz,r:3,label:'Scanner arch',act:{type:'read',t:'Wardline scan',x:'The arch hums as you pass. A soft chime: VISITOR · LOW CITY ORIGIN · MONITORED. Somewhere, a file on you just got one line longer.'}});}

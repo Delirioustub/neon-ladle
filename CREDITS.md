@@ -36,3 +36,8 @@
 
 ## R11b / R13
 - Harbor Rise roads, canal plazas, and the ride-along Ring Line car with its live window view: procedurally built for this project. No new third-party assets.
+
+## R14b vehicles
+- **Quaternius — Cars bundle** (Car, SUV, Sports Car, Taxi, Police Car and variants), CC0 1.0. https://quaternius.com/packs/cars.html · https://poly.pizza/bundle/Cars-Bundle-FE5IWe6OMk → `models/cars/car1-7.glb`
+- **Hover car — Pixor library (Frakassets)**, CC0 1.0. https://pixor.art/library/vehicles/hover-car/ → `models/cars/hover.glb`
+- District paint tints and neon sill/underglow trims are added in code (`cars.js`).

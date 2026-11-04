@@ -1,5 +1,6 @@
 // World builder: dense voxel city block, neon, rain, wet streets.
 import * as THREE from 'three';
+import {carSlot} from './cars.js';
 export const rnd=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)];
 export let seed=7;export const srand=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
 const sr=(a,b)=>a+srand()*(b-a), spick=a=>a[Math.floor(srand()*a.length)];
@@ -182,6 +183,6 @@ export function makeTraffic(scene){const cars=[];const cols=[0xffe0a0,0xff4d5e,0
  for(let lane=0;lane<4;lane++)for(let i=0;i<6;i++){const g=new THREE.Group();const body=new THREE.Mesh(new THREE.BoxGeometry(1.4,.4,.7),new THREE.MeshLambertMaterial({color:0x2a2834}));g.add(body);
   const hl=new THREE.Mesh(new THREE.BoxGeometry(.06,.12,.5),new THREE.MeshBasicMaterial({color:new THREE.Color(cols[lane%3]).multiplyScalar(3),toneMapped:false}));hl.position.x=.72;g.add(hl);
   const tl=new THREE.Mesh(new THREE.BoxGeometry(.06,.1,.5),new THREE.MeshBasicMaterial({color:new THREE.Color(0xff2040).multiplyScalar(2.5),toneMapped:false}));tl.position.x=-.72;g.add(tl);
-  scene.add(g);cars.push({g,lane,x:rnd(-60,60),y:18+lane*5+rnd(-1,1),z:-4+lane*2.6,v:(lane%2?1:-1)*rnd(6,10)});}
+  scene.add(g);carSlot(g,lane%3?'hover':'sky','salt',i+lane,Math.PI/2,-.35,1.15);cars.push({g,lane,x:rnd(-60,60),y:18+lane*5+rnd(-1,1),z:-4+lane*2.6,v:(lane%2?1:-1)*rnd(6,10)});}
  return {update(dt){for(const c of cars){c.x+=c.v*dt;if(c.x>70)c.x=-70;if(c.x<-70)c.x=70;c.g.position.set(c.x,c.y,c.z);c.g.rotation.y=c.v>0?0:Math.PI;}}};}
 export {Batch,streakMat};export const MATS={ROAD,WALK,WALK2,PUDDLE,WATER};
