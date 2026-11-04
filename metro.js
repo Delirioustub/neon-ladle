@@ -11,9 +11,9 @@ export function buildRide(scene,CITY,makeHuman,walkable){
  box(0,-.05,0,Wd,.1,L,floorM);box(0,H,0,Wd,.12,L,shell);box(0,H/2,L/2,Wd,H,.12,shell);box(0,H/2,-L/2,Wd,H,.12,shell);
  // sides: low wall + header, window pillars every 2 m (big openings y .85..2.05)
  for(const s of[-1,1]){box(s*Wd/2,.42,0,.12,.85,L,shell);box(s*Wd/2,2.27,0,.12,.46,L,shell);for(let z=-L/2;z<=L/2+.01;z+=2)box(s*Wd/2,1.45,z,.14,1.2,.16,shell);
-  box(s*(Wd/2-.45),.45,0,.5,.12,L-1,seat);box(s*(Wd/2-.18),.75,0,.1,.5,L-1,seat);// bench + backrest
+  box(s*(Wd/2-.32),.64,0,.34,.12,L-1,seat);box(s*(Wd/2-.24),.32,0,.2,.5,L-1,lm(0x2a1820,.2));box(s*(Wd/2-.12),.98,0,.1,.56,L-1,seat);// bench + backrest
   box(s*(Wd/2+.08),.55,0,.04,.08,L,bm(0x3ff0ff,1.6));// outside neon stripe
-  const gl=new THREE.Mesh(new THREE.PlaneGeometry(L,1.2),new THREE.MeshBasicMaterial({color:0x9fd8ff,transparent:true,opacity:.03,depthWrite:false,side:THREE.DoubleSide}));gl.position.set(s*Wd/2,1.45,0);gl.rotation.y=Math.PI/2;car.add(gl);}
+  const gl=new THREE.Mesh(new THREE.PlaneGeometry(L,1.2),new THREE.MeshBasicMaterial({color:0x5f8fb8,transparent:true,opacity:.22,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,toneMapped:false}));gl.position.set(s*Wd/2,1.45,0);gl.rotation.y=Math.PI/2;car.add(gl);}
  for(let z=-6;z<=6;z+=3)box(0,H/2,z,.05,H,.05,pole);for(let z=-7;z<=7;z+=1.4)box(0,H-.05,z,.9,.03,.22,bm(0xfff1d8,1.3));
  box(0,-.35,0,Wd+.2,.5,L+.4,outer);// undercarriage
  // line map over the end door
@@ -27,7 +27,8 @@ export function buildRide(scene,CITY,makeHuman,walkable){
  // a few seated passengers (crowd LOD bodies)
  const pax=[];const looks=[{cls:'mid',top:0x3a3a48},{cls:'rich',top:0xd8d4cc,sex:'f'},{cls:'poor',top:0x3a3028},{robot:'Enemy_EyeDrone',glow:{color:0xffe14d}}];
  const spots=[[-1,-5],[1,-1.5],[-1,3],[1,5.5]];
- const ensurePax=()=>{if(pax.length)return;looks.forEach((l,i)=>{const h=makeHuman(l);const [s,z]=spots[i];h.obj.position.set(s*(Wd/2-.5),l.robot?.3:.15,z);h.obj.rotation.y=s>0?-Math.PI/2:Math.PI/2;h.play(l.robot?'idle':'sit');car.add(h.obj);pax.push(h);});};
+ const ensurePax=()=>{if(pax.length)return;looks.forEach((l,i)=>{const h=makeHuman(l);const [s,z]=spots[i];// R13c: the sit clip carries its hips ~.8 m up; place sitters so hips land on the raised seat (.76) and feet on the floor
+  h.obj.position.set(l.robot?s*(Wd/2-.5):s*(Wd/2-.37),l.robot?.75:-.05,z);h.obj.rotation.y=s>0?-Math.PI/2:Math.PI/2;h.play(l.robot?'idle':'sit');car.add(h.obj);pax.push(h);});};
  const R={car,active:null};
  R.start=(from,to)=>{ensurePax();const a=CITY.stations[from]?.z??z0+30,b=CITY.stations[to].z;const D=Math.abs(b-a),dir=Math.sign(b-a)||1,v=22,acc=3.2;const ta=v/acc,da=.5*acc*ta*ta;
   const T=D>2*da?2*ta+(D-2*da)/v:2*Math.sqrt(D/acc);R.active={a,dir,D,v,acc,ta,da,T,t:0,to};car.visible=true;car.rotation.y=dir>0?0:Math.PI;place(0);return R.active;};
