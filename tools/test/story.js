@@ -28,7 +28,7 @@ window.__T=(()=>{const G=__G,S=__S;const log=[],bad=[];
   for(const h of hrs){S.min=(h<12?h+24:h)*60;let a=s.at;if(typeof a==='function')a=a();if(!a){out.push(h+':no target');continue;}
    if(typeof a==='string'){const p=G.placeFor(a);if(!p){out.push(h+':'+a+' not placed');continue;}const n=G.npcs[a];G.tickNPCsOnce&&G.tickNPCsOnce();const pp=G.placePos(p);if(pp&&!reachable(pp[0],pp[1]))out.push(h+':'+a+'@'+p+' unreachable');}
    if(window.__PRES){const ks=new Set(typeof a==='string'?[a]:[]);for(const ev of G.onList(s))if(ev.startsWith('talk:'))ks.add(ev.slice(5));for(const k of ks){if(!G.npcs[k]){out.push(h+":"+k+" no npc");continue;}if(!G.placeFor(k))continue;const r=present(id,k,h);if(r)out.push(h+':'+r);}}
-   else if(!reachable(a[0],a[1]))out.push(h+':'+a.join(',')+' unreachable');}
+   else if(typeof a==='string'){}else if(!Array.isArray(a)){out.push(h+':bad at '+JSON.stringify(a));}else if(!reachable(a[0],a[1]))out.push(h+':'+JSON.stringify(a)+' unreachable');}
   S.min=m0;const tg=G.stepTarget(s);if(!tg)out.push('no live waypoint');return out;}
  function fire(id,s,pref){const st=S.q[id];const ons=G.onList(s);
   for(const ev of ons){const [kind,arg]=ev.split(':');

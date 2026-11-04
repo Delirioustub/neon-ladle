@@ -101,3 +101,19 @@ Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain 
 - **Ashline L-alley + Net Market:** new north gap at x 38..46 opens an alley with lantern strings to a quay square on the sea (Net & Tackle, Eel House enterable, fish stalls, quay seat facing the flooded city).
 - **Not done / unverified:** real stairs/ramps between tiers (district y stays 0; tiers are visual plus lift/metro/causeway), the under-city is not reachable (distant scenery like the skyline), metro untouched, the central T-end drop-offs now show sea + flooded towers but have no plazas, no on-device perf check.
 - Test: `r11_shots.py` (shots + walkability of new spaces + interactables).
+
+## r11b: Harbor Rise roads + canal plazas
+- **Harbor Rise:** curving graded roads link the Heights deck, the centre and the docks. Each road is built from capsule walk slices `r[5]={seg,hw}` whose height is interpolated along the centreline, so the slope is continuous (no steps). The player and bike follow it through `groundY`. Canal Head/Foot plazas replace the street-end cap walls. Skyline towers keep clear of plazas and roads. Seeded street props avoid doors and interactables.
+- Test: `r11b_walks.py` walks and rides the bike up and down every Harbor Rise road (0 fails). `r11b_shots.py` writes the shots.
+
+## r12: Grab3D characters + small robots
+- 9 Grab3D bodies (hi for the player and cast, lo for crowds). The UAL clips are retargeted by bone map. Each body gets a clothing tint, neon trim rings and glow accessories (collar, visor, strip). Looks are set by class (rich: gold/white, mid: streetwear, poor: work gear) and by gang colour. The character creator has Body/Tint/Trim/Rings/Glow rows. Robots are 5 Quaternius models scaled to 0.45–1.25 m, never taller than a person.
+- Tests: `r12_faces.py` (studio close-ups), `r12_street.py` (56 humans + 6 robots in the street). No T-poses were seen in any shot.
+
+## r13: Ring Line ride
+- `G.ride(to,from)` puts the player in the elevated car. The windows show the real city going by, and a **Skip** button fast-travels. Test: `r13_ride.py` covers night and day rides, arrival at the station spawn, and Skip (all passed).
+
+## r13 test pass (Nov 4)
+- All of these pass: story (all main steps, BAD []), r10b_presence (0), r9_reset, r7_migration, r8_drive (18/18, scenery 0), r11b_walks (0), r9_props (56 prop hits, all room interiors, down from 61), r10_shots, r12_*, r13_ride. There were no console errors.
+- **Fixed:** the harness in `tools/test/story.js` called `.join` on string NPC targets, so the story test crashed. Fixed in the test only; game code is unchanged.
+- **Open:** `r7_seams` shows 12 near-miss gaps of 0.3–0.5 m inside the apartment studios at z≈800. These are furniture spacing, not routes. One run reported a flaky 4-crossing fail at the Docks shop door (25.3, 253.8), probably from a moving cart or ped; it did not reproduce on rerun. r10 WHITEBOX flags the Crown station canopy at (-53, 3, -252.5). Headless FPS is meaningless under SwiftShader, and nothing has been profiled on a device.
