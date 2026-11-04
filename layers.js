@@ -49,13 +49,13 @@ function seaWalks(scene,walk,block,cand,B,G){const Y=-.6,Wk=(x0,x1,z0,z1,y=0,q)=
    else{B.add(c,top-.4,(z0+z1)/2,l,.8,z1-z0,0x3a3640);G.add(c+(p1-p0)/2*.92,top+.005,(z0+z1)/2,.05,.015,z1-z0-.2,0x3ff0ff);}}
   if(ax==='z'){for(const x of[x0-.1,x1+.1])B.add(x,(ya+yb)/2+.5,(a+b)/2,.2,1,Math.abs(b-a)+.6,0x2a2832);}else for(const z of[z0-.1,z1+.1])B.add((a+b)/2,(ya+yb)/2+.5,z,Math.abs(b-a)+.6,1,.2,0x2a2832);};
  // a canal-end plaza: floor, kerb lights, benches (solid), kiosk, lamps, name
- const plaza=(z0,z1,name,col,dir)=>{const x0=46.5,x1=69.5,cx=58,cz=(z0+z1)/2,edge=dir>0?z1:z0;Wk(x0,x1,z0,z1);B.add(cx,-.06,cz,x1-x0,.12,z1-z0,0x34323c);
+ const plaza=(z0,z1,name,col,dir)=>{const x0=48.2,x1=67.8,cx=58,cz=(z0+z1)/2,edge=dir>0?z1:z0;Wk(x0,x1,z0,z1);B.add(cx,-.06,cz,x1-x0,.12,z1-z0,0x34323c);
   for(let x=x0+2;x<x1;x+=3)B.add(x,.004,cz,.06,.01,z1-z0-.4,0x24222a);
   // balustrade along the sea edge, open at the stair (x 56..60)
   for(const [a,b] of[[x0,54.3],[61.7,x1]]){B.add((a+b)/2,.45,edge,b-a,.9,.25,0x4a4852);G.add((a+b)/2,.92,edge,b-a,.03,.27,new THREE.Color(col).multiplyScalar(.35).getHex());}
   for(const x of[x0,x1]){B.add(x,.45,cz,.25,.9,z1-z0-1.2,0x4a4852);}
-  for(const x of[50,66]){const z=cz;B.add(x,.42,z,3,.1,.7,0x4a3a30);B.add(x,.2,z,2.8,.4,.5,0x2a2830);block.push([x-1.5,x+1.5,z-.35,z+.35]);}
-  for(const x of[49,67]){const z=edge-dir*1.6;B.add(x,.5,z,1.4,1,1.4,0x2a2832);B.add(x,1.8,z,.25,1.8,.25,0x3a2a1e);B.add(x,3,z,1.8,1.4,1.8,0x1e3a2a);block.push([x-.75,x+.75,z-.75,z+.75]);}
+  for(const x of[51.5,64.5]){const z=cz;B.add(x,.42,z,3,.1,.7,0x4a3a30);B.add(x,.2,z,2.8,.4,.5,0x2a2830);block.push([x-1.5,x+1.5,z-.35,z+.35]);}
+  for(const x of[49.6,66.4]){const z=edge-dir*1.6;B.add(x,.5,z,1.4,1,1.4,0x2a2832);B.add(x,1.8,z,.25,1.8,.25,0x3a2a1e);B.add(x,3,z,1.8,1.4,1.8,0x1e3a2a);block.push([x-.75,x+.75,z-.75,z+.75]);}
   for(const x of[52,64]){const z=edge-dir*.9;B.add(x,2.2,z,.14,4.4,.14,0x3a3844);G.add(x,4.45,z,.6,.12,.3,0xfff1c9);L(x,4,z,0xfff1d8,4,11);}
   sign(name,col,cx,3.2,edge-dir*.3,.8,0);G.add(cx,2.6,edge-dir*.3,6,.04,.06,col);};
  // ---- R11b(2): the joins are real roads: Catmull-Rom centrelines, continuously graded (no steps), 7 m wide (5 m carriageway + sidewalks),

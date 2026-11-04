@@ -106,7 +106,7 @@ export const DISTRICTS={
  alley:{name:'Lantern Market',cx:24,cz:-28.6,rot:Math.PI/2,len:40,hw:3.2,kind:'alley',hmin:10,hmax:26,caps:[1],parent:'main',join:[24,-6.5]},
  avenue:{name:'Line 9 Approach',cx:-22,cz:24.3,rot:-Math.PI/2,len:31.4,hw:5,kind:'street',hmin:14,hmax:30,parent:'main',join:[-22,6.5]},
  plaza:{name:'Line 9 Plaza',cx:-22,cz:54,rot:0,len:34,hw:14,kind:'plaza',hmin:18,hmax:40,gaps:[{side:-1,a:-5.2,b:5.2},{side:1,a:-5,b:5}],caps:[-1,1],parent:'avenue',join:[-22,41]},
- canal:{name:'Velvet Canal',cx:58,cz:0,rot:Math.PI/2,len:88,hw:10,kind:'canal',hmin:12,hmax:28,bridges:[-25,0,25],gaps:[{side:-1,a:-8.7,b:8.7}],caps:[-1,1],parent:'main',join:[50,0]}
+ canal:{name:'Velvet Canal',cx:58,cz:0,rot:Math.PI/2,len:88,hw:10,kind:'canal',hmin:12,hmax:28,bridges:[-25,0,25],gaps:[{side:-1,a:-8.7,b:8.7}],caps:[],parent:'main',join:[50,0]}
 };
 let ZI=0,ZL=0;
 export function buildWorld(scene,cand){const out={districts:{},flick:[],vents:[],steamPts:[],walk:[],block:[]};
@@ -156,7 +156,7 @@ export function buildWorld(scene,cand){const out={districts:{},flick:[],vents:[]
  const sky=new Batch(new THREE.MeshLambertMaterial()),skg=new Batch(new THREE.MeshBasicMaterial({toneMapped:false}));skg.mat.userData.boost=1.6;seed=99;
  for(let i=0;i<90;i++){const a=srand()*Math.PI*2,r=sr(80,140);const x=10+Math.cos(a)*r,z=20+Math.sin(a)*r,h=sr(40,120),w=sr(8,18);
   // R8: never stand a skyline block on the Ring Causeway band or on any street rect (they were the black boxes on the deck)
-  const pad=w/2+2;if((x+pad>-84&&x-pad<-44)||out.walk.some(q=>x+pad>q[0]&&x-pad<q[1]&&z+pad>q[2]&&z-pad<q[3]))continue;sky.add(x,h/2,z,w,h,w,0x110f18);
+  const pad=w/2+2;if((x+pad>-84&&x-pad<-44)||[[44,100,-215,-40],[44,80,40,226]].some(q=>x+pad>q[0]&&x-pad<q[1]&&z+pad>q[2]&&z-pad<q[3])/* R11b: canal plazas + Harbor Rise roads */||out.walk.some(q=>x+pad>q[0]&&x-pad<q[1]&&z+pad>q[2]&&z-pad<q[3]))continue;sky.add(x,h/2,z,w,h,w,0x110f18);
   for(let k=0;k<10;k++)skg.add(x+sr(-w/2,w/2),sr(4,h),z+(z>20?-1:1)*(w/2+.05),sr(.5,2),sr(.3,.8),.1,new THREE.Color(spick(winCols)).multiplyScalar(.5).getHex());if(srand()<.35)skg.add(x,h*.75,z+(z>20?-1:1)*(w/2+.1),w*.8,sr(1.5,4),.1,spick(NEON));}
  sky.build(scene);skg.build(scene);
  return out;}
