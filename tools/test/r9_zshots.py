@@ -3,7 +3,10 @@ SP=[('terrace',-3,46,-274,3.14,-.6,1),('terrace-down',0,46,-272.8,3.14,-1.0,1),(
 def st(pg,shot,lp):
   pg.click('text=Done');pg.wait_for_timeout(500);pg.evaluate('__G.setTP(false)')
   for i in range(8):
-    if pg.is_visible('#dlg'):pg.mouse.click(420,300);pg.wait_for_timeout(300)
+    pass
+  pg.add_style_tag(content='#dlg{display:none!important}')
   for n,x,y,z,yaw,pit,h in SP:shot('r9-'+n,h=h,pp={'x':x,'y':y,'z':z,'yaw':yaw,'pitch':pit})
+  print('DOORBLOCKS',pg.evaluate("Object.values(__G.CITY.apts).map(a=>[a.door,__G.CITY.block.filter(b=>Math.hypot((b[0]+b[1])/2-a.door[0],(b[2]+b[3])/2-a.door[1])<2.5).length])"))
+  pg.evaluate('__S.min=9*60');pg.evaluate('for(let i=0;i<400;i++)__G.LP.update(.5,__G.cam)')
   print('MARA',pg.evaluate("(()=>{const n=__G.npcs.mara;return [n.obj.position.x,n.obj.position.z,n.obj.visible]})()"))
 run(st)

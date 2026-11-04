@@ -18,7 +18,7 @@ Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain 
 | `input.js` | Touch stick and look, plus keyboard (WASD/E/V/M/Esc). |
 | `ladle.js`, `props.js` | Optional noodle-bar side gig and props. |
 | `voice.js` | Kokoro-generated voice lines (`audio/voice/`) and district street ambience. |
-| `sw.js` | Network-first service worker. Bump `C` on every deploy (currently `nl-r8b`). |
+| `sw.js` | Network-first service worker. Bump `C` on every deploy (currently `nl-r9a`). |
 | `tools/voice/` | `extract.mjs` (pull lines) and `gen.py` (Kokoro TTS). |
 | `tools/test/` | Headless Playwright tests (see below). |
 
@@ -50,6 +50,15 @@ Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain 
   - a bathroom with a sink and a mirror that opens the look editor.
   R3 decor slots are kept. The light budget is 6 point lights per flat, and only one flat is near the player at a time.
 - **Doors:** every walk-in storefront (`room()`) gets a lit frame in its sign colour, a threshold glow and an "Enter · <name>" prompt. Apartment doors, metro stairs and elevators get a bobbing glow chevron (distance-culled, under 30 m). Storefronts also show on the map.
+
+## r9 fixes (Joshua's iPhone report)
+- **Reset didn't reset:** the Options "Reset" removed `neonLadle2` and called `location.reload()`, but the reload fires `pagehide`/`visibilitychange`, whose autosave immediately re-wrote the in-memory `S`. You respawned exactly where you were. `wipeSave()` now sets a `WIPING` latch that disables `save()`, removes every `neonLadle*`/`nl*` save key (including the v1 `neonLadle` key, which would otherwise be migrated back in), keeps settings/audio, clears sessionStorage and any ladle IndexedDB, then `location.replace`s. Test: `r9_reset.py`.
+- **Walk-through props:** Crown parked cars, the holo-fountain basin, planters; Ashline burn barrels and crates; Line 9 ticket machines; and the procedural street props (vending machines, trash piles, bollards/planters) now push solid AABBs into `CITY.block`. That list is bucketed on the 4 m grid (`bgrid`). Procedural props are also skipped within 3.2 m of any apartment door or storefront door, which was the vending machine in front of the flat. Audit: `props.js` + `r9_props.py`. 136 hits went down to 61, and the rest are room interiors (counters, tables, stools), which are left walkable on purpose.
+- **Mara missing at her stall:** `mara_tea` was at x=22.2, *inside* the tea-stall counter in the Lantern Market alley. The waypoint pointed at a body hidden in the counter. She now stands at x=23.9 in the alley, facing the counter.
+- **Z-fighting:** the sky-terrace slab top was exactly coplanar with the tower mass top (y=46). Other cases: the Orrin lobby floor vs the room floor (both 0.04), the door threshold glow vs the room floor, puddles separated by only 1e-4, sign reflection streaks under the puddles, and road/paving planes of adjoining districts, all at y=0. These are all separated now: each district's ground is offset by (index%5)×3 mm, puddles use polygonOffset, and streaks sit at 0.05. The camera near plane went from 0.08 to 0.15 (about 2× depth precision). logarithmicDepthBuffer was not used (it hurts mobile early-z).
+- **Tower top view:** the terrace parapet is now 0.4 m solid with an open post-and-rail at 1.05 m, so you can look down to the street.
+- **Signage:** sign texts come from shuffled decks (no repeat until every text is used). Crown went from 11 to 41 brands, Docks from 10 to 22, and Saltgate from 16 to 40. The more CJK verticals and five sign styles (block, serif double-frame, thin underline, condensed italic, script) make the streets look less uniform. "ORRIN MUTUAL" is only on the Orrin tower and the plaza billboard now.
+- **Black slab at camera height (Crown, night):** most likely a parked car body seen from inside it or by the third-person camera, since cars had no collision. Cars are solid now. This wasn't reproduced exactly.
 
 ## Tests (`tools/test/`, need `python3 -m http.server 8123` in the repo root and Playwright with Chrome)
 - `r7_story.py`: `MODE=story` plays the whole main story from a fresh save. At four times of day, every step must have a scheduled NPC or target, be reachable by multi-level flood fill (ground, metro, ladders, elevators), and show a live waypoint. `MODE=ends` plays all five endings (open, fair, tide, law, chair). `MODE=shots` writes the r7 screenshots.
