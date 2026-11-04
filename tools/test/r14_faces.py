@@ -11,7 +11,7 @@ def st(pg,shot,lp):
  C=pg.evaluate("Object.keys(__G.CAST).map(k=>Object.assign({hi:1},__G.CAST[k].look))")
  print('cast',len(C))
  for i in range(0,len(C),4):
-  n='r14-faces-cast%d'%(i//4+1);y=pg.evaluate(JS,[C[i:i+4],n,.42,26,1.25]);pg.wait_for_timeout(300);pg.screenshot(path=S+n+'.png');print(n,y)
+  n='r14-faces-cast%d'%(i//4+1);y=pg.evaluate(JS,[C[i:i+4],n,.6,30,2.4]);pg.wait_for_timeout(300);pg.screenshot(path=S+n+'.png');print(n,y)
  L=pg.evaluate("(()=>{const R=[0xd8d4cc,0x1a1a22,0x3ff0ff,0xff3fa4,0x3a3028,0x2a2c22];return ['rich','rich','mid','mid','poor','poor'].map((c,i)=>({sex:i%2?'f':'m',cls:c,top:R[i],hi:1,glow:c==='rich'?{where:'collar',color:0xffe0a0}:c==='mid'?{where:'visor',color:0x3ff0ff}:null}));})()")
  pg.evaluate(JS,[L,'c',.5,34,1.6]);pg.wait_for_timeout(300);pg.screenshot(path=S+'r14-faces-classes.png')
  L=[{'gang':'tide','top':0x2a2c22,'glow':{'where':'strip','color':0xff8a3d}},{'gang':'wardline','top':0x1e2a44,'hat':'cap'},{'gang':'saint','top':0xe8e8f0,'glow':{'where':'visor','color':0xffffff}},{'gang':'orrin','cls':'rich','top':0x3a2a5a,'trim':0xc9b2ff},{'android':1,'top':0x8a8a9a},{'android':1,'top':0x3ff0ff}]
