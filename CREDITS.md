@@ -19,3 +19,12 @@
 
 ## R3
 - Character creator, job boards (Tide/Wardline/Orrin), apartment leasing + decorating, look-based faction perception. All procedural, no new assets.
+
+## R6 audio: voices and street ambience
+- **Main-cast voice lines (`audio/voice/*.mp3`):** generated locally with **Kokoro-82M** (hexgrad/Kokoro-82M, Apache-2.0) through `kokoro-onnx` (MIT), v1.0 int8 model and voice pack. Voices are the stock Kokoro voices, some blended (see `audio/voice/VOICES.md`). Mono MP3, 32 kbps. Only the main cast is voiced. Street extras are not voiced.
+- **Street ambience (`audio/amb/*.mp3`)**, re-encoded to mono 40 kbps MP3 and loudness-normalized:
+  - `crowd.mp3`: "Scifi City - Ambient Loop" (busy_cyberworld.ogg) by TinyWorlds, CC0. https://opengameart.org/content/scifi-city-ambient-loop
+  - `traffic.mp3`: "High traffic road sounds" (gatve Varniu.ogg) by IgnasD, CC0. https://opengameart.org/content/high-traffic-road-sounds
+  - `rain.mp3`: "Rain (loopable)" (track 3) by Ylmir, CC0. https://opengameart.org/content/rain-loopable
+  - `siren.mp3`: "Storm & Siren" (storm_3_siren.ogg) by TinyWorlds, CC0, low-passed to sound distant. https://opengameart.org/content/storm-siren
+  CC0 needs no attribution. It's listed here anyway, with thanks.
