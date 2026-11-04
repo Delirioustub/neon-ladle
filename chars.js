@@ -42,7 +42,7 @@ function shell(sk,sex,mat,region,push,opt={}){
 function carrier(root,bone){root.updateMatrixWorld(true);const g=new THREE.Group();const inv=new THREE.Matrix4().copy(bone.matrixWorld).invert().multiply(root.matrixWorld);inv.decompose(g.position,g.quaternion,g.scale);bone.add(g);return g;}
 // look: {sex:'m'|'f', skin, top, pants, boots, coat:{color,len,open}, hair:{style,color}, hat, hatColor, glow:{where,color}, gear:[...], slim, bulk, scale, android, apron, umbrella}
 export function makeHuman(look){const sex=look.sex||'f';const root=SkeletonUtils.clone(BASE[sex]);const H=new THREE.Group();H.add(root);
- const s=(look.scale||1)*(sex==='m'?.93:.96);root.scale.set(s*(look.slim||1)*(look.bulk||1),s,s*(look.slim||1)*(look.bulk||1));
+ const sc0=look.scale||1,kid=look.kid||sc0<.9;const s=(kid?sc0:Math.min(1.045,Math.max(.955,sc0)))*(sex==='m'?1.02:.97);/* normalized adult heights ~1.6-1.86m */root.scale.set(s*(look.slim||1)*(look.bulk||1),s,s*(look.slim||1)*(look.bulk||1));
  const bones={};root.traverse(o=>{if(o.isBone)bones[o.name]=o;if(o.isMesh)o.frustumCulled=false;});
  const sk=bodyMesh(root);
  root.traverse(o=>{if(!o.isMesh||o.userData.shell)return;const mats=Array.isArray(o.material)?o.material:[o.material];o.material=mats.map(m=>{const n=m.clone();

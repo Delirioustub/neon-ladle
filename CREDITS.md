@@ -1,5 +1,8 @@
 # Credits
 
+## R2 city expansion
+- Crown Heights, Ashline Docks, interiors, rooftops, sky terrace, Ring Line stations and train car: procedurally built for this project (`city.js`). No new third-party assets.
+
 ## v2 (root of the site)
 - **Characters:** "Universal Base Characters" (Superhero male/female bodies and the Long, Buns, Buzzed, SimpleParted and Beard hairstyles) and "Universal Animation Library" clips, both by Quaternius (https://quaternius.com), CC0 1.0. Taken from the GLB/glTF conversions in the public CC0 project github.com/lord3nd3r/ffxi-browser. Changes: textures resized to 512 px JPEG, only 8 animation clips kept, scale and translation tracks stripped; in engine they get procedural skinned clothing (smoothed shells), coat skirts, aprons, hats, hoods, glow gear, palette tints and a rim-light shader. Files: `models/ubc-*.glb`. See `models/UAL-LICENSE.txt`.
 - **Character portraits (`portraits/*.jpg`):** original images generated with an AI image generator for this project. They depict original characters only.

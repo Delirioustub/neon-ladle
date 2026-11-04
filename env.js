@@ -6,9 +6,9 @@ const C=(h)=>new THREE.Color(h);
 const KEYS=[[0,C(0x120a22),C(0x241236),C(0x5a4a9a),C(0x120818),.6,0,.75,1.0,1],
  [4.5,C(0x140c26),C(0x261638),C(0x5a4a9a),C(0x120818),.6,0,.75,1.0,1],
  [6,C(0x4a2a4a),C(0x6a4058),C(0xc08aa0),C(0x2a1a28),1.0,.3,.6,1.0,.8],
- [7.5,C(0x7a8898),C(0x8a909a),C(0xc8d0e0),C(0x3a3a44),1.9,1.1,.32,.95,.35],
- [12,C(0x8a96a6),C(0x98a0aa),C(0xd8e0f0),C(0x50505a),3.0,1.5,.28,.92,.25],
- [16.5,C(0x7a8494),C(0x8a8e98),C(0xd0c8d0),C(0x403a40),1.9,1.1,.32,.95,.35],
+ [7.5,C(0x8a98aa),C(0x98a0ac),C(0xd8e0f0),C(0x5a5a64),3.0,1.8,.26,1.08,.35],
+ [12,C(0xa4b2c4),C(0xb0b8c4),C(0xe8eef8),C(0x70707a),4.4,2.6,.2,1.12,.2],
+ [16.5,C(0x8a94a4),C(0x9a9ea8),C(0xe0d8d8),C(0x5a5458),3.0,1.8,.26,1.06,.35],
  [18.2,C(0x5a2a48),C(0x7a3a50),C(0xff9a7a),C(0x2a1420),1.1,.45,.55,1.0,.75],
  [19.6,C(0x1c0e2c),C(0x2c1640),C(0x6a4aa0),C(0x140a1c),.7,0,.72,1.0,1],[24,C(0x120a22),C(0x241236),C(0x5a4a9a),C(0x120818),.6,0,.75,1.0,1]];
 export const WEATHER={clear:{rain:0,fog:.75,dur:[5,9]},drizzle:{rain:.35,fog:.95,dur:[3,7]},rain:{rain:.7,fog:1,dur:[3,7]},downpour:{rain:1,fog:1.25,dur:[2,4]},fog:{rain:.05,fog:2.1,dur:[2,5]},storm:{rain:1,fog:1.15,dur:[1.5,3],lightning:1}};
@@ -31,7 +31,7 @@ export function makeEnv(scene,{hemi,moon,bloom,R,mats}){
    let i=0;while(i<KEYS.length-2&&tod>=KEYS[i+1][0])i++;const a=KEYS[i],b=KEYS[i+1],t=THREE.MathUtils.smoothstep(tod,a[0],b[0]);
    const over=Math.min(1,st.rain*.9+(st.fog-1)*.4);// overcast greys out the day
    scene.background.copy(a[1]).lerp(b[1],t);scene.fog.color.copy(a[2]).lerp(b[2],t);
-   const dayF=THREE.MathUtils.lerp(a[6],b[6],t)/1.5;st.dayF=dayF;
+   const dayF=Math.min(1,THREE.MathUtils.lerp(a[6],b[6],t)/2.6);st.dayF=dayF;
    if(dayF>0){const g=C(0x5a5e68).multiplyScalar(.9);scene.background.lerp(g,over*.5*dayF);scene.fog.color.lerp(g,over*.5*dayF);}
    hemi.color.copy(a[3]).lerp(b[3],t);hemi.groundColor.copy(a[4]).lerp(b[4],t);hemi.intensity=THREE.MathUtils.lerp(a[5],b[5],t)*(1-over*.25*dayF);
    sun.intensity=THREE.MathUtils.lerp(a[6],b[6],t)*(1-over*.6);moon.intensity=.35*(1-dayF);
@@ -40,7 +40,7 @@ export function makeEnv(scene,{hemi,moon,bloom,R,mats}){
    env.lampMul=THREE.MathUtils.lerp(a[9],b[9],t);
    scene.fog.density=.03*st.fog*(1-dayF*.35);
    // wet surfaces: glossier + more mirror-like when soaked
-   const w=st.wet;mats.ROAD.roughness=.62-.44*w;mats.ROAD.metalness=.15+.4*w;mats.WALK.roughness=.7-.4*w;mats.WALK2.roughness=.7-.48*w;
+   const w=st.wet;mats.ROAD.roughness=.62-.44*w;mats.ROAD.metalness=.15+.4*w;mats.WALK.roughness=.7-.4*w;mats.WALK2.roughness=.7-.48*w;if(mats.STONE){mats.STONE.roughness=.6-.4*w;mats.STONE2.roughness=.5-.35*w;mats.GRIME.roughness=.75-.4*w;}
    mats.PUDDLE.opacity=Math.min(1,w*1.4);mats.PUDDLE.transparent=true;mats.PUDDLE.visible=w>.05;
    // lightning
    if(W.lightning){st.bolt-=dt;if(st.bolt<=0){st.flash=1;st.bolt=4+Math.random()*10;env.onThunder&&env.onThunder();}}
