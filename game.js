@@ -17,6 +17,7 @@ import {DISH,CAST,PLACES,SCHED,PATROL,CHAT,TOPICS,makeQuests} from './story.js';
 import {makeActs} from './story5.js';
 import {initLadle} from './ladle.js';
 import {initR5} from './r5.js';
+import {loadGuns} from './guns.js';
 let R5=null,LADLE=null;
 const $=id=>document.getElementById(id);
 // ================= settings (device-agnostic; persisted) =================
@@ -104,7 +105,7 @@ function talk(k){const n=npcs[k];
  if(k==='dess'&&S.flags.dessHome)opts.unshift({t:'"Any tips, chef?"',then:()=>say('dess',[pick(["Customers wait longer if you look busy. Look busy.","Tea's a gateway. Nobody leaves after tea. They want soup.","Close before curfew. Wardline doesn't tip."])],[])});
  R5&&R5.talkOpts(k,opts);opts.push({t:'"Night."'});say(k,[line],opts);}
 // ================= people =================
-await loadRig('models/');
+await Promise.all([loadRig('models/'),loadGuns('models/guns/').catch(e=>console.warn('guns',e))]);
 const npcs={};const tags={};
 for(const k in CAST){const h=makeHuman(Object.assign({hi:1},CAST[k].look));scene.add(h.obj);npcs[k]={k,h,obj:h.obj,route:[],place:null,talking:false,pi:0};
  const t=document.createElement('div');t.className='tag';t.innerHTML=`<span>${CAST[k].n}</span>`;$('tags').appendChild(t);tags[k]=t;}
@@ -491,6 +492,7 @@ function drawMap(){const c=$('mapC'),dpr=devicePixelRatio,w=c.clientWidth*dpr,h=
  if(!bk.on)icon(S.bike.x,S.bike.z,'⛍','#ff3fa4',7);
  for(const t of mapTargets()){const [sx,sy]=toS(t.x,t.z);const pr=(t.tr?7:4)+Math.sin(T*4)*1.5;g.fillStyle=t.tr?'#ffd24d':'rgba(255,210,77,.6)';g.beginPath();g.arc(sx,sy,px(pr),0,7);g.fill();if(t.tr){g.strokeStyle='rgba(255,210,77,.5)';g.beginPath();g.arc(sx,sy,px(pr+6),0,7);g.stroke();}}
  if(S.jobDef&&typeof S.q.job==='number'){const p=S.jobDef.sp[S.q.job];icon(p[0],p[1],'$','#ffe14d',8);}
+ for(const m of (window.__mapIcons?window.__mapIcons():[]))icon(m[0],m[1],m[2],m[3],m[4]||8);
  if(S.wp){const [sx,sy]=toS(S.wp[0],S.wp[1]);g.strokeStyle='#7ff3ff';g.lineWidth=2*dpr;g.beginPath();g.moveTo(sx,sy-px(10));g.lineTo(sx+px(7),sy);g.lineTo(sx,sy+px(10));g.lineTo(sx-px(7),sy);g.closePath();g.stroke();}
  const o=outdoorPos(),[sx,sy]=toS(o.x,o.z),fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw),a=Math.atan2(fx,fz);g.save();g.translate(sx,sy);g.rotate(a);g.fillStyle='#fff';g.shadowColor='#7ff3ff';g.shadowBlur=12*dpr;g.beginPath();g.moveTo(px(11),0);g.lineTo(-px(7),px(7));g.lineTo(-px(3),0);g.lineTo(-px(7),-px(7));g.closePath();g.fill();g.restore();
  g.fillStyle='rgba(232,224,255,.55)';g.font=`${px(10)}px system-ui`;g.textAlign='left';g.fillText('◀ uptown · Crown',px(14),h-px(14));g.textAlign='right';g.fillText('Ashline · the harbor ▶',w-px(14),h-px(14));}
@@ -511,7 +513,7 @@ ENV.onThunder=()=>{if(!audio)return;const A=audio.AC,t=A.currentTime+.4+Math.ran
 cam.position.set(0,1.6,-2);ENV.update(0,(S.min/60)%24,0,S);LP.update(10,cam);for(let i=0;i<20;i++)LP.update(.5,cam);cubeCam.position.set(0,.4,-2);cubeCam.update(R,scene);
 scene.traverse(o=>{if(o.material&&o.material.isMeshStandardMaterial&&o.material.metalness>.3){o.material.envMap=cubeRT.texture;o.material.envMapIntensity=.9;}});
 for(const k in npcs)tickNPCs(0);
-Object.assign(G,{Q,stepOf,onList,qAdv,emit,interact,say,fade,W,CITY,cand,makeHuman,walkable,regionOf,lookClass,CAST,Input,THREE,scene,P,cam,npcs,dlg:()=>dlgOpen,riding:()=>!!riding||bk.on&&Math.abs(bk.v)>4});R5=initR5(G);window.R5=R5;LADLE=initLadle(G);
+Object.assign(G,{player:()=>player,tp:()=>!!tickPlayer.tp,qStart,groundY,blocked:()=>menuOpen()||mapOpen||creating,save:()=>save(),Q,stepOf,onList,qAdv,emit,interact,say,fade,W,CITY,cand,makeHuman,walkable,regionOf,lookClass,CAST,Input,THREE,scene,P,cam,npcs,dlg:()=>dlgOpen,riding:()=>!!riding||bk.on&&Math.abs(bk.v)>4});R5=initR5(G);window.R5=R5;LADLE=initLadle(G);
 // load-repair m8->m9 (has its own chapter card); the other timer hand-offs are repaired by NEXT below
 if(S.q.m8==='done'&&S.q.m9===undefined)setTimeout(()=>{chapter('Act Three','The Weather Men');qStart('m9');},2500);
 window.__S=S;window.__P=P;window.__G={groundY,makeHuman,get RIDE(){return RIDE},ride,get riding(){return riding},CAST,tickNPCs:dt=>tickNPCs(dt),PLACES,R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,inWalk,stepOf,placeFor,placePos,stepTarget,onList,S,get near(){return near;}};

@@ -1,0 +1,9 @@
+<!doctype html><html><body style="margin:0"><script type="importmap">{"imports":{"three":"../../lib/three.module.js","three/addons/":"../../lib/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const R=new THREE.WebGLRenderer();R.setSize(1200,600);document.body.appendChild(R.domElement);const sc=new THREE.Scene();sc.background=new THREE.Color(0x335);
+sc.add(new THREE.HemisphereLight(0xffffff,0x444,2));const cam=new THREE.PerspectiveCamera(40,2,.01,50);cam.position.set(0,0,3.2);
+const L=new GLTFLoader();const fs=['pistol1','pistol3','smg2','ar1'];let i=0;const out=[];
+for(const f of fs){const g=await L.loadAsync('../../models/guns/'+f+'.glb');const s=g.scene;const b=new THREE.Box3().setFromObject(s);const sz=b.getSize(new THREE.Vector3());const k=0.6/Math.max(sz.x,sz.y,sz.z);s.scale.setScalar(k);const c=b.getCenter(new THREE.Vector3()).multiplyScalar(k);s.position.sub(c);const G=new THREE.Group();G.add(s);G.position.set(-1.5+i,0,0);sc.add(G);G.add(new THREE.AxesHelper(.4));out.push([f,sz.toArray()]);i++;}
+R.render(sc,cam);window.done=JSON.stringify(out);
+</script></body></html>
