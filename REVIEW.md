@@ -18,7 +18,7 @@ Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain 
 | `input.js` | Touch stick and look, plus keyboard (WASD/E/V/M/Esc). |
 | `ladle.js`, `props.js` | Optional noodle-bar side gig and props. |
 | `voice.js` | Kokoro-generated voice lines (`audio/voice/`) and district street ambience. |
-| `sw.js` | Network-first service worker. Bump `C` on every deploy (currently `nl-r10b`). |
+| `sw.js` | Network-first service worker. Bump `C` on every deploy (currently `nl-r11a`). |
 | `tools/voice/` | `extract.mjs` (pull lines) and `gen.py` (Kokoro TTS). |
 | `tools/test/` | Headless Playwright tests (see below). |
 
@@ -94,3 +94,10 @@ Landscape-first, first-person/third-person cyberpunk life-sim for phones. Plain 
 ## r10b: quest NPCs missing on a fresh game
 - **Root cause:** `tickNPCs` culled with `o.visible=o.visible&&d<70`. Once a cast NPC was more than 70 m from the camera a single frame (e.g. walking to the Line 9 gate), `visible` latched false and never came back. Kip and Ilse (and Mara, Benny, Juno, Sela) vanished for good; only Dess had a special-case re-show. Now `o.visible=d<70` whenever the NPC is placed.
 - **Test:** `r10b_presence.py` plays every main step at 8 times of day (19, 21:30, 23:45, 1:30, 3:00, 9, 13, 17) in a storm, first parks the player 200 m away, then arrives, and asserts each targeted/talk NPC is visible, within 4 m of its place, on walkable ground, at the waypoint, and in CAST. Fails 10 steps with the old line, 0 with the fix. Side quests not covered.
+
+## r11: layered city + street ends
+- **`layers.js` (new):** three readable tiers, all distant instanced scenery (2 draw calls, no lights/collision). The shared sea at y -0.95 under the centre and Docks (replaces the Docks-only water plane), with ~600 flooded outer-city towers standing in it; Crown Heights now rides a megastructure deck (foundation walls with light bands) over an under-city at y -38 (ground, lit street grid, ~600 towers) ending at a sea wall. Fog thins to 0.3x on the overlooks so the lower tiers read.
+- **Halcyon Plaza (Crown east end):** the flat cap wall is gone. 46x64 m plaza with Cafe Halcyon, Galleria 9 and Argent Tailor (enterable), holo-ring sculpture, trees, benches (sit), balustrade over the drop. A promenade turns south (toward the centre) to an overlook terrace with the **Halcyon Lift** (tp to Saltgate at x 44, z -6.6, and back up). Ped lanes added.
+- **Ashline L-alley + Net Market:** new north gap at x 38..46 opens an alley with lantern strings to a quay square on the sea (Net & Tackle, Eel House enterable, fish stalls, quay seat facing the flooded city).
+- **Not done / unverified:** real stairs/ramps between tiers (district y stays 0; tiers are visual plus lift/metro/causeway), the under-city is not reachable (distant scenery like the skyline), metro untouched, the central T-end drop-offs now show sea + flooded towers but have no plazas, no on-device perf check.
+- Test: `r11_shots.py` (shots + walkability of new spaces + interactables).
