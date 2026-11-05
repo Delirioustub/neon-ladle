@@ -43,6 +43,6 @@
 - **Hover car — Pixor library (Frakassets)**, CC0 1.0. https://pixor.art/library/vehicles/hover-car/ → `models/cars/hover.glb`
 - District paint tints and neon sill/underglow trims are added in code (`cars.js`).
 
-## R15 gunplay (on branch r15 — not in r14c)
+## R15 gunplay
 - **Quaternius Modular Gun Pack** (Pistol_1, Pistol_3, SMG_2, AR_1), CC0 1.0. https://quaternius.com · https://poly.pizza → `models/guns/{pistol1,pistol3,smg2,ar1}.glb`. In engine: barrel remapped to −Z, Main material recolored to each gang's neon emissive, scaled to weapon length.
 - **Combat clips** (Death, HitRecieve, HitRecieve_2) extracted from Quaternius Ultimate Modular Characters Punk_M.glb, CC0 1.0. Bones renamed to the g3 names; meshes stripped. Aim/shoot/run-shoot clips omitted for now — retarget shortened the body. File: `models/guns/combat-anims.glb`.
