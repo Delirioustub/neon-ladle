@@ -51,7 +51,7 @@ def f(pg,shot,lp):
   }""")
   pg.wait_for_timeout(800)
   for i in range(14):
-    info=J("""()=>({ev:!!R5.ev, en:!!(R5.ev&&R5.ev.enemies), type:R5.ev&&R5.ev.type, reg:__G.regionOf(__P.x,__P.z), dlg:!document.getElementById('dlg').classList.contains('hide'), gang:__S.gang})""")
+    info=J("""()=>({ev:!!R5.ev, en:!!(R5.ev&&R5.ev.enemies), type:R5.ev&&R5.ev.type, dlg:!document.getElementById('dlg').classList.contains('hide'), gang:__S.gang})""")
     print('EV',i,info)
     if info.get('en'): break
     J("""()=>{
