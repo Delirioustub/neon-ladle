@@ -5,18 +5,18 @@
 // and its walls are absolute geometry (NL_ABS): they are built straight from H and only get the camera offset.
 import * as THREE from 'three';
 const S=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);};
-const gs=(x,z,cx,cz,r,h)=>h*Math.exp(-((x-cx)**2+(z-cz)**2)/(r*r));
+const gs=(x,z,cx,cz,r,h)=>{const q=Math.max(0,1-((x-cx)**2+(z-cz)**2)/(r*r*4));return h*q*q*q;};// cheap bell (same in GLSL)
 export function H(x,z){
  let h=.5+5.5*S(235,150,z)+3.5*S(140,100,z)+3*S(60,-60,z)+16*S(-60,-215,z);
- const m=S(215,170,z)*S(-215,-180,z);h-=.035*Math.min(110,Math.max(-90,x))*m;
+ const m=S(215,170,z)*S(-240,-150,z);h-=.035*Math.min(70,Math.max(-90,x))*m;
  const k=S(230,180,z);h+=k*(gs(x,z,-210,-40,95,16)+gs(x,z,230,-90,100,20)+gs(x,z,190,-280,85,9)+gs(x,z,-190,150,80,9)+gs(x,z,210,120,70,7));
  return h;}
 const GL=`
 float nlS(float a,float b,float x){float t=clamp((x-a)/(b-a),0.0,1.0);return t*t*(3.0-2.0*t);}
-float nlG(vec2 p,vec2 c,float r,float h){vec2 d=p-c;return h*exp(-dot(d,d)/(r*r));}
+float nlG(vec2 p,vec2 c,float r,float h){vec2 d=p-c;float q=max(0.0,1.0-dot(d,d)/(r*r*4.0));return h*q*q*q;}
 float nlH(vec2 p){float z=p.y,x=p.x;
  float h=0.5+5.5*nlS(235.0,150.0,z)+3.5*nlS(140.0,100.0,z)+3.0*nlS(60.0,-60.0,z)+16.0*nlS(-60.0,-215.0,z);
- h-=0.035*clamp(x,-90.0,110.0)*nlS(215.0,170.0,z)*nlS(-215.0,-180.0,z);
+ h-=0.035*clamp(x,-90.0,70.0)*nlS(215.0,170.0,z)*nlS(-240.0,-150.0,z);
  h+=nlS(230.0,180.0,z)*(nlG(p,vec2(-210.0,-40.0),95.0,16.0)+nlG(p,vec2(230.0,-90.0),100.0,20.0)+nlG(p,vec2(190.0,-280.0),85.0,9.0)+nlG(p,vec2(-190.0,150.0),80.0,9.0)+nlG(p,vec2(210.0,120.0),70.0,7.0));
  return h;}
 float nlW(vec3 w){
@@ -70,7 +70,7 @@ export function subdivide(geo,mw,maxL=4){let g=geo.index?geo.toNonIndexed():geo.
   const e=L.indexOf(mx),a=T[e],b=T[(e+1)%3],c=T[(e+2)%3],m=mid(a,b);stack.push([a,m,c],[m,b,c]);}
  const ng=new THREE.BufferGeometry();names.forEach((nm,k)=>ng.setAttribute(nm,new THREE.Float32BufferAttribute(out[k],isz[k],A[k].normalized)));
  for(const gr of geo.groups||[])0;ng.computeBoundingSphere();ng.computeBoundingBox();return ng;}
-export function subdivideScene(scene,maxL=4){const bb=new THREE.Box3();let n=0;const cache=new Map();
+export function subdivideScene(scene,maxL=8){const bb=new THREE.Box3();let n=0;const cache=new Map();
  scene.updateMatrixWorld(true);
  scene.traverse(o=>{if(!o.isMesh||o.isInstancedMesh||o.isSkinnedMesh||!o.geometry||o.userData.nlAbs||(o.material&&o.material.defines&&('NL_ABS' in o.material.defines||'NL_NOWARP' in o.material.defines)))return;
   if(o.geometry.groups&&o.geometry.groups.length>1)return;
@@ -79,7 +79,7 @@ export function subdivideScene(scene,maxL=4){const bb=new THREE.Box3();let n=0;c
   o.geometry=subdivide(o.geometry,o.matrixWorld,maxL);n++;});return n;}
 // buckets for big instanced boxes (Batch): a unit box with n segments on x and z
 const BX={};export const segBox=n=>BX[n]||(BX[n]=new THREE.BoxGeometry(1,1,1,n,1,n));
-export const segFor=(sx,sz)=>{const m=Math.max(sx,sz);if(m<=5)return 1;for(const n of[2,4,8,16,32,64])if(m/n<=4)return n;return 64;};
+export const segFor=(sx,sz)=>{const m=Math.max(sx,sz);if(m<=9)return 1;for(const n of[2,4,8,16,32])if(m/n<=8)return n;return 32;};
 // ================= the land: terrain skin, the Velvet River (source in Crown Heights -> falls -> sea), walls, falls, footbridges =================
 export const RIVER=[[110,-224],[112,-206],[110,-186],[106,-166],[101,-142],[95,-116],[91,-92],[88,-68],[87,-44],[87,-20],[87,4],[88,28],[89,52],[91,80],[93,110],[94,140],[94,168],[92,196],[90,222],[89,250],[88,290]];
 const RW=4.6,WALL=5.6;// water half-width, inner wall line
@@ -165,11 +165,21 @@ export function sidewalkStairs(scene,pts,hw){const dummy=new THREE.Object3D();co
  return T.length;}
 // ================= R16 river footbridges: Canal Head and Canal Foot each get a lit path east, a bridge over the Velvet River and an overlook =================
 // under a footbridge the wall cap drops to 0.5 m below the deck
-export function wallTop(x,z,t){for(const b of BRIDGES)if(b.rx!==undefined&&Math.abs(z-b.z)<2.6&&Math.abs(x-b.rx)<9)return Math.min(t,H(x,z)-.5);return t;}
+export function wallTop(x,z,t){for(const b of BRIDGES)if(b.rx!==undefined&&Math.abs(z-b.z)<2.6&&Math.abs(x-b.rx)<9)return Math.min(t,H(x,z)-.95);return t;}
 export const BRIDGES=[{z:-50,name:'CANAL HEAD'},{z:50,name:'CANAL FOOT'}];
 export function bridgeWalks(walk){const out=[];for(const b of BRIDGES){const {r}=riverDist(88,b.z);const rx=r.x;b.rx=rx;b.x0=67.6;b.x1=rx+9.5;b.ox1=rx+17;
   out.push([b.x0,b.x1,b.z-1.6,b.z+1.6,0],[b.x1-.2,b.ox1,b.z-5,b.z+5,0]);}walk.push(...out);return out;}
-export function buildBridges(scene,cand,Batch,signTex){const B=new Batch(new THREE.MeshLambertMaterial()),G=new Batch(new THREE.MeshBasicMaterial({toneMapped:false}));G.mat.userData.boost=1.6;
+export function buildBridges(scene,cand,Batch,signTex,walk,LAND){
+ // R16 night dressing: lamps along both river banks (lit), and a scatter of street lights over the hillsides so the slope reads at night
+ {const B=new Batch(new THREE.MeshLambertMaterial()),G=new Batch(new THREE.MeshBasicMaterial({toneMapped:false}));G.mat.userData.boost=1.8;const R=sampleRiver();let rs=1;const rr=()=>{rs=(rs*16807)%2147483647;return rs/2147483647;};
+  const onWalk=(x,z,p)=>walk.some(q=>x>q[0]-p&&x<q[1]+p&&z>q[2]-p&&z<q[3]+p);
+  for(let i=4;i<R.length;i+=8){const p=R[i];if(p.fall)continue;for(const sd of[-1,1]){const x=p.x+p.nx*(WALL+1.3)*sd,z=p.z+p.nz*(WALL+1.3)*sd;if(onWalk(x,z,1))continue;const by=LAND.groundAbs(x,z)-H(x,z);
+    B.add(x,by+1.9,z,.14,3.8,.14,0x3a3844);B.add(x-p.nx*sd*.5,by+3.8,z-p.nz*sd*.5,Math.abs(p.nz)+.14,.08,Math.abs(p.nx)+.14,0x3a3844);G.add(x-p.nx*sd*.9,by+3.72,z-p.nz*sd*.9,.45,.08,.45,(i/8|0)%3?0xffd090:0x9fe8ff);
+    if((i/8|0)%2===(sd>0?1:0))cand.push({x:x-p.nx*sd*.9,y:by+3.3,z:z-p.nz*sd*.9,col:0xffc890,int:4,dist:14,pri:0});}}
+  const COL=[0xffc070,0xffb060,0x9fe8ff,0xff9fd6,0xfff1c9];
+  for(let k=0;k<1400;k++){const x=-320+rr()*640,z=-450+rr()*640;if(z>195||onWalk(x,z,8)||nearRiver(x,z,3))continue;const y=LAND.groundAbs(x,z);if(y<-.3)continue;const by=y-H(x,z);
+   const c=COL[(rr()*COL.length)|0];if(rr()<.55){B.add(x,by+2,z,.12,4,.12,0x2a2832);G.add(x,by+4.05,z,.4,.1,.4,c);}else{G.add(x,by+rr()*3+1,z,rr()*2+.6,.5+rr()*.6,.08,new THREE.Color(c).multiplyScalar(.7).getHex());}}
+  B.build(scene);G.build(scene);}const B=new Batch(new THREE.MeshLambertMaterial()),G=new Batch(new THREE.MeshBasicMaterial({toneMapped:false}));G.mat.userData.boost=1.6;
  const L=(x,y,z,col,int=3,dist=10)=>cand.push({x,y,z,col,int,dist,pri:0});
  for(const b of BRIDGES){const {z,rx,x0,x1,ox1}=b;const cx=(x0+x1)/2;
   B.add(cx,-.1,z,x1-x0,.2,3.2,0x3a3640);for(let x=x0+.5;x<x1;x+=.8)B.add(x,.003,z,.6,.01,3,0x4a4652);

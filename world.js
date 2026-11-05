@@ -161,7 +161,7 @@ export function buildWorld(scene,cand){const out={districts:{},flick:[],vents:[]
  const sky=new Batch(new THREE.MeshLambertMaterial()),skg=new Batch(new THREE.MeshBasicMaterial({toneMapped:false}));skg.mat.userData.boost=1.6;seed=99;
  for(let i=0;i<90;i++){const a=srand()*Math.PI*2,r=sr(80,140);const x=10+Math.cos(a)*r,z=20+Math.sin(a)*r,h=sr(40,120),w=sr(8,18);
   // R8: never stand a skyline block on the Ring Causeway band or on any street rect (they were the black boxes on the deck)
-  const pad=w/2+2;if(nearRiver(x,z,pad+2)||(x+pad>-84&&x-pad<-44)||[[44,140,-215,-40],[44,80,40,226]].some(q=>x+pad>q[0]&&x-pad<q[1]&&z+pad>q[2]&&z-pad<q[3])/* R11b: canal plazas + Harbor Rise roads */||out.walk.some(q=>x+pad>q[0]&&x-pad<q[1]&&z+pad>q[2]&&z-pad<q[3]))continue;sky.add(x,h/2,z,w,h,w,0x110f18);
+  const pad=w/2+2;if(nearRiver(x,z,pad+2)||(x+pad>-84&&x-pad<-44)||[[44,140,-215,-40],[44,80,40,226],[64,118,40,62],[64,118,-62,-40]]/* R16: river footbridges + overlooks */.some(q=>x+pad>q[0]&&x-pad<q[1]&&z+pad>q[2]&&z-pad<q[3])/* R11b: canal plazas + Harbor Rise roads */||out.walk.some(q=>x+pad>q[0]&&x-pad<q[1]&&z+pad>q[2]&&z-pad<q[3]))continue;sky.add(x,h/2,z,w,h,w,0x110f18);
   for(let k=0;k<10;k++)skg.add(x+sr(-w/2,w/2),sr(4,h),z+(z>20?-1:1)*(w/2+.05),sr(.5,2),sr(.3,.8),.1,new THREE.Color(spick(winCols)).multiplyScalar(.5).getHex());if(srand()<.35)skg.add(x,h*.75,z+(z>20?-1:1)*(w/2+.1),w*.8,sr(1.5,4),.1,spick(NEON));}
  sky.build(scene);skg.build(scene);
  return out;}
