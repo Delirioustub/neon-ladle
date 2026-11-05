@@ -5,13 +5,13 @@
 // Everything here is distant scenery: instanced (one draw call per batch), no collision, no lights in the pool.
 import * as THREE from 'three';
 import {Batch,MATS,signTex} from './world.js';
-import {nearRiver,absMat} from './terrain.js';
+import {nearRiver,absMat,sidewalkStairs} from './terrain.js';
 let s=4242;const r=()=>{s=(s*16807)%2147483647;return s/2147483647;},sr=(a,b)=>a+r()*(b-a),pk=a=>a[Math.floor(r()*a.length)];
 const WIN=[0xffc98a,0xffb06b,0x9fe8ff,0xff9fd6,0xc9b2ff,0xfff1c9],NE=[0xff3fa4,0x3ff0ff,0xb04dff,0xff8a3d,0x5dff9b,0xffe14d];
 export function buildLayers(scene,walk,block=[],cand=[]){
  const B=new Batch(new THREE.MeshLambertMaterial()),G=new Batch(new THREE.MeshBasicMaterial({toneMapped:false}));G.mat.userData.boost=1.8;
  seaWalks(scene,walk,block,cand,B,G);
- const pad=(x,z,w)=>nearRiver(x,z,w+2)||walk.some(q=>x+w>q[0]-6&&x-w<q[1]+6&&z+w>q[2]-6&&z-w<q[3]+6)||(x+w>-90&&x-w<-40&&z>-300&&z<300);
+ const pad=(x,z,w)=>nearRiver(x,z,w+2)||(x+w>44&&x-w<140&&z+w>-215&&z-w<-40)||walk.some(q=>x+w>q[0]-6&&x-w<q[1]+6&&z+w>q[2]-6&&z-w<q[3]+6)||(x+w>-90&&x-w<-40&&z>-300&&z<300);
  const CROWN=[-70,110,-300,-196];const inCrown=(x,z,w)=>x+w>CROWN[0]&&x-w<CROWN[1]&&z+w>CROWN[2]&&z-w<CROWN[3];
  const tower=(x,y0,z,w,d,h,lit)=>{B.add(x,y0+h/2,z,w,h,d,pk([0x14121c,0x1a1622,0x100e16,0x1c1820]));
   for(let k=0;k<lit;k++){const f=r()<.5,sx=f?(r()<.5?-1:1):0,sz=f?0:(r()<.5?-1:1);G.add(x+(sx?sx*(w/2+.05):sr(-w/2+.5,w/2-.5)),y0+sr(1.5,h-1),z+(sz?sz*(d/2+.05):sr(-d/2+.5,d/2-.5)),sx?.08:sr(.5,1.6),sr(.35,.8),sz?.08:sr(.5,1.6),new THREE.Color(pk(WIN)).multiplyScalar(sr(.35,.8)).getHex());}
@@ -24,10 +24,10 @@ export function buildLayers(scene,walk,block=[],cand=[]){
  // --- Crown Heights deck: foundation and under-city
  B.add(20.75,-19.2,-266,169.5,37.6,68,0x16141c);B.add(93.75,-19.2,-216.5,23.5,37.6,31,0x16141c);for(let y=-34;y<-2;y+=4)G.add(20,y,-231.9,168,.12,.1,new THREE.Color(0x9fe8ff).multiplyScalar(.25).getHex());
  for(let y=-34;y<-2;y+=4)for(const x of[-64.1,105.6])G.add(x,y,-266,.1,.12,66,new THREE.Color(0xc9b2ff).multiplyScalar(.22).getHex());
- B.add(40,-38.1,-330,640,.2,300,0x0c0b12);// under-city ground
- for(let x=-280;x<=320;x+=22)G.add(x,-37.95,-330,.8,.05,300,new THREE.Color(0xffb06b).multiplyScalar(.6).getHex());for(let z=-470;z<=-190;z+=22)G.add(40,-37.95,z,640,.05,.8,new THREE.Color(0xffb06b).multiplyScalar(.6).getHex());
- B.add(40,-19.5,-189.5,640,37.2,1,0x18161e);// sea wall where the under-city meets the sea
- for(let i=0;i<700;i++){const x=sr(-300,330),z=sr(-470,-192),w=sr(6,16),d=sr(6,16);if(inCrown(x,z,Math.max(w,d)/2+3)||(x>-90&&x<-40&&z>-300))continue;tower(x,-38,z,w,d,sr(8,Math.hypot(x-20,z+248)>140?60:32),6);}
+ 
+ // R16: the under-city is gone; Crown Heights stands on the hilltop and its outskirts are towers on the slope
+ 
+ for(let i=0;i<700;i++){const x=sr(-300,330),z=sr(-470,-192),w=sr(6,16),d=sr(6,16);if(inCrown(x,z,Math.max(w,d)/2+3)||(x>-90&&x<-40&&z>-300))continue;tower(x,-.95,z,w,d,sr(6,Math.hypot(x-20,z+248)>140?34:22),6);}
  B.build(scene);G.build(scene);}
 
 // R11b: the tiers are physically joined. Velvet Canal's two dead ends became plazas (Canal Head north, Canal Foot south); from each a stair
@@ -54,7 +54,7 @@ function seaWalks(scene,walk,block,cand,B,G){const Y=-.6,Wk=(x0,x1,z0,z1,y=0,q)=
   for(let x=x0+2;x<x1;x+=3)B.add(x,.004,cz,.06,.01,z1-z0-.4,0x24222a);
   // balustrade along the sea edge, open at the stair (x 56..60)
   for(const [a,b] of[[x0,54.3],[61.7,x1]]){B.add((a+b)/2,.45,edge,b-a,.9,.25,0x4a4852);G.add((a+b)/2,.92,edge,b-a,.03,.27,new THREE.Color(col).multiplyScalar(.35).getHex());}
-  for(const x of[x0,x1]){B.add(x,.45,cz,.25,.9,z1-z0-1.2,0x4a4852);}
+  B.add(x0,.45,cz,.25,.9,z1-z0-1.2,0x4a4852);for(const [a,b] of[[z0+.6,cz-1.8],[cz+1.8,z1-.6]])B.add(x1,.45,(a+b)/2,.25,.9,b-a,0x4a4852);// R16: opening east onto the river footbridge
   for(const x of[51.5,64.5]){const z=cz;B.add(x,.42,z,3,.1,.7,0x4a3a30);B.add(x,.2,z,2.8,.4,.5,0x2a2830);block.push([x-1.5,x+1.5,z-.35,z+.35]);}
   for(const x of[49.6,66.4]){const z=edge-dir*1.6;B.add(x,.5,z,1.4,1,1.4,0x2a2832);B.add(x,1.8,z,.25,1.8,.25,0x3a2a1e);B.add(x,3,z,1.8,1.4,1.8,0x1e3a2a);block.push([x-.75,x+.75,z-.75,z+.75]);}
   for(const x of[52,64]){const z=edge-dir*.9;B.add(x,2.2,z,.14,4.4,.14,0x3a3844);G.add(x,4.45,z,.6,.12,.3,0xfff1c9);L(x,4,z,0xfff1d8,4,11);}
@@ -67,6 +67,7 @@ function seaWalks(scene,walk,block,cand,B,G){const Y=-.6,Wk=(x0,x1,z0,z1,y=0,q)=
  function road(C,tag,col){const hw=3.5,pts=[];const cr=(a,b,c,d,t)=>{const t2=t*t,t3=t2*t;return .5*(2*b+(-a+c)*t+(2*a-5*b+4*c-d)*t2+(-a+3*b-3*c+d)*t3);};
   const P=C.map(p=>[p[0],p[1],p[2]||0]);for(let i=0;i<P.length-1;i++){const a=P[Math.max(0,i-1)],b=P[i],c=P[i+1],d=P[Math.min(P.length-1,i+2)];const n=Math.ceil(Math.hypot(c[0]-b[0],c[1]-b[1])/2);
    for(let k=0;k<n;k++){const t=k/n,s=t*t*(3-2*t);pts.push([cr(a[0],b[0],c[0],d[0],t),cr(a[1],b[1],c[1],d[1],t),b[2]+(c[2]-b[2])*s]);}}pts.push(P[P.length-1]);
+  sidewalkStairs(scene,pts,hw);
   for(let i=0;i<pts.length-1;i++){const [x0,z0,y0]=pts[i],[x1,z1,y1]=pts[i+1];walk.push([Math.min(x0,x1)-hw,Math.max(x0,x1)+hw,Math.min(z0,z1)-hw,Math.max(z0,z1)+hw,(y0+y1)/2,{seg:[x0,z0,y0,x1,z1,y1],hw}]);}
   // ribbons
   const N=pts.map((p,i)=>{const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)];const dx=b[0]-a[0],dz=b[1]-a[1],l=Math.hypot(dx,dz)||1;return [-dz/l,dx/l];});

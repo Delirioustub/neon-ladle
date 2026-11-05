@@ -18,7 +18,8 @@ import {makeActs} from './story5.js';
 import {initLadle} from './ladle.js';
 import {initR5} from './r5.js';
 import {loadGuns} from './guns.js';
-import {hookRenderer,buildLand,subdivideScene,TW,H as TH} from './terrain.js';
+import {hookRenderer,buildLand,subdivideScene,TW,H as TH,bridgeWalks,buildBridges} from './terrain.js';
+import {Batch,signTex} from './world.js';
 let R5=null,LADLE=null;
 const $=id=>document.getElementById(id);
 // ================= settings (device-agnostic; persisted) =================
@@ -29,11 +30,11 @@ const saveSet=()=>{try{localStorage.setItem('nlSettings',JSON.stringify(SET));}c
 const canvas=$('c');const R=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance'});
 hookRenderer(R);R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.15;
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x120a22);scene.fog=new THREE.FogExp2(0x241236,.03);
-const cam=new THREE.PerspectiveCamera(66,2,.15,220);scene.add(cam);
+const cam=new THREE.PerspectiveCamera(66,2,.15,300);scene.add(cam);
 const hemi=new THREE.HemisphereLight(0x5a4a9a,0x120818,.6);scene.add(hemi);
 const moon=new THREE.DirectionalLight(0x6a7aff,.35);moon.position.set(-10,30,10);scene.add(moon);
 const fill=new THREE.PointLight(0xb8a8ff,2.2,8,1.3);scene.add(fill);
-const cand=[];const W=buildWorld(scene,cand);const CITY=buildCity(scene,cand);W.walk.push(...CITY.walk);CITY.block.push(...W.block);Object.assign(W.districts,CITY.districts);dressCity(W.districts,cand,Object.values(CITY.apts||{}).map(a=>a.door).concat((CITY.doors||[]).map(d=>Array.isArray(d)?d:[d.x,d.z]).concat((CITY.inter||[]).map(i=>[i.x,i.z])).filter(d=>d&&isFinite(d[0]))),CITY.block);buildLayers(scene,W.walk,CITY.block,cand);const LAND=buildLand(scene,cand,{walk:W.walk,block:CITY.block});const LP=makeLightPool(scene,cand,SET.low?10:18);
+const cand=[];const W=buildWorld(scene,cand);const CITY=buildCity(scene,cand);W.walk.push(...CITY.walk);CITY.block.push(...W.block);Object.assign(W.districts,CITY.districts);dressCity(W.districts,cand,Object.values(CITY.apts||{}).map(a=>a.door).concat((CITY.doors||[]).map(d=>Array.isArray(d)?d:[d.x,d.z]).concat((CITY.inter||[]).map(i=>[i.x,i.z])).filter(d=>d&&isFinite(d[0]))),CITY.block);bridgeWalks(W.walk);buildLayers(scene,W.walk,CITY.block,cand);buildBridges(scene,cand,Batch,signTex);const LAND=buildLand(scene,cand,{walk:W.walk,block:CITY.block});const LP=makeLightPool(scene,cand,SET.low?10:18);
 const cubeRT=new THREE.WebGLCubeRenderTarget(256,{type:THREE.HalfFloatType});const cubeCam=new THREE.CubeCamera(.5,120,cubeRT);scene.add(cubeCam);
 const composer=new EffectComposer(R);composer.addPass(new RenderPass(scene,cam));
 const bloom=new UnrealBloomPass(new THREE.Vector2(512,256),.75,.5,.72);composer.addPass(bloom);composer.addPass(new OutputPass());

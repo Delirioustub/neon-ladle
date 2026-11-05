@@ -3,6 +3,7 @@
 // hit markers, Quaternius combat clips (aim / shoot / hit / death / run) on enemies, cover-seeking, ammo drops.
 // r5.js owns events, factions and dialogue; this file owns weapons, the HUD and the firefight itself.
 import * as THREE from 'three';
+import {TW} from './terrain.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 const rnd=(a,b)=>a+Math.random()*(b-a);
 export const GUNS={
@@ -96,7 +97,7 @@ export function initGuns(G,H){const {S,scene,P,cam,toast}=G;const T3=textures();
  for(let i=0;i<32;i++){const m=new THREE.Mesh(dGeo,new THREE.MeshBasicMaterial({map:T3.scorch,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,opacity:.9}));const e=new THREE.Mesh(dGeo,new THREE.MeshBasicMaterial({map:T3.ember,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,polygonOffset:true,polygonOffsetFactor:-5,toneMapped:false}));e.position.z=.002;m.add(e);m.visible=false;scene.add(m);decals.push({m,e,t:0});}let dI=0;
  const putDecal=(p,n)=>{const d=decals[dI++%decals.length];d.m.position.copy(p).addScaledVector(n,.012);d.m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),n);d.m.rotateZ(rnd(0,6));const s=rnd(.14,.22);d.m.scale.set(s,s,s);d.m.visible=true;d.t=0;d.e.material.opacity=1;d.m.material.opacity=.9;};
  // world-ray targets: static, non-skinned meshes (cached; refreshed when the city streams)
- let statics=[],staticsT=0;const _wp=new THREE.Vector3();const rebuildStatics=()=>{statics=[];const cx=cam.position.x,cz=cam.position.z;scene.traverse(o=>{if(!o.isMesh||o.isSkinnedMesh||o.visible===false||!o.geometry)return;const mat=o.material;if(mat&&(Array.isArray(mat)?mat.every(m=>m&&m.transparent&&m.opacity<.15):mat.transparent&&mat.opacity<.15))return;let p=o,skip=false;while(p){if((p.userData&&(p.userData.human||p.userData.gun||p.userData.keep))||p===VM||p.isCamera||p===sparks){skip=true;break;}p=p.parent;}if(skip)return;const e=o.matrixWorld.elements;if(Math.hypot(e[12]-cx,e[14]-cz)>85)return;statics.push(o);});staticsT=0;};
+ let statics=[],staticsT=0;const _wp=new THREE.Vector3();const rebuildStatics=()=>{statics=[];const cx=cam.position.x,cz=cam.position.z;scene.traverse(o=>{if(!o.isMesh||o.isSkinnedMesh||o.visible===false||!o.geometry||o.userData.nlAbs)return;const mat=o.material;if(mat&&(Array.isArray(mat)?mat.every(m=>m&&m.transparent&&m.opacity<.15):mat.transparent&&mat.opacity<.15))return;let p=o,skip=false;while(p){if((p.userData&&(p.userData.human||p.userData.gun||p.userData.keep))||p===VM||p.isCamera||p===sparks){skip=true;break;}p=p.parent;}if(skip)return;const e=o.matrixWorld.elements;if(Math.hypot(e[12]-cx,e[14]-cz)>85)return;statics.push(o);});staticsT=0;};
  const RC=new THREE.Raycaster();RC.far=70;
  const worldHit=(o,d,far=70)=>{RC.set(o,d);RC.far=far;let best=null;for(const m of statics){if(!m.visible)continue;let par=m.parent,vis=true;while(par){if(par.visible===false){vis=false;break;}par=par.parent;}if(!vis)continue;const hs=RC.intersectObject(m,false);if(hs.length&&(!best||hs[0].distance<best.distance))best=hs[0];}
   // ground plane fallback
@@ -177,8 +178,9 @@ export function initGuns(G,H){const {S,scene,P,cam,toast}=G;const T3=textures();
   const d=fwd.clone();const moving=Math.hypot(G.Input.move.x,G.Input.move.y)>.3;const spr=Gd.spread*(1+bloom*1.6+(moving?.8:0));d.x+=rnd(-1,1)*spr;d.y+=rnd(-1,1)*spr;d.z+=rnd(-1,1)*spr;d.normalize();
   const o=cam.position.clone();const wh=worldHit(o,d);let tDist=70,target=null,head=false;
   const cand=fight?fight.ens.filter(n=>n.hp>0):(H.bystanders?H.bystanders():[]).map(a=>({a,hp:2,ghost:1}));
-  for(const n of cand){const hp=bonesWorld(n.a,'Head')||new THREE.Vector3(n.a.x,(n.a.h.obj.position.y||0)+1.65,n.a.z);hp.y+=.06;const tH=raySphere(o,d,hp,.2);if(tH!=null&&tH<tDist){tDist=tH;target=n;head=true;}
-   const hip=bonesWorld(n.a,'Hips')||new THREE.Vector3(n.a.x,(n.a.h.obj.position.y||0)+.95,n.a.z),nk=bonesWorld(n.a,'neck')||hip.clone().setY(hip.y+.55);
+  for(const n of cand){const wy=TW(n.a.x,n.a.z);// R16: aim against the body where it is drawn (terrain warp, camera-relative)
+   const hp=bonesWorld(n.a,'Head')||new THREE.Vector3(n.a.x,(n.a.h.obj.position.y||0)+1.65,n.a.z);hp.y+=.06+wy;const tH=raySphere(o,d,hp,.2);if(tH!=null&&tH<tDist){tDist=tH;target=n;head=true;}
+   const hip=bonesWorld(n.a,'Hips')||new THREE.Vector3(n.a.x,(n.a.h.obj.position.y||0)+.95,n.a.z),nk=bonesWorld(n.a,'neck')||hip.clone().setY(hip.y+.55);hip.y+=wy;nk.y+=wy;
    for(let s=0;s<=4;s++){const c=hip.clone().lerp(nk,s/4);const r=s===0?.24:.3;const t=raySphere(o,d,c,r);if(t!=null&&t<tDist-.01){tDist=t;target=n;head=false;}}
    const legs=raySphere(o,d,hip.clone().setY(hip.y-.45),.22);if(legs!=null&&legs<tDist){tDist=legs;target=n;head=false;}}
   // solid cover only blocks if it is clearly in front of the body (ignore thin props hugging a silhouette)
