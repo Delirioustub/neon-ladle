@@ -53,7 +53,7 @@ export function buildCity(scene,cand){
   Mt.add(0,.055,lob.zm,11,.02,8.6,0xc8c4c8);B.add(0,.55,N-5.5,4.2,1.1,1,0x2a2832);Gh.add(0,1.12,N-5.5,4,.04,.9,0xc9b2ff);B.add(0,3.4,N-8.85,6,4,.1,0x1a1824);Gl.add(0,3.4,N-8.8,5.6,3.6,.02,0x2a1048);
   sign('YOUR FUTURE, FINANCED',0xc9b2ff,0,3.4,N-8.75,.45,0,{light:false,fs:48});
   for(const x of[-4.2,4.2]){Mt.add(x,1.4,N-8.7,1.6,2.8,.1,0x8a8a92);Gh.add(x,2.95,N-8.6,.5,.06,.04,0x9fe8ff);}
-  out.staff.push({k:'Receptionist',x:0,z:N-6.3,ry:0,look:{sex:'f',skin:0xf0d0b8,top:0xe8e4e0,pants:0x2a2a3a,hair:{style:'bun',color:0x2a1a10},glow:{where:'collar',color:0xc9b2ff}},lines:["Welcome to Orrin Mutual. Appointments only above floor three. The sky terrace is open to the public until curfew. Mostly to remind you what you can't afford.","Mr. Orrin doesn't take walk-ins. He doesn't take anything, actually. He gives. Loans."]});
+  out.staff.push({k:'Receptionist',x:0,z:N-6.3,ry:0,look:{body:'scifi_f',cls:'rich',sex:'f',skin:0xf0d0b8,top:0xe8e4e0,pants:0x2a2a3a,hair:{style:'bun',color:0x2a1a10},glow:{where:'collar',color:0xc9b2ff},tintS:.55},lines:["Welcome to Orrin Mutual. Appointments only above floor three. The sky terrace is open to the public until curfew. Mostly to remind you what you can't afford.","Mr. Orrin doesn't take walk-ins. He doesn't take anything, actually. He gives. Loans."]});
   I({id:'elev',x:-4.2,y:1.4,z:N-8.2,r:2.2,label:'Elevator · Sky terrace',act:{type:'tp',x:-3,y:46,z:N-2,yaw:Math.PI,msg:'Forty-six floors in eleven seconds. Your ears pop.'}});
   I({id:'elev2',x:4.2,y:1.4,z:N-8.2,r:2.2,label:'Elevator · Sky terrace',act:{type:'tp',x:3,y:46,z:N-2,yaw:Math.PI,msg:'Forty-six floors in eleven seconds. Your ears pop.'}});
   // sky terrace on top of the tower block (y=46)
@@ -68,12 +68,12 @@ export function buildCity(scene,cand){
   const bt=room(20,28,S,1,{dep:8,h:4.2,H:44,floor:0x2a2228,ceil:0x3a3632,wall:0x8a8278,front:0xa8acb4,mass:0x8a8e9a,lamp:0xfff1d8,sign:'MAISON VEIL',sc:0xffe0a0});
   for(let x=21;x<27.5;x+=1.4){Mt.add(x,1.9,S+6.2,.06,.06,1.6,0xd0d0d8);for(let k=0;k<4;k++)B.add(x+(k-1.5)*.08,1.3,S+5.6+k*.35,.5,1.1,.05,[0xff3fa4,0x2a2a3a,0xd8d4cc,0x3ff0ff,0x8a5a3a,0xb04dff][(Math.round(x)+k)%6]);}
   Mt.add(21,1.2,S+2,.05,2.2,1,0xe8f0ff);Gh.add(21.05,1.2,S+2,.02,2,.9,0x2a3038);
-  out.staff.push({k:'Veil clerk',x:25.5,z:S+3,ry:-Math.PI/2,look:{sex:'m',skin:0xc89070,top:0x1a1a1a,pants:0x1a1a1a,hair:{style:'short',color:0x101010},coat:{color:0x1a1a22,len:.72,shiny:1}},shop:'clothes'});
+  out.staff.push({k:'Veil clerk',x:25.5,z:S+3,ry:-Math.PI/2,look:{body:'businessman',cls:'rich',sex:'m',skin:0xc89070,top:0x1a1a1a,pants:0x1a1a1a,hair:{style:'short',color:0x101010},coat:{color:0x1a1a22,len:.72,shiny:1}},shop:'clothes'});
   // Lumen café (south gap x-34..-26)
   const cf=room(-34,-26,S,1,{dep:8,h:3.8,H:42,floor:0x5a4a3a,ceil:0x2a2220,wall:0x6a5a4a,front:0x9a9ea8,mass:0x6a7080,lamp:0xffc890,sign:'LUMEN CAFÉ',sc:0xffe0a0});
   B.add(-30,.55,S+6,6,1.1,.8,0x3a2a20);Gh.add(-30,1.12,S+5.6,6,.04,.05,0xffb06b);
   for(const x of[-32.5,-30,-27.5]){B.add(x,.38,S+3,.9,.06,.9,0xd8d0c0);B.add(x,.2,S+3,.08,.4,.08,0x333);out.seats.push({x,z:S+2.2});I({id:'cfs'+x,x,y:.8,z:S+2.2,r:1.4,label:'Sit',act:{type:'sit',x,y:0,z:S+2.2,yaw:Math.PI}});}
-  out.staff.push({k:'Barista',x:-30,z:S+6.8,ry:Math.PI,look:{sex:'f',skin:0x8a5a40,top:0x3a2a2a,pants:0x1a1a22,hair:{style:'long',color:0x101010},gear:[{t:'glasses',c:0x3ff0ff}]},shop:'cafe'});
+  out.staff.push({k:'Barista',x:-30,z:S+6.8,ry:Math.PI,look:{body:'witch',cls:'mid',sex:'f',skin:0x8a5a40,top:0x3a2a2a,pants:0x1a1a22,hair:{style:'long',color:0x101010},gear:[{t:'glasses',c:0x3ff0ff}],tintS:.5},shop:'cafe'});
   // street dressing: planters/trees, holo fountain, benches, parked cars, checkpoint
   for(let x=-50;x<=50;x+=12)for(const s of[-1,1]){const z=cz+s*(12-3.4);B.add(x,.4,z,1.6,.8,1.6,0x9a96a0);out.block.push([x-.8,x+.8,z-.8,z+.8]);B.add(x,1.6,z,.18,2.4,.18,0x3a2a20);B.add(x,3.1,z,1.8,1.4,1.8,0x1f4a38);B.add(x,3.9,z,1.1,.8,1.1,0x2a5a40);Gh.add(x,2.35,z,1.2,.04,1.2,0x3ff0c0);}
   for(const [x,s] of[[-18,-1],[14,1],[38,-1],[-44,1]]){const z=cz+s*(12-3.4);B.add(x,.42,z,2.6,.08,.6,0x6a5a48);B.add(x,.2,z,.1,.4,.5,0x555);I({id:'cb'+x,x,y:.8,z,r:1.6,label:'Sit on the bench',act:{type:'sit',x,y:0,z:z-s*.1,yaw:s<0?Math.PI:0}});}
@@ -112,11 +112,11 @@ export function buildCity(scene,cand){
   const hk=room(-46,-38,S,1,{dep:8,h:3.6,H:12,floor:0x2a1e18,ceil:0x140e0c,wall:0x3a2420,front:0x2a1e18,mass:0x3a2a22,lamp:0xff8a3d,lamp2:0xff3fa4,win:0xffb06b,sign:'THE RUSTED HOOK',sc:0xff4d3d});
   B.add(-42,.55,S+6.2,6.5,1.1,.8,0x4a2a1a);Gh.add(-42,1.12,S+5.8,6.4,.04,.05,0xff3fa4);for(let k=0;k<12;k++)Gh.add(-45+k*.55,1.9,S+7.6,.12,.35,.12,[0x5dff9b,0xffc070,0xff4d3d][k%3]);
   for(const x of[-44.5,-43,-41.5,-40]){B.add(x,.7,S+5.1,.4,.06,.4,0x8a3a2a);B.add(x,.35,S+5.1,.06,.7,.06,0x333);I({id:'hk'+x,x,y:.9,z:S+4.8,r:1.2,label:'Sit at the bar',act:{type:'sit',x,y:.3,z:S+4.9,yaw:Math.PI}});}
-  out.staff.push({k:'Old Hesk',x:-42,z:S+7,ry:Math.PI,look:{sex:'m',skin:0x8a5a40,top:0x3a2a22,pants:0x1a1a1a,hair:{style:'beard',color:0xc0b0a0},bulk:1.12},shop:'bar',lines:["Hesk. I own the Hook. The Hook owns me. What'll it be?"]});
+  out.staff.push({k:'Old Hesk',x:-42,z:S+7,ry:Math.PI,look:{body:'business',cls:'poor',sex:'m',skin:0x8a5a40,top:0x3a2a22,pants:0x1a1a1a,hair:{style:'beard',color:0xc0b0a0},bulk:1.15},shop:'bar',lines:["Hesk. I own the Hook. The Hook owns me. What'll it be?"]});
   // parts & pawn (north gap 22..29)
   room(22,29,N,-1,{dep:7,h:3.4,H:9,floor:0x22201a,wall:0x3a3a30,front:0x2a2a24,mass:0x3a3028,lamp:0x9fe8ff,lamp2:0x5dff9b,sign:'PARTS & PAWN',sc:0x5dff9b});
   for(let x=23;x<28.5;x+=1.1)for(let yy=.5;yy<3;yy+=.7){B.add(x,yy,N-6.4,.9,.06,.7,0x4a4a40);if(Math.random()<.7)Gh.add(x+(Math.random()-.5)*.5,yy+.15,N-6.3,.12,.18,.12,[0x5dff9b,0x3ff0ff,0xff4d3d,0xffe14d][Math.floor(Math.random()*4)]);}
-  out.staff.push({k:'Ninefingers',x:25.5,z:N-4.5,ry:0,look:{sex:'f',skin:0x5a3828,top:0x2a3a2a,pants:0x22202a,hair:{style:'buzz',color:0xff3fa4},hat:'beanie',hatColor:0x2a2a2a,gear:[{t:'glasses',c:0x5dff9b}]},shop:'pawn',lines:["Name's Ninefingers. Don't ask. I buy, I sell, I don't remember faces."]});
+  out.staff.push({k:'Ninefingers',x:25.5,z:N-4.5,ry:0,look:{body:'ninja',cls:'poor',sex:'f',skin:0x5a3828,top:0x2a3a2a,pants:0x22202a,hair:{style:'buzz',color:0xff3fa4},hat:'beanie',hatColor:0x2a2a2a,gear:[{t:'glasses',c:0x5dff9b}]},shop:'pawn',lines:["Name's Ninefingers. Don't ask. I buy, I sell, I don't remember faces."]});
   // waterfront (east end): pier, containers, cranes, moored boat
   W(48,72,cz-3,cz+3);B.add(60,-.1,cz,24,.2,6,0x3a2e24);for(let x=49;x<72;x+=.6)B.add(x,.02,cz,.5,.04,5.8,0x4a3a2a);
   /* R11: the docks water is now the shared sea from layers.js */

@@ -1,4 +1,4 @@
-// R14: Quaternius Ultimate Modular Characters (CC0) under the old body keys (woman=Punk_F, man=Punk_M, businessman=Suit, police-officer=Soldier, teen-character=Worker dockhand, sci-fi-soldier=SciFi, ninja=Hooded, android=Hazmat, cyborg=Adventurer); bones renamed + feet reparented in Blender. Was: R12 Grab3D CC0 rigged humans (decimated: ~15k tris "hi" for cast/player, ~6k "lo" for crowds) + Quaternius CC0 small robots.
+// R15: Quaternius Ultimate Modular Men+Women (CC0). Keys: woman=Punk_F, man=Punk_M, businessman=Suit_M, police-officer=Soldier_M, teen-character=Worker_M, sci-fi-soldier=SciFi_M, ninja=Hooded_M, android=Hazmat, cyborg=Adventurer_M, plus hoodie/casual/beach/swat/farmer/astronaut/business/suit_f/soldier_f/worker_f/woman_casual/scifi_f/adventurer_f/witch/hooded_f. King skipped (medieval). Cast bodies reserved from crowds. Blender: anims/weapons stripped, feet reparented, toe bone, bones renamed.
 // The 8 Universal Animation Library clips (authored on the UBC skeleton) are retargeted onto each Grab3D skeleton at load time:
 // per mapped bone, world-space rotation delta from the source bind pose, pre-aligned so target bone directions match source bone directions
 // at bind (handles A-pose vs T-pose), hips translation scaled by leg length. Looks get a clothing tint (skin-preserving shader), neon trims
@@ -6,8 +6,11 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-export const BODIES=['woman','man','businessman','police-officer','teen-character','sci-fi-soldier','ninja','android','cyborg'];
-const HEIGHT={woman:1.7,man:1.8,businessman:1.8,'police-officer':1.8,'teen-character':1.78,'sci-fi-soldier':1.84,ninja:1.78,android:1.78,cyborg:1.74};
+export const BODIES=['woman','man','businessman','police-officer','teen-character','sci-fi-soldier','ninja','android','cyborg','hoodie','casual','beach','swat','farmer','astronaut','business','suit_f','soldier_f','worker_f','woman_casual','scifi_f','adventurer_f','witch','hooded_f'];
+// Cast-reserved: never pick these for random crowds (or only with heavy tintS if forced)
+export const CAST_BODIES=new Set(['suit_f','farmer','woman_casual','hoodie','soldier_f','adventurer_f','android','business','ninja']);
+export const FEM_BODIES=new Set(['woman','suit_f','soldier_f','worker_f','woman_casual','scifi_f','adventurer_f','witch','hooded_f']);
+const HEIGHT={woman:1.7,man:1.8,businessman:1.8,'police-officer':1.8,'teen-character':1.78,'sci-fi-soldier':1.84,ninja:1.78,android:1.78,cyborg:1.76,hoodie:1.78,casual:1.78,beach:1.76,swat:1.84,farmer:1.8,astronaut:1.86,business:1.8,suit_f:1.7,soldier_f:1.74,worker_f:1.72,woman_casual:1.7,scifi_f:1.74,adventurer_f:1.72,witch:1.7,hooded_f:1.72};
 const SIDE=s=>s==='l'?'Left':'Right';
 const MAP={pelvis:'Hips',spine_01:'Spine02',spine_02:'Spine01',spine_03:'Spine',neck_01:'neck',Head:'Head'};
 for(const s of['l','r']){const S=SIDE(s);Object.assign(MAP,{['clavicle_'+s]:S+'Shoulder',['upperarm_'+s]:S+'Arm',['lowerarm_'+s]:S+'ForeArm',['hand_'+s]:S+'Hand',['thigh_'+s]:S+'UpLeg',['calf_'+s]:S+'Leg',['foot_'+s]:S+'Foot',['ball_'+s]:S+'ToeBase'});
@@ -17,10 +20,15 @@ for(const s of['l','r']){Object.assign(CHILD,{['clavicle_'+s]:'upperarm_'+s,['up
  for(const f of['index','middle','ring','pinky','thumb'])for(const i of[1,2])CHILD[`${f}_0${i}_${s}`]=`${f}_0${i+1}_${s}`;}
 const LIB={hi:{},lo:{}},CLIPS={},ROBO={};let SRC=null,SRCCLIPS=null;
 export const g3Ready=()=>!!LIB.lo.man;
+// Cast + staff + character-creator bodies block boot; crowd-only bodies fill in after.
+export const PRELOAD=['woman','man','businessman','teen-character','sci-fi-soldier','ninja','android','cyborg','hoodie','casual','beach','swat','farmer','suit_f','soldier_f','woman_casual','adventurer_f','business','scifi_f','witch','astronaut'];
 export async function loadG3(dir,srcScene,srcClips,hiSet){const L=new GLTFLoader();SRC=srcScene;SRCCLIPS=srcClips;
- const jobs=[];for(const b of BODIES){jobs.push(L.loadAsync(`${dir}g3/${b}-lo.glb`).then(g=>LIB.lo[b]=prep(g.scene,b)));}
- for(const r of ['CP_Flying','CP_Robot_2Legs','Enemy_EyeDrone','Enemy_Trilobite','Enemy_QuadShell'])jobs.push(L.loadAsync(`${dir}robots/${r}.glb`).then(g=>ROBO[r]={scene:g.scene,clips:g.animations}).catch(()=>{}));
- await Promise.all(jobs);}
+ const put=b=>L.loadAsync(`${dir}g3/${b}-lo.glb`).then(g=>LIB.lo[b]=prep(g.scene,b));
+ await Promise.all(PRELOAD.map(put));
+ // crowd-only (and wardline) — do not block first paint
+ for(const b of BODIES){if(!LIB.lo[b])put(b).catch(()=>{});}
+ for(const r of ['CP_Flying','CP_Robot_2Legs','Enemy_EyeDrone','Enemy_Trilobite','Enemy_QuadShell'])L.loadAsync(`${dir}robots/${r}.glb`).then(g=>ROBO[r]={scene:g.scene,clips:g.animations}).catch(()=>{});
+}
 function prep(scene,b){let sk=null;scene.traverse(o=>{if(o.isSkinnedMesh){sk=o;o.frustumCulled=false;}});return {scene,b};}
 const bonesOf=root=>{const m={};root.traverse(o=>{if(o.isBone)m[o.name]=o;});return m;};
 // ---------- retarget (once per body kind; the lo and hi files share the skeleton) ----------
@@ -54,14 +62,24 @@ const stdM=(c,r=.6,m=.2)=>new THREE.MeshStandardMaterial({color:c,roughness:r,me
 // ---------- body pick ----------
 const hash=o=>{let h=7;const s=JSON.stringify(o);for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h);};
 export function bodyFor(look){if(look.body&&BODIES.includes(look.body))return look.body;const h=hash(look);
- if(look.android)return h%2?'android':'cyborg';if(look.gang==='wardline'||(look.hat==='cap'&&look.top===0x1e2a44))return 'police-officer';
- if(look.gang==='tide')return ['ninja','man','teen-character'][h%3];if(look.gang==='saint')return 'sci-fi-soldier';
- if(look.sex==='f')return h%5===0?'teen-character':'woman';
- if(look.cls==='rich')return h%4===0?'man':'businessman';if(look.cls==='poor')return ['man','teen-character','sci-fi-soldier','man'][h%4];
- return ['man','teen-character','businessman','man','sci-fi-soldier'][h%5];}
+ // Gang outfits first — avoid cast-reserved bodies
+ if(look.android)return 'cyborg';
+ if(look.gang==='wardline'||look.cls==='wardline'||(look.hat==='cap'&&look.top===0x1e2a44))return h%2?'police-officer':'swat';
+ if(look.gang==='tide')return ['casual','teen-character','beach','sci-fi-soldier','hooded_f','man'][h%6];
+ if(look.gang==='saint')return h%2?'sci-fi-soldier':'scifi_f';
+ // District class — Punk (man/woman) capped ~20%; cast bodies excluded
+ if(look.cls==='rich'){
+  if(look.sex==='f')return ['scifi_f','businessman','witch','woman','scifi_f'][h%5];
+  return ['businessman','astronaut','sci-fi-soldier','cyborg','businessman'][h%5];}
+ if(look.cls==='poor'){
+  if(look.sex==='f')return ['worker_f','hooded_f','witch','woman','worker_f','beach'][h%6];
+  return ['teen-character','casual','beach','cyborg','man','sci-fi-soldier'][h%6];}
+ // Saltgate mid
+ if(look.sex==='f')return ['woman','worker_f','scifi_f','hooded_f','witch','woman'][h%6];
+ return ['casual','teen-character','swat','cyborg','man','beach','sci-fi-soldier','businessman'][h%8];}
 const TRIM={rich:[0xffe0a0,0xffffff,0xf0d890],mid:[0x3ff0ff,0xff3fa4,0x5dff9b,0xb04dff,0xffe14d],poor:[0xff8a3d,0xc06a30,0x8a7a5a],tide:[0xff8a3d],saint:[0xffffff],wardline:[0x3f8aff],orrin:[0xc9b2ff]};
 const A={idle:'Idle_Loop',walk:'Walk_Loop',talk:'Idle_Talking_Loop',sit:'Sitting_Idle_Loop',sittalk:'Sitting_Talking_Loop',interact:'Interact',jog:'Jog_Fwd_Loop',formal:'Walk_Formal_Loop'};
-export function makeG3(look,hi){const b=bodyFor(look);const lib=(hi&&LIB.hi[b])||LIB.lo[b];const root=SkeletonUtils.clone(lib.scene);const H=new THREE.Group();H.userData.human=1;H.add(root);
+export function makeG3(look,hi){const b=bodyFor(look);const lib=(hi&&LIB.hi[b])||LIB.lo[b]||LIB.lo.man;const root=SkeletonUtils.clone(lib.scene);const H=new THREE.Group();H.userData.human=1;H.userData.body=b;H.add(root);
  const h=hash(look),cls=look.gang||look.cls||'mid',pal=TRIM[cls]||TRIM.mid,trim=look.trim??(look.glow?.color??pal[h%pal.length]);
  const tint=look.top??0x8a8a8a,str=look.tintS??(b==='android'||b==='cyborg'?.35:cls==='rich'?.35:cls==='poor'?.45:.55);
  let sk=null;root.traverse(o=>{if(o.isSkinnedMesh&&!sk)sk=o;});sk.skeleton.pose();root.updateMatrixWorld(true);const nb=bonesOf(root).neck;
@@ -75,7 +93,7 @@ root.traverse(o=>{if(o.isMesh){const sm=Array.isArray(o.material)?o.material[0]:
   o.material=skinMat(sm,cls==='poor'?new THREE.Color(tint).lerp(new THREE.Color(0x6a5a48),.4).getHex():tint,syn&&(isSkin||isHair)?0:str,new THREE.Color(trim).multiplyScalar(.45),syn,nh,X);o.castShadow=false;}});
 
  // normalise height + stand on y=0
- const ht=HEIGHT[b]*(look.scale?Math.min(1.05,Math.max(.95,look.scale)):1)*(look.sex==='f'&&b!=='woman'?.97:1);{const B0=bonesOf(root);const hy=B0.Hips.getWorldPosition(new THREE.Vector3()).y,ty=(B0.LeftToeBase||B0.LeftFoot).getWorldPosition(new THREE.Vector3()).y;const s=ht*.51/(hy-ty);root.scale.multiplyScalar(s);root.updateMatrixWorld(true);root.position.y=-B0.LeftToeBase.getWorldPosition(new THREE.Vector3()).y+.02*ht;const hp=B0.Hips.getWorldPosition(new THREE.Vector3());root.position.x-=hp.x;root.position.z-=hp.z;}
+ const ht=(HEIGHT[b]||1.78)*(look.scale?Math.min(1.05,Math.max(.95,look.scale)):1)*(look.sex==='f'&&b!=='woman'?.97:1);{const B0=bonesOf(root);const hy=B0.Hips.getWorldPosition(new THREE.Vector3()).y,ty=(B0.LeftToeBase||B0.LeftFoot).getWorldPosition(new THREE.Vector3()).y;const s=ht*.51/(hy-ty);root.scale.multiplyScalar(s);root.updateMatrixWorld(true);root.position.y=-B0.LeftToeBase.getWorldPosition(new THREE.Vector3()).y+.02*ht;const hp=B0.Hips.getWorldPosition(new THREE.Vector3());root.position.x-=hp.x;root.position.z-=hp.z;}
  const sl=(look.slim||1)*(look.bulk||1);root.scale.x*=sl;root.scale.z*=sl;root.updateMatrixWorld(true);
  const bones=bonesOf(root);const Hinv=new THREE.Matrix4().copy(H.matrixWorld).invert();
  // attach a node to a bone with metre-space offsets in H space at bind pose (x right, y up, z forward)
