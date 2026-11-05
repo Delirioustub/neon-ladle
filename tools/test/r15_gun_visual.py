@@ -46,16 +46,23 @@ def f(pg,shot,lp):
   # open plaza for firefight — docks boardwalk facing -Z into open water/street
   J("""()=>{
     __S.gun.cur='kestrel'; R5.guns.draw();
-    Object.assign(__P,{x:20,z:240,y:0,yaw:0,pitch:-0.05});
+    Object.assign(__P,{x:20,z:255,y:0,yaw:Math.PI*.5,pitch:-0.05});
     __S.gang={id:'tide',rank:2}; R5.force('shakedown');
   }""")
-  pg.wait_for_timeout(1000)
-  for i in range(10):
-    if J("!!R5.ev&&!!R5.ev.enemies"):break
-    J("()=>{__S.gang.rank=2;R5.force('shakedown')}");pg.wait_for_timeout(500)
+  pg.wait_for_timeout(800)
+  for i in range(14):
+    info=J("""()=>({ev:!!R5.ev, en:!!(R5.ev&&R5.ev.enemies), type:R5.ev&&R5.ev.type, reg:__G.regionOf(__P.x,__P.z), dlg:!document.getElementById('dlg').classList.contains('hide'), gang:__S.gang})""")
+    print('EV',i,info)
+    if info.get('en'): break
+    J("""()=>{
+      document.getElementById('dlg').classList.add('hide');
+      __S.gang={id:'tide',rank:2}; __P.y=0;
+      R5.force('shakedown');
+    }""")
+    pg.wait_for_timeout(700)
   close()
   placed=J("""()=>{
-    const e=R5.ev; if(!e||!e.enemies) return {ok:false};
+    const e=R5.ev; if(!e||!e.enemies) return {ok:false, why:!e?'noev':'noen'};
     const P=__P; const f=[-Math.sin(P.yaw),-Math.cos(P.yaw)];
     let k=0, pos=[];
     for(const a of e.enemies){
@@ -63,6 +70,7 @@ def f(pg,shot,lp):
       a.x=x;a.z=z; a.h.obj.visible=true; a.h.obj.position.set(x,__G.groundY(x,z,0),z); pos.push([+x.toFixed(1),+z.toFixed(1)]); k++;
     }
     R5.forceFight(e,'saint');
+    if(!R5.guns.fight) return {ok:false, why:'nofight'};
     for(const n of R5.guns.fight.ens){n.move=null;n.cd=99;n.mt=99;}
     __S.hp=1e9; return {ok:true,pos,n:e.enemies.length};
   }""")

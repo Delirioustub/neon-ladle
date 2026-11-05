@@ -8,7 +8,7 @@ def f(pg,shot,lp):
       if J("document.getElementById('dlg').classList.contains('hide')"):return
       J("()=>{const b=document.querySelectorAll('#dopts button');b.length&&b[b.length-1].click()}");pg.wait_for_timeout(150)
   pg.click('#ccDone');pg.wait_for_timeout(800);close()
-  J("()=>{__S.cash=500;__S.gang={id:\'tide\',rank:2};}")
+  J("()=>{__S.cash=500;__S.gang={id:'tide',rank:2};}")
   # errand
   J("()=>{const s=__G.CITY.staff.find(s=>s.k==='Ninefingers');__G.talk&&0;window.R5.shopOpts(s,window.__o=[]);}")
   opts=J("__o.map(o=>o.t)");print('PAWN',opts);ok['shop_lists_guns']=any('Kestrel' in o for o in opts) and any('errand' in o for o in opts)
@@ -17,7 +17,7 @@ def f(pg,shot,lp):
   J("()=>{__G.interact.find(i=>i.id==='gq0').fn()}");J("()=>{__G.interact.find(i=>i.id==='gq1').fn()}")
   pg.wait_for_timeout(900);close();ok['got_gun']=J("__S.gun.has===1&&__S.gun.owned.includes('kestrel')")
   # go to the docks, near the pier and draw
-  J("()=>{Object.assign(__P,{x:40,z:255,y:0,yaw:Math.PI*.5,pitch:0});}");lp()
+  J("()=>{Object.assign(__P,{x:28,z:255,y:0,yaw:Math.PI*.5,pitch:-0.12});}");lp()
   J("()=>R5.guns.draw()");pg.wait_for_timeout(600);ok['drawn']=J("R5.guns.drawn&&R5.guns._dbg.VM.visible")
   m0=J("__S.gun.mag.kestrel")
   J("()=>R5.guns.fire()");pg.wait_for_timeout(30);ok['tracer_visible']=J("R5.guns._dbg.tracers.some(t=>t.live&&t.m.visible)")
