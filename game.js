@@ -18,6 +18,7 @@ import {makeActs} from './story5.js';
 import {initLadle} from './ladle.js';
 import {initR5} from './r5.js';
 import {loadGuns} from './guns.js';
+import {hookRenderer,buildLand,subdivideScene,TW,H as TH} from './terrain.js';
 let R5=null,LADLE=null;
 const $=id=>document.getElementById(id);
 // ================= settings (device-agnostic; persisted) =================
@@ -26,13 +27,13 @@ if(localStorage.nlLow&&SET.low===0&&!localStorage.nlSettings)SET.low=1;
 const saveSet=()=>{try{localStorage.setItem('nlSettings',JSON.stringify(SET));}catch(e){}};Input.lookSens=SET.sens;
 // ================= renderer / scene =================
 const canvas=$('c');const R=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance'});
-R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.15;
+hookRenderer(R);R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.15;
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x120a22);scene.fog=new THREE.FogExp2(0x241236,.03);
 const cam=new THREE.PerspectiveCamera(66,2,.15,220);scene.add(cam);
 const hemi=new THREE.HemisphereLight(0x5a4a9a,0x120818,.6);scene.add(hemi);
 const moon=new THREE.DirectionalLight(0x6a7aff,.35);moon.position.set(-10,30,10);scene.add(moon);
 const fill=new THREE.PointLight(0xb8a8ff,2.2,8,1.3);scene.add(fill);
-const cand=[];const W=buildWorld(scene,cand);const CITY=buildCity(scene,cand);W.walk.push(...CITY.walk);CITY.block.push(...W.block);Object.assign(W.districts,CITY.districts);dressCity(W.districts,cand,Object.values(CITY.apts||{}).map(a=>a.door).concat((CITY.doors||[]).map(d=>Array.isArray(d)?d:[d.x,d.z]).concat((CITY.inter||[]).map(i=>[i.x,i.z])).filter(d=>d&&isFinite(d[0]))),CITY.block);buildLayers(scene,W.walk,CITY.block,cand);const LP=makeLightPool(scene,cand,SET.low?10:18);
+const cand=[];const W=buildWorld(scene,cand);const CITY=buildCity(scene,cand);W.walk.push(...CITY.walk);CITY.block.push(...W.block);Object.assign(W.districts,CITY.districts);dressCity(W.districts,cand,Object.values(CITY.apts||{}).map(a=>a.door).concat((CITY.doors||[]).map(d=>Array.isArray(d)?d:[d.x,d.z]).concat((CITY.inter||[]).map(i=>[i.x,i.z])).filter(d=>d&&isFinite(d[0]))),CITY.block);buildLayers(scene,W.walk,CITY.block,cand);const LAND=buildLand(scene,cand,{walk:W.walk,block:CITY.block});const LP=makeLightPool(scene,cand,SET.low?10:18);
 const cubeRT=new THREE.WebGLCubeRenderTarget(256,{type:THREE.HalfFloatType});const cubeCam=new THREE.CubeCamera(.5,120,cubeRT);scene.add(cubeCam);
 const composer=new EffectComposer(R);composer.addPass(new RenderPass(scene,cam));
 const bloom=new UnrealBloomPass(new THREE.Vector2(512,256),.75,.5,.72);composer.addPass(bloom);composer.addPass(new OutputPass());
@@ -370,7 +371,7 @@ Input.on('menu',()=>{if(mapOpen){closeMap();return;}menuOpen()?$('menu').classLi
 const beam=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,40,8,1,true),new THREE.MeshBasicMaterial({color:new THREE.Color(0x7ff3ff).multiplyScalar(1.4),transparent:true,opacity:.22,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));scene.add(beam);
 function tickWaypoint(t){const id=S.track&&typeof S.q[S.track]==='number'?S.track:null;const s=id&&stepOf(id);let tg=s&&stepTarget(s);const wp=$('wp');if(S.wp){tg=new THREE.Vector3(S.wp[0],1.4,S.wp[1]);if(Math.hypot(S.wp[0]-P.x,S.wp[1]-P.z)<4){S.wp=null;toast('Waypoint reached');save();}}
  $('track').innerHTML=id?`<b>${Q[id].t.toUpperCase()}</b>${s.d}`:(S.flags.finished?'<b>THE END</b>Veyra is yours to walk':S.q.m8==='done'?'<b>CHAPTER TWO COMPLETE</b>Keep the lights on':'');
- if(!tg){wp.style.display='none';beam.visible=false;return;}const dist=Math.hypot(tg.x-P.x,tg.z-P.z);beam.visible=dist>6;beam.position.set(tg.x,20,tg.z);beam.material.opacity=(.14+Math.sin(t*2.4)*.05)*Math.min(1,(dist-6)/14);tv.copy(tg).project(cam);const behind=tv.z>1;let sx=(tv.x+1)/2*VW,sy=(1-tv.y)/2*VH;
+ if(!tg){wp.style.display='none';beam.visible=false;return;}const dist=Math.hypot(tg.x-P.x,tg.z-P.z);beam.visible=dist>6;beam.position.set(tg.x,20,tg.z);beam.material.opacity=(.14+Math.sin(t*2.4)*.05)*Math.min(1,(dist-6)/14);tv.copy(tg);tv.y+=TW(tv.x,tv.z);tv.project(cam);const behind=tv.z>1;let sx=(tv.x+1)/2*VW,sy=(1-tv.y)/2*VH;
  if(behind){sx=VW-sx;sy=VH-sy;}const mg=40,off=behind||sx<mg||sx>VW-mg||sy<mg||sy>VH-mg;
  if(off){const cx=VW/2,cy=VH/2;let dx=sx-cx,dy=sy-cy;if(behind&&Math.abs(dx)<1)dx=1;const k=Math.min((cx-mg)/Math.abs(dx||1e-3),(cy-mg)/Math.abs(dy||1e-3));sx=cx+dx*k;sy=cy+dy*k;wp.querySelector('i').style.transform=`rotate(${Math.atan2(dy,dx)}rad)`;wp.classList.add('edge');}else{wp.classList.remove('edge');wp.querySelector('i').style.transform='';}
  wp.style.display=dist<2.2?'none':'block';wp.style.left=sx+'px';wp.style.top=sy+'px';wp.querySelector('span').textContent=Math.round(dist)+'m';}
@@ -423,7 +424,7 @@ function sleep(){if(S.open){toast('Close the shop first (Kitchen)');return;}
  S.day++;S.min=10*60;S.talkedDay={};S.asked={};const interest=S.flags.interestFrozen?0:Math.round(S.debt*.002);S.debt+=interest;fade();toast(`Day ${S.day}${interest?` · Orrin Mutual added ¢${interest} interest`:''}`);save();}
 function fade(){const f=$('fade');f.classList.remove('show');void f.offsetWidth;f.classList.add('show');}
 // ================= helpers =================
-const tmpV=new THREE.Vector3();function place(el,x,y,z){tmpV.set(x,y,z).project(cam);if(tmpV.z>1){el.style.display='none';return;}el.style.left=((tmpV.x+1)/2*VW)+'px';el.style.top=((1-tmpV.y)/2*VH)+'px';}
+const tmpV=new THREE.Vector3();function place(el,x,y,z){tmpV.set(x,y+TW(x,z),z).project(cam);if(tmpV.z>1){el.style.display='none';return;}el.style.left=((tmpV.x+1)/2*VW)+'px';el.style.top=((1-tmpV.y)/2*VH)+'px';}
 // district streaming: hide whole districts the camera can't meaningfully see
 function tickStreaming(){const lim=SET.low?58:72;for(const k in W.districts){const d=DISTRICTS[k],g=W.districts[k].G;const c=Math.cos(d.rot||0),s=Math.abs(Math.sin(d.rot||0));const hx=(c*c>.5?d.len/2:d.hw+10),hz=(c*c>.5?d.hw+10:d.len/2);
   const dx=Math.max(0,Math.abs(cam.position.x-d.cx)-hx),dz=Math.max(0,Math.abs(cam.position.z-d.cz)-hz);g.visible=Math.hypot(dx,dz)<lim;}}
@@ -510,13 +511,13 @@ if(SET.low)bloom.strength=.7;
 // bake wet-street reflections once, lit by the pool around the Ladle
 const ENV=makeEnv(scene,{hemi,moon,bloom,R,mats:MATS});ENV.set(S.weather||'rain',true);if(S.wet!=null)ENV.st.wet=S.wet;window.__ENV=ENV;let envBake=0;
 ENV.onThunder=()=>{if(!audio)return;const A=audio.AC,t=A.currentTime+.4+Math.random()*1.5,b=A.createBuffer(1,A.sampleRate*3,A.sampleRate),d=b.getChannelData(0);let l=0;for(let i=0;i<d.length;i++){l=l*.985+(Math.random()*2-1)*.015;d[i]=l*12*Math.exp(-i/A.sampleRate*1.1);}const sN=A.createBufferSource();sN.buffer=b;const g=A.createGain();g.gain.value=.9;sN.connect(g);g.connect(audio.rainB);sN.start(t);};
-cam.position.set(0,1.6,-2);ENV.update(0,(S.min/60)%24,0,S);LP.update(10,cam);for(let i=0;i<20;i++)LP.update(.5,cam);cubeCam.position.set(0,.4,-2);cubeCam.update(R,scene);
+{const nS=subdivideScene(scene);console.log('r16 subdiv',nS);}cam.position.set(0,1.6,-2);ENV.update(0,(S.min/60)%24,0,S);LP.update(10,cam);for(let i=0;i<20;i++)LP.update(.5,cam);cubeCam.position.set(0,.4,-2);cubeCam.update(R,scene);
 scene.traverse(o=>{if(o.material&&o.material.isMeshStandardMaterial&&o.material.metalness>.3){o.material.envMap=cubeRT.texture;o.material.envMapIntensity=.9;}});
 for(const k in npcs)tickNPCs(0);
 Object.assign(G,{player:()=>player,tp:()=>!!tickPlayer.tp,qStart,groundY,blocked:()=>menuOpen()||mapOpen||creating,save:()=>save(),Q,stepOf,onList,qAdv,emit,interact,say,fade,W,CITY,cand,makeHuman,walkable,regionOf,lookClass,CAST,Input,THREE,scene,P,cam,npcs,dlg:()=>dlgOpen,riding:()=>!!riding||bk.on&&Math.abs(bk.v)>4});R5=initR5(G);window.R5=R5;LADLE=initLadle(G);
 // load-repair m8->m9 (has its own chapter card); the other timer hand-offs are repaired by NEXT below
 if(S.q.m8==='done'&&S.q.m9===undefined)setTimeout(()=>{chapter('Act Three','The Weather Men');qStart('m9');},2500);
-window.__S=S;window.__P=P;window.__G={groundY,makeHuman,get RIDE(){return RIDE},ride,get riding(){return riding},CAST,tickNPCs:dt=>tickNPCs(dt),PLACES,R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,inWalk,stepOf,placeFor,placePos,stepTarget,onList,S,get near(){return near;}};
+window.__S=S;window.__P=P;window.__G={LAND,TH,TW,groundY,makeHuman,get RIDE(){return RIDE},ride,get riding(){return riding},CAST,tickNPCs:dt=>tickNPCs(dt),PLACES,R5,mountBike,dismountBike,openMap,closeMap,drawMap,callBike,bk,setTP:v=>{viewTP=v},THREE,scene,player,jobBoard,BOARDS,decorate,openCreator,cam,cand,LP,CITY,Q,emit,qStart,npcs,talk,W,interact,SET,openMenu,walkable,inWalk,stepOf,placeFor,placePos,stepTarget,onList,S,get near(){return near;}};
 $('load').classList.add('hide');$('start').classList.remove('hide');
 $('start').onclick=async()=>{$('title').classList.add('gone');setTimeout(()=>$('title').remove(),900);$('hud').classList.remove('hide');startAudio();
  try{await document.documentElement.requestFullscreen?.();await screen.orientation?.lock?.('landscape');}catch(e){}
@@ -547,7 +548,7 @@ function frameBody(now){const dt=Math.min(.05,(now-last)/1000)*(window.__G.ts||1
  trainT-=dt;if(trainT<=0){train.position.x+=dt*16;if(train.position.x>40){train.position.x=-90;trainT=rnd(25,45);}}
  if(gateAnim&&W.gate.position.y<2.9){W.gate.position.y+=dt*.8;}
  flickT-=dt;if(flickT<=0){flickT=rnd(.05,.4);for(const f of W.flick)f.material.color.setScalar(Math.random()<.15?.25:1.25);if(!S.up.sign&&!S.open)W.ladleSign.material.color.setScalar(Math.random()<.12?.2:.6);}
- saveT+=dt;if(saveT>5){saveT=0;const rg=regionOf(P.x,P.z);if(rg!=='home'&&rg!=='metro')S.lastOut={x:P.x,z:P.z};if(!riding)S.P={x:P.x,z:P.z,y:P.y,yaw:P.yaw,pitch:P.pitch};save();}if(mapOpen){mapT-=dt;if(mapT<=0){mapT=.25;drawMap();}}for(const a of CW.anim)a(T,dt);CW.follow&&CW.follow(P.x,P.z);
+ saveT+=dt;if(saveT>5){saveT=0;const rg=regionOf(P.x,P.z);if(rg!=='home'&&rg!=='metro')S.lastOut={x:P.x,z:P.z};if(!riding)S.P={x:P.x,z:P.z,y:P.y,yaw:P.yaw,pitch:P.pitch};save();}if(mapOpen){mapT-=dt;if(mapT<=0){mapT=.25;drawMap();}}for(const a of CW.anim)a(T,dt);for(const a of LAND.anim)a(T,dt);CW.follow&&CW.follow(P.x,P.z);
  composer.render(dt);}
 requestAnimationFrame(frame);
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update(),5*60e3);}).catch(()=>{});let rl=0;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(rl++)return;try{save()}catch(e){}location.reload();});}

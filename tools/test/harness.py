@@ -1,6 +1,6 @@
 import sys,json
 from playwright.sync_api import sync_playwright
-import os;U=os.environ.get('NLU','http://localhost:8123/');P='/workspace/neon-ladle/shots/'
+import os;U=os.environ.get('NLU','http://localhost:8123/');P=os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../shots/')
 def run(steps,fresh=True):
  with sync_playwright() as p:
   b=p.chromium.launch(executable_path="/usr/bin/google-chrome",args=["--use-gl=angle","--use-angle=swiftshader","--enable-unsafe-swiftshader"])
