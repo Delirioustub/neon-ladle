@@ -81,7 +81,7 @@ export function subdivideScene(scene,maxL=8){const bb=new THREE.Box3();let n=0;c
 const BX={};export const segBox=n=>BX[n]||(BX[n]=new THREE.BoxGeometry(1,1,1,n,1,n));
 export const segFor=(sx,sz)=>{const m=Math.max(sx,sz);if(m<=9)return 1;for(const n of[2,4,8,16,32])if(m/n<=8)return n;return 32;};
 // ================= the land: terrain skin, the Velvet River (source in Crown Heights -> falls -> sea), walls, falls, footbridges =================
-export const RIVER=[[110,-224],[112,-206],[110,-186],[106,-166],[101,-142],[95,-116],[91,-92],[88,-68],[87,-44],[87,-20],[87,4],[88,28],[89,52],[91,80],[93,110],[94,140],[94,168],[92,196],[90,222],[89,250],[88,290]];
+export const RIVER=[[113,-224],[114.5,-206],[110,-186],[106,-166],[101,-142],[95,-116],[91,-92],[88,-68],[87,-44],[87,-20],[87,4],[88,28],[89,52],[91,80],[93,110],[94,140],[94,168],[92,196],[90,222],[89,250],[88,290]];
 const RW=4.6,WALL=5.6;// water half-width, inner wall line
 let RS=null;// sampled river: [{x,z,nx,nz,L,s}]
 function sampleRiver(){if(RS)return RS;const P=RIVER,pts=[];const cr=(a,b,c,d,t)=>{const t2=t*t,t3=t2*t;return .5*(2*b+(-a+c)*t+(2*a-5*b+4*c-d)*t2+(-a+3*b-3*c+d)*t3);};
@@ -89,7 +89,7 @@ function sampleRiver(){if(RS)return RS;const P=RIVER,pts=[];const cr=(a,b,c,d,t)
  const SEA=-.45;let L=H(pts[0][0],pts[0][1])-1.7,s=0;RS=[];
  for(let i=0;i<pts.length;i++){const [x,z]=pts[i],a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)];let dx=b[0]-a[0],dz=b[1]-a[1];const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;
   if(i)s+=Math.hypot(x-pts[i-1][0],z-pts[i-1][1]);
-  const t=Math.max(SEA,Math.min(H(x,z)-1.7,H(x+dz*7,z-dx*7)-1.7,H(x-dz*7,z+dx*7)-1.7));let fall=0;
+  const dB=Math.min(...[-50,50].map(b=>Math.abs(z-b)));const t=Math.max(SEA,Math.min(H(x,z)-1.7-1.1*S(14,4,dB),H(x+dz*7,z-dx*7)-1.7,H(x-dz*7,z+dx*7)-1.7));let fall=0;
   const Ln=Math.max(t,L-.035*2);if(Ln-t>1.5){fall=Ln-t;}
   if(fall){RS.push({x,z,nx:-dz,nz:dx,L:Ln,s,top:1});L=t;RS.push({x,z,nx:-dz,nz:dx,L,s:s+.001,fall});}else{L=Ln;RS.push({x,z,nx:-dz,nz:dx,L,s});}}
  return RS;}
@@ -177,7 +177,7 @@ export function buildBridges(scene,cand,Batch,signTex,walk,LAND){
     B.add(x,by+1.9,z,.14,3.8,.14,0x3a3844);B.add(x-p.nx*sd*.5,by+3.8,z-p.nz*sd*.5,Math.abs(p.nz)+.14,.08,Math.abs(p.nx)+.14,0x3a3844);G.add(x-p.nx*sd*.9,by+3.72,z-p.nz*sd*.9,.45,.08,.45,(i/8|0)%3?0xffd090:0x9fe8ff);
     if((i/8|0)%2===(sd>0?1:0))cand.push({x:x-p.nx*sd*.9,y:by+3.3,z:z-p.nz*sd*.9,col:0xffc890,int:4,dist:14,pri:0});}}
   const COL=[0xffc070,0xffb060,0x9fe8ff,0xff9fd6,0xfff1c9];
-  for(let k=0;k<1400;k++){const x=-320+rr()*640,z=-450+rr()*640;if(z>195||onWalk(x,z,8)||nearRiver(x,z,3))continue;const y=LAND.groundAbs(x,z);if(y<-.3)continue;const by=y-H(x,z);
+  for(let k=0;k<1400;k++){const x=-320+rr()*640,z=-450+rr()*640;if(z>195||(x>-95&&x<-38&&z>-310&&z<310)||onWalk(x,z,8)||nearRiver(x,z,3))continue;const y=LAND.groundAbs(x,z);if(y<-.3)continue;const by=y-H(x,z);
    const c=COL[(rr()*COL.length)|0];if(rr()<.55){B.add(x,by+2,z,.12,4,.12,0x2a2832);G.add(x,by+4.05,z,.4,.1,.4,c);}else{G.add(x,by+rr()*3+1,z,rr()*2+.6,.5+rr()*.6,.08,new THREE.Color(c).multiplyScalar(.7).getHex());}}
   B.build(scene);G.build(scene);}const B=new Batch(new THREE.MeshLambertMaterial()),G=new Batch(new THREE.MeshBasicMaterial({toneMapped:false}));G.mat.userData.boost=1.6;
  const L=(x,y,z,col,int=3,dist=10)=>cand.push({x,y,z,col,int,dist,pri:0});
