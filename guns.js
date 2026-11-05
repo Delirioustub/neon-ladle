@@ -77,30 +77,30 @@ export function initGuns(G,H){const {S,scene,P,cam,toast}=G;const T3=textures();
   VMg.traverse(o=>{if(o.material){o.renderOrder=5;}});
   // muzzle flash
   const fm=new THREE.MeshBasicMaterial({map:T3.star,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false,color:new THREE.Color(1.6,1.3,1)});
-  const fl=new THREE.Group();for(let i=0;i<3;i++){const p=new THREE.Mesh(new THREE.PlaneGeometry(.1,.1),fm);if(i==1)p.rotation.y=Math.PI/2;if(i==2){p.rotation.x=Math.PI/2;p.scale.set(.55,1.6,1);}fl.add(p);}
-  const side=new THREE.Mesh(new THREE.PlaneGeometry(.1,.3),fm);side.rotation.y=Math.PI/2;side.position.z=-.1;fl.add(side);
+  const fl=new THREE.Group();for(let i=0;i<3;i++){const p=new THREE.Mesh(new THREE.PlaneGeometry(.18,.18),fm);if(i==1)p.rotation.y=Math.PI/2;if(i==2){p.rotation.x=Math.PI/2;p.scale.set(.55,1.8,1);}fl.add(p);}
+  const side=new THREE.Mesh(new THREE.PlaneGeometry(.16,.42),fm);side.rotation.y=Math.PI/2;side.position.z=-.14;fl.add(side);
   fl.position.copy(vmGun.userData.muzzle);fl.visible=false;vmGun.add(fl);vmGun.userData.flash=fl;}
  const HIP={x:.19,y:-.17,z:-.4};
  // ---- third-person / enemy world guns ----
  const tpGun={o:null,type:null};
  // ---- FX pools ----
  const fxLight=new THREE.PointLight(0xffb060,0,9,1.6);scene.add(fxLight);
- const TRM={p:new THREE.MeshBasicMaterial({color:new THREE.Color(1,.72,.35).multiplyScalar(5),transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}),e:new THREE.MeshBasicMaterial({color:new THREE.Color(1,.2,.45).multiplyScalar(5),transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false})};
+ const TRM={p:new THREE.MeshBasicMaterial({color:new THREE.Color(1,.78,.4).multiplyScalar(8),transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}),e:new THREE.MeshBasicMaterial({color:new THREE.Color(1,.28,.5).multiplyScalar(8),transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false})};
  const trG=new THREE.BoxGeometry(1,1,1);trG.translate(0,0,-.5);const tracers=[];
- for(let i=0;i<28;i++){const m=new THREE.Mesh(trG,TRM.p);m.visible=false;m.frustumCulled=false;scene.add(m);const hd=new THREE.Sprite(new THREE.SpriteMaterial({map:T3.dot,color:new THREE.Color(1,.7,.4).multiplyScalar(3),blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));hd.scale.setScalar(.14);m.add(hd);m.userData.hd=hd;tracers.push({m,live:0});}
+ for(let i=0;i<28;i++){const m=new THREE.Mesh(trG,TRM.p);m.visible=false;m.frustumCulled=false;scene.add(m);const hd=new THREE.Sprite(new THREE.SpriteMaterial({map:T3.dot,color:new THREE.Color(1,.82,.5).multiplyScalar(5),blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));hd.scale.setScalar(.22);m.add(hd);m.userData.hd=hd;tracers.push({m,live:0});}
  const NSP=220,spPos=new Float32Array(NSP*3),spCol=new Float32Array(NSP*3),spV=new Float32Array(NSP*3),spL=new Float32Array(NSP);let spI=0;
  const spGeo=new THREE.BufferGeometry();spGeo.setAttribute('position',new THREE.BufferAttribute(spPos,3));spGeo.setAttribute('color',new THREE.BufferAttribute(spCol,3));
- const sparks=new THREE.Points(spGeo,new THREE.PointsMaterial({size:.07,map:T3.dot,vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));sparks.frustumCulled=false;scene.add(sparks);for(let i=0;i<NSP;i++)spPos[i*3+1]=-999;
- const burstSparks=(p,n,col,sp=4,up=1.5)=>{for(let k=0;k<n;k++){const i=spI++%NSP;spPos[i*3]=p.x;spPos[i*3+1]=p.y;spPos[i*3+2]=p.z;spV[i*3]=rnd(-1,1)*sp;spV[i*3+1]=rnd(-.3,1)*sp*.7+up;spV[i*3+2]=rnd(-1,1)*sp;spL[i]=rnd(.25,.55);const c=new THREE.Color(col);spCol[i*3]=c.r*3;spCol[i*3+1]=c.g*3;spCol[i*3+2]=c.b*3;}};
+ const sparks=new THREE.Points(spGeo,new THREE.PointsMaterial({size:.11,map:T3.dot,vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));sparks.frustumCulled=false;scene.add(sparks);for(let i=0;i<NSP;i++)spPos[i*3+1]=-999;
+ const burstSparks=(p,n,col,sp=4,up=1.5)=>{for(let k=0;k<n;k++){const i=spI++%NSP;spPos[i*3]=p.x;spPos[i*3+1]=p.y;spPos[i*3+2]=p.z;spV[i*3]=rnd(-1,1)*sp;spV[i*3+1]=rnd(-.3,1)*sp*.7+up;spV[i*3+2]=rnd(-1,1)*sp;spL[i]=rnd(.35,.7);const c=new THREE.Color(col);spCol[i*3]=c.r*3;spCol[i*3+1]=c.g*3;spCol[i*3+2]=c.b*3;}};
  const decals=[];const dGeo=new THREE.PlaneGeometry(1,1);
  for(let i=0;i<32;i++){const m=new THREE.Mesh(dGeo,new THREE.MeshBasicMaterial({map:T3.scorch,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-4,opacity:.9}));const e=new THREE.Mesh(dGeo,new THREE.MeshBasicMaterial({map:T3.ember,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,polygonOffset:true,polygonOffsetFactor:-5,toneMapped:false}));e.position.z=.002;m.add(e);m.visible=false;scene.add(m);decals.push({m,e,t:0});}let dI=0;
- const putDecal=(p,n)=>{const d=decals[dI++%decals.length];d.m.position.copy(p).addScaledVector(n,.012);d.m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),n);d.m.rotateZ(rnd(0,6));const s=rnd(.09,.14);d.m.scale.set(s,s,s);d.m.visible=true;d.t=0;d.e.material.opacity=1;d.m.material.opacity=.9;};
+ const putDecal=(p,n)=>{const d=decals[dI++%decals.length];d.m.position.copy(p).addScaledVector(n,.012);d.m.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),n);d.m.rotateZ(rnd(0,6));const s=rnd(.14,.22);d.m.scale.set(s,s,s);d.m.visible=true;d.t=0;d.e.material.opacity=1;d.m.material.opacity=.9;};
  // world-ray targets: static, non-skinned meshes (cached; refreshed when the city streams)
- let statics=[],staticsT=0;const rebuildStatics=()=>{statics=[];scene.traverse(o=>{if(o.isMesh&&!o.isSkinnedMesh&&o.visible!==false&&o.geometry&&!o.material.transparent){let p=o,skip=false;while(p){if(p.userData&&(p.userData.human||p.userData.gun)||p===VM||p.isCamera){skip=true;break;}p=p.parent;}if(!skip)statics.push(o);}});};
+ let statics=[],staticsT=0;const _wp=new THREE.Vector3();const rebuildStatics=()=>{statics=[];const cx=cam.position.x,cz=cam.position.z;scene.traverse(o=>{if(!o.isMesh||o.isSkinnedMesh||o.visible===false||!o.geometry)return;const mat=o.material;if(mat&&(Array.isArray(mat)?mat.every(m=>m&&m.transparent&&m.opacity<.15):mat.transparent&&mat.opacity<.15))return;let p=o,skip=false;while(p){if((p.userData&&(p.userData.human||p.userData.gun||p.userData.keep))||p===VM||p.isCamera||p===sparks){skip=true;break;}p=p.parent;}if(skip)return;const e=o.matrixWorld.elements;if(Math.hypot(e[12]-cx,e[14]-cz)>85)return;statics.push(o);});staticsT=0;};
  const RC=new THREE.Raycaster();RC.far=70;
  const worldHit=(o,d,far=70)=>{RC.set(o,d);RC.far=far;let best=null;for(const m of statics){if(!m.visible)continue;let par=m.parent,vis=true;while(par){if(par.visible===false){vis=false;break;}par=par.parent;}if(!vis)continue;const hs=RC.intersectObject(m,false);if(hs.length&&(!best||hs[0].distance<best.distance))best=hs[0];}
   // ground plane fallback
-  if(!best&&d.y<-.01){const gy=G.groundY?G.groundY(o.x,o.z,P.y):0;const t=(gy-o.y)/d.y;if(t>0&&t<far)best={distance:t,point:o.clone().addScaledVector(d,t),face:{normal:new THREE.Vector3(0,1,0)},ground:1};}
+  if(!best&&d.y<-.005){const gy=G.groundY?G.groundY(o.x,o.z,P.y):0;const t=(gy+.02-o.y)/d.y;if(t>0&&t<far)best={distance:t,point:o.clone().addScaledVector(d,t),face:{normal:new THREE.Vector3(0,1,0)},ground:1};}
   if(best){const n=best.face?best.face.normal.clone():new THREE.Vector3(0,1,0);if(best.object&&!best.ground)n.transformDirection(best.object.matrixWorld);if(n.dot(d)>0)n.negate();best.n=n;}return best;};
  // ---- HUD ----
  const ui=document.createElement('div');ui.id='guns';ui.innerHTML='<div id="gxh"><i></i><i></i><i></i><i></i></div><div id="ghm"><i></i><i></i><i></i><i></i></div><div id="gam"><b>12</b><span>/ 36</span><small>KESTREL 9</small></div><button id="gDraw"><svg viewBox="0 0 24 24"><path d="M3 9h13l2-2h3v4h-3l-1 1h-4l-1 5H8l1-5H3z" fill="currentColor"/></svg><span>DRAW</span></button><button id="gFire"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5" stroke="currentColor" stroke-width="2"/></svg></button><button id="gReload"><svg viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2-5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M14 3h5v5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></button><div id="ghint"></div>';
@@ -138,8 +138,8 @@ export function initGuns(G,H){const {S,scene,P,cam,toast}=G;const T3=textures();
  const finishReload=()=>{const Gd=cur(),k=S.gun.cur;const need=Gd.mag-(S.gun.mag[k]||0),take=Math.min(need,S.gun.ammo);S.gun.mag[k]=(S.gun.mag[k]||0)+take;S.gun.ammo-=take;};
  const markHit=(kill,head)=>{hm.className=kill?'k':'';hm.style.transition='none';hm.style.opacity=1;hm.style.transform='scale(1.25)';void hm.offsetWidth;hm.style.transition='opacity .28s, transform .28s';hm.style.opacity=0;hm.style.transform='scale(.85)';const R=kill?15:11;hm.querySelectorAll('i').forEach((el,i)=>{const a=Math.PI/4+i*Math.PI/2;el.style.transform=`translate(${Math.cos(a)*R}px,${Math.sin(a)*R}px) rotate(${a+Math.PI/2}rad)`;});SFX.hit(kill);if(head)toast('Headshot');};
  // ---- tracers ----
- function tracer(from,to,mat,speed,onArrive){const t=tracers.find(x=>!x.live)||tracers[0];t.live=1;t.m.material=mat;t.m.userData.hd.material.color.copy(mat.color).multiplyScalar(.7);t.from=from.clone();t.to=to.clone();t.dir=V.subVectors(to,from).clone();t.len=t.dir.length();t.dir.normalize();t.s=0;t.sp=speed;t.cb=onArrive;t.m.visible=true;t.whiz=mat===TRM.e;t.wz=0;place(t);}
- function place(t){const head=Math.min(t.s,t.len),tail=Math.max(0,head-Math.min(2.8,t.sp*.03));t.m.position.copy(t.from).addScaledVector(t.dir,head);t.m.lookAt(V2.copy(t.m.position).add(t.dir));t.m.rotateY(Math.PI);t.m.scale.set(.034,.034,Math.max(.08,head-tail));}
+ function tracer(from,to,mat,speed,onArrive){const t=tracers.find(x=>!x.live)||tracers[0];t.live=1;t.m.material=mat;t.m.userData.hd.material.color.copy(mat.color).multiplyScalar(.85);t.from=from.clone();t.to=to.clone();t.dir=V.subVectors(to,from).clone();t.len=Math.max(.4,t.dir.length());t.dir.normalize();t.s=0;t.sp=Math.min(speed,t.len/0.14);t.cb=onArrive;t.m.visible=true;t.whiz=mat===TRM.e;t.wz=0;place(t);}
+ function place(t){const head=Math.min(t.s,t.len),tail=Math.max(0,head-Math.min(4.5,t.sp*.045));t.m.position.copy(t.from).addScaledVector(t.dir,head);t.m.lookAt(V2.copy(t.m.position).add(t.dir));t.m.rotateY(Math.PI);t.m.scale.set(.07,.07,Math.max(.25,head-tail));t.m.userData.hd.scale.setScalar(.28+Math.min(.25,t.sp*.001));}
  // ---- enemies (driven during a fight) ----
  let fight=null;
  const bonesWorld=(a,n)=>a.h.bones&&a.h.bones[n]?a.h.bones[n].getWorldPosition(new THREE.Vector3()):null;
@@ -168,10 +168,13 @@ export function initGuns(G,H){const {S,scene,P,cam,toast}=G;const T3=textures();
  function fire(){const Gd=cur(),k=S.gun.cur;if((S.gun.mag[k]||0)<=0){SFX.dry();cool=.25;if(S.gun.ammo>0)reload();else toast('Empty. Ninefingers sells rounds.');firing=false;return;}
   S.gun.mag[k]--;cool=Gd.rof;kick=Math.min(1.6,kick+.55*Gd.kick);kickR=rnd(-1,1);bloom=Math.min(1,bloom+.25*Gd.kick);SFX.shot(Gd);
   P.pitch=Math.min(1.05,P.pitch+.011*Gd.kick);P.yaw+=rnd(-.004,.004)*Gd.kick;
-  const fl=vmGun&&vmGun.userData.flash;if(fl){fl.visible=true;fl.rotation.z=rnd(0,6);fl.scale.setScalar(rnd(.7,1.05)*(Gd.len>.4?1.05:.9));flashT=.07;}
-  const mw=vmGun?vmGun.userData.muzzle.clone().applyMatrix4(vmGun.matrixWorld):cam.position.clone();fxLight.position.copy(mw);fxLight.color.set(0xffb060);fxLight.intensity=14;
+  const fl=vmGun&&vmGun.userData.flash;if(fl){fl.visible=true;fl.rotation.z=rnd(0,6);fl.scale.setScalar(rnd(1.05,1.45)*(Gd.len>.4?1.2:1));flashT=.1;}
+  const mw=vmGun?vmGun.userData.muzzle.clone().applyMatrix4(vmGun.matrixWorld):cam.position.clone();fxLight.position.copy(mw);fxLight.color.set(0xffb060);fxLight.intensity=22;
+  // keep camera + statics in sync even when tests/scripts set P without waiting a frame
+  const eye=cam.position.y;cam.position.set(P.x,eye,P.z);const fwd=new THREE.Vector3(-Math.sin(P.yaw)*Math.cos(P.pitch),Math.sin(P.pitch),-Math.cos(P.yaw)*Math.cos(P.pitch));cam.lookAt(P.x+fwd.x,eye+fwd.y,P.z+fwd.z);cam.updateMatrixWorld(true);if(vmGun)vmGun.updateMatrixWorld(true);
+  if(!statics.length||staticsT>2.5)rebuildStatics();
   // aim ray from the camera with spread
-  const d=new THREE.Vector3();cam.getWorldDirection(d);const moving=Math.hypot(G.Input.move.x,G.Input.move.y)>.3;const spr=Gd.spread*(1+bloom*1.6+(moving?.8:0));d.x+=rnd(-1,1)*spr;d.y+=rnd(-1,1)*spr;d.z+=rnd(-1,1)*spr;d.normalize();
+  const d=fwd.clone();const moving=Math.hypot(G.Input.move.x,G.Input.move.y)>.3;const spr=Gd.spread*(1+bloom*1.6+(moving?.8:0));d.x+=rnd(-1,1)*spr;d.y+=rnd(-1,1)*spr;d.z+=rnd(-1,1)*spr;d.normalize();
   const o=cam.position.clone();const wh=worldHit(o,d);let tDist=70,target=null,head=false;
   const cand=fight?fight.ens.filter(n=>n.hp>0):(H.bystanders?H.bystanders():[]).map(a=>({a,hp:2,ghost:1}));
   for(const n of cand){const hp=bonesWorld(n.a,'Head')||new THREE.Vector3(n.a.x,(n.a.h.obj.position.y||0)+1.65,n.a.z);hp.y+=.06;const tH=raySphere(o,d,hp,.2);if(tH!=null&&tH<tDist){tDist=tH;target=n;head=true;}
@@ -183,8 +186,8 @@ export function initGuns(G,H){const {S,scene,P,cam,toast}=G;const T3=textures();
   else if(!target&&wh)tDist=wh.distance;
   lastFireDbg={tDist,hasTarget:!!target,head,wh:wh&&wh.distance,cand:cand.length,dir:[d.x,d.y,d.z]};
   const end=o.clone().addScaledVector(d,tDist);
-  tracer(mw,end,TRM.p,Gd.auto?110:95,()=>{if(target){if(target.ghost){H.provoke&&H.provoke(target.a);return;}burstSparks(end,10,0xff3a5a,2.2,.6);burstSparks(end,6,0xffd080,3,1);damage(target,Gd.dmg,head);}
-   else if(wh){burstSparks(end,14,0xffc070,3.6,1.4);putDecal(end,wh.n);if(Math.random()<.35)SFX.ping();}});
+  tracer(mw,end,TRM.p,Gd.auto?78:62,()=>{if(target){if(target.ghost){H.provoke&&H.provoke(target.a);return;}burstSparks(end,16,0xff3a5a,2.8,.8);burstSparks(end,10,0xffd080,3.6,1.2);damage(target,Gd.dmg,head);}
+   else if(wh){burstSparks(end,22,0xffc070,4.2,1.6);burstSparks(end,8,0xfff0c0,2.2,.4);putDecal(end,wh.n);if(Math.random()<.45)SFX.ping();}else{burstSparks(end,8,0xffb060,2.5,.5);}});
   if(!fight){const r=H.region();if(r!=='docks'){shotsPublic++;heat+=4;H.publicShot&&H.publicShot(shotsPublic);}}
   updHud();}
  const raySphere=(o,d,c,r)=>{const ox=o.x-c.x,oy=o.y-c.y,oz=o.z-c.z;const b=ox*d.x+oy*d.y+oz*d.z,cc=ox*ox+oy*oy+oz*oz-r*r,h=b*b-cc;if(h<0)return null;const t=-b-Math.sqrt(h);return t>0?t:null;};
@@ -228,7 +231,7 @@ export function initGuns(G,H){const {S,scene,P,cam,toast}=G;const T3=textures();
   // third-person gun on the player
   const pl=G.player&&G.player();if(dr&&tp&&pl&&pl.obj.visible){if(!tpGun.o||tpGun.type!==S.gun.cur){if(tpGun.o)scene.remove(tpGun.o);tpGun.o=makeGun(S.gun.cur,gangCol());tpGun.type=S.gun.cur;scene.add(tpGun.o);}const hb=pl.bones&&pl.bones.RightHand;if(hb){hb.getWorldPosition(tpGun.o.position);const f=new THREE.Vector3();cam.getWorldDirection(f);tpGun.o.scale.setScalar(1.15);tpGun.o.position.addScaledVector(f,.08);tpGun.o.position.y+=.03;tpGun.o.lookAt(tpGun.o.position.clone().add(f));tpGun.o.rotateY(Math.PI);}tpGun.o.visible=true;}else if(tpGun.o)tpGun.o.visible=false;
   // FX
-  if(fxLight.intensity>0)fxLight.intensity=Math.max(0,fxLight.intensity-dt*220);
+  staticsT+=dt;if(fxLight.intensity>0)fxLight.intensity=Math.max(0,fxLight.intensity-dt*160);
   for(const t of tracers){if(!t.live)continue;t.s+=t.sp*dt;if(t.whiz){}if(t.s>=t.len+Math.min(2.8,t.sp*.03)){t.live=0;t.m.visible=false;continue;}if(t.s>=t.len&&t.cb){const c=t.cb;t.cb=null;c();}place(t);}
   let any=false;for(let i=0;i<NSP;i++){if(spL[i]<=0)continue;any=true;spL[i]-=dt;if(spL[i]<=0){spPos[i*3+1]=-999;continue;}spV[i*3+1]-=9.8*dt;spPos[i*3]+=spV[i*3]*dt;spPos[i*3+1]+=spV[i*3+1]*dt;spPos[i*3+2]+=spV[i*3+2]*dt;const f=Math.min(1,spL[i]*3);spCol[i*3]*=.97;spCol[i*3+1]*=.94;spCol[i*3+2]*=.9;}
   if(any){spGeo.attributes.position.needsUpdate=true;spGeo.attributes.color.needsUpdate=true;}

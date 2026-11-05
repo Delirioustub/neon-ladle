@@ -8,7 +8,7 @@ def f(pg,shot,lp):
       if J("document.getElementById('dlg').classList.contains('hide')"):return
       J("()=>{const b=document.querySelectorAll('#dopts button');b.length&&b[b.length-1].click()}");pg.wait_for_timeout(150)
   pg.click('#ccDone');pg.wait_for_timeout(800);close()
-  J("()=>{__S.cash=500;}")
+  J("()=>{__S.cash=500;__S.gang={id:\'tide\',rank:2};}")
   # errand
   J("()=>{const s=__G.CITY.staff.find(s=>s.k==='Ninefingers');__G.talk&&0;window.R5.shopOpts(s,window.__o=[]);}")
   opts=J("__o.map(o=>o.t)");print('PAWN',opts);ok['shop_lists_guns']=any('Kestrel' in o for o in opts) and any('errand' in o for o in opts)
