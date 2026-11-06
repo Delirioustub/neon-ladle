@@ -3,7 +3,7 @@
 // hit markers, Quaternius combat clips (aim / shoot / hit / death / run) on enemies, cover-seeking, ammo drops.
 // r5.js owns events, factions and dialogue; this file owns weapons, the HUD and the firefight itself.
 import * as THREE from 'three';
-import {TW} from './terrain.js';
+import {H as TH} from './terrain.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 const rnd=(a,b)=>a+Math.random()*(b-a);
 export const GUNS={
@@ -178,7 +178,7 @@ export function initGuns(G,H){const {S,scene,P,cam,toast}=G;const T3=textures();
   const d=fwd.clone();const moving=Math.hypot(G.Input.move.x,G.Input.move.y)>.3;const spr=Gd.spread*(1+bloom*1.6+(moving?.8:0));d.x+=rnd(-1,1)*spr;d.y+=rnd(-1,1)*spr;d.z+=rnd(-1,1)*spr;d.normalize();
   const o=cam.position.clone();const wh=worldHit(o,d);let tDist=70,target=null,head=false;
   const cand=fight?fight.ens.filter(n=>n.hp>0):(H.bystanders?H.bystanders():[]).map(a=>({a,hp:2,ghost:1}));
-  for(const n of cand){const wy=TW(n.a.x,n.a.z);// R16: aim against the body where it is drawn (terrain warp, camera-relative)
+  for(const n of cand){const wy=TH(n.a.x,n.a.z)-TH(cam.position.x,cam.position.z);// R16: aim against the body where it is drawn (terrain warp, camera-relative)
    const hp=bonesWorld(n.a,'Head')||new THREE.Vector3(n.a.x,(n.a.h.obj.position.y||0)+1.65,n.a.z);hp.y+=.06+wy;const tH=raySphere(o,d,hp,.2);if(tH!=null&&tH<tDist){tDist=tH;target=n;head=true;}
    const hip=bonesWorld(n.a,'Hips')||new THREE.Vector3(n.a.x,(n.a.h.obj.position.y||0)+.95,n.a.z),nk=bonesWorld(n.a,'neck')||hip.clone().setY(hip.y+.55);hip.y+=wy;nk.y+=wy;
    for(let s=0;s<=4;s++){const c=hip.clone().lerp(nk,s/4);const r=s===0?.24:.3;const t=raySphere(o,d,c,r);if(t!=null&&t<tDist-.01){tDist=t;target=n;head=false;}}
