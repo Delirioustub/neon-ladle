@@ -9,6 +9,7 @@ void (window.__SCENERY=(opts)=>{opts=opts||{};const G=__G,T=G.THREE;const box=ne
   for(const r of big?L0:deck)if(ov(b,r)){hits.push({kind:big?'tall-on-street':'on-deck',g:o.geometry.type+'/'+o.material.type+(o.material.transparent?'/t':''),c:b.getCenter(new T.Vector3()).toArray().map(v=>+v.toFixed(2)),s:s.toArray().map(v=>+v.toFixed(2))});return;}};
  G.scene.updateMatrixWorld(true);
  G.scene.traverse(o=>{if(!o.isMesh||o.isSkinnedMesh||!o.visible||(o.material.transparent&&o.material.opacity<.6))return;// light beams / cones are see-through, not obstacles
+ if(o.userData.nlAbs)return;// R16: terrain/river skins are absolute render-space geometry; r16_terrain checks them against the walk map
  let p=o;while(p){if(p.userData&&(p.userData.human||p.userData.dyn||p.userData.room))return;p=p.parent;}
   const g=o.geometry;if(!g.boundingBox)g.computeBoundingBox();
   if(o.isInstancedMesh){for(let i=0;i<o.count;i++){o.getMatrixAt(i,m);m.premultiply(o.matrixWorld);box.copy(g.boundingBox).applyMatrix4(m);test(box,o);}}

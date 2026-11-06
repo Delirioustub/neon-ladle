@@ -38,7 +38,7 @@ export function makeEnv(scene,{hemi,moon,bloom,R,mats}){
    const ang=(tod-6)/12*Math.PI;sun.position.set(Math.cos(ang)*60,Math.max(8,Math.sin(ang)*70),-25);
    bloom.strength=THREE.MathUtils.lerp(a[7],b[7],t);R.toneMappingExposure=THREE.MathUtils.lerp(a[8],b[8],t);
    env.lampMul=THREE.MathUtils.lerp(a[9],b[9],t);
-   scene.fog.density=.03*st.fog*(1-dayF*.35);
+   scene.fog.density=.019*st.fog*(1-dayF*.35);
    // wet surfaces: glossier + more mirror-like when soaked
    const w=st.wet;mats.ROAD.roughness=.62-.44*w;mats.ROAD.metalness=.15+.4*w;mats.WALK.roughness=.7-.4*w;mats.WALK2.roughness=.7-.48*w;if(mats.STONE){mats.STONE.roughness=.6-.4*w;mats.STONE2.roughness=.5-.35*w;mats.GRIME.roughness=.75-.4*w;}
    mats.PUDDLE.opacity=Math.min(1,w*1.4);mats.PUDDLE.transparent=true;mats.PUDDLE.visible=w>.05;

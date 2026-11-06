@@ -1,6 +1,7 @@
 // World builder: dense voxel city block, neon, rain, wet streets.
 import * as THREE from 'three';
 import {carSlot} from './cars.js';
+import {segFor,segBox,TW,H as TH,nearRiver} from './terrain.js';
 export const rnd=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)];
 export let seed=7;export const srand=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
 const sr=(a,b)=>a+srand()*(b-a), spick=a=>a[Math.floor(srand()*a.length)];
@@ -8,10 +9,13 @@ export const NEON=[0xff3fa4,0x3ff0ff,0xb04dff,0xff8a3d,0x5dff9b,0xffe14d,0xff4d5
 const WALL=[0x2a2433,0x221d2c,0x302838,0x1d1a26,0x2e2a36,0x3a2c34,0x24202e];
 // ---- instanced voxel batches ----
 class Batch{constructor(mat){this.mat=mat;this.m=[];this.c=[];}
- add(x,y,z,sx,sy,sz,col){this.m.push(x,y,z,sx,sy,sz);this.c.push(col);}
- build(scene){const n=this.c.length;if(!n)return;const im=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),this.mat,n);const o=new THREE.Object3D(),c=new THREE.Color();
-  for(let i=0;i<n;i++){const k=i*6;o.position.set(this.m[k],this.m[k+1],this.m[k+2]);o.scale.set(this.m[k+3],this.m[k+4],this.m[k+5]);o.updateMatrix();im.setMatrixAt(i,o.matrix);c.setHex(this.c[i]);if(this.mat.userData.boost)c.multiplyScalar(this.mat.userData.boost);im.setColorAt(i,c);}
-  im.computeBoundingSphere();im.frustumCulled=true;scene.add(im);return im;}}
+ add(x,y,z,sx,sy,sz,col){if(sy>2&&Math.abs(y-sy/2)<.03&&!this.noPlinth){y-=.35;sy+=.7;}// R16: building feet run below grade so slopes never show a gap
+  this.m.push(x,y,z,sx,sy,sz);this.c.push(col);}
+ build(scene){const n=this.c.length;if(!n)return;// R16: big boxes go into segmented buckets so the terrain warp bends their floors and wall feet
+  const bk={};for(let i=0;i<n;i++){const k=i*6,sg=segFor(this.m[k+3],this.m[k+5]);(bk[sg]||(bk[sg]=[])).push(i);}let first=null;
+  for(const sg in bk){const ids=bk[sg];const im=new THREE.InstancedMesh(sg==1?new THREE.BoxGeometry(1,1,1):segBox(+sg),this.mat,ids.length);const o=new THREE.Object3D(),c=new THREE.Color();
+  ids.forEach((i,j)=>{const k=i*6;o.position.set(this.m[k],this.m[k+1],this.m[k+2]);o.scale.set(this.m[k+3],this.m[k+4],this.m[k+5]);o.updateMatrix();im.setMatrixAt(j,o.matrix);c.setHex(this.c[i]);if(this.mat.userData.boost)c.multiplyScalar(this.mat.userData.boost);im.setColorAt(j,c);});
+  im.computeBoundingSphere();im.frustumCulled=true;scene.add(im);if(!first||sg==1)first=im;}return first;}}
 export function signTex(text,col,opt={}){const vert=opt.vert,fs=opt.fs||64;const cv=document.createElement('canvas');const ctx=cv.getContext('2d');
  const sty=opt.style!==undefined?opt.style:(opt.cjk?0:Math.floor(Math.random()*5));// R9: 5 sign looks (block, serif, thin outline, condensed italic, script) so streets don't read as one brand
  const fam=opt.cjk?'"Noto Sans CJK JP","Noto Serif CJK JP","Hiragino Sans",sans-serif':['"Arial Black",Impact,sans-serif','Didot,"Bodoni 72",Georgia,serif','"Helvetica Neue",Helvetica,Arial,sans-serif','"Avenir Next Condensed","Arial Narrow",sans-serif','"Snell Roundhand","Brush Script MT",cursive'][sty];
@@ -154,18 +158,21 @@ export function buildWorld(scene,cand){const out={districts:{},flick:[],vents:[]
  xl.build(scene);xg.build(scene);xh.build(scene);metal.build(scene);
  out.ladleSign=ladleSign;out.L=48;
  // far skyline
+ const DUMMY={add(){}};
  const sky=new Batch(new THREE.MeshLambertMaterial()),skg=new Batch(new THREE.MeshBasicMaterial({toneMapped:false}));skg.mat.userData.boost=1.6;seed=99;
  for(let i=0;i<90;i++){const a=srand()*Math.PI*2,r=sr(80,140);const x=10+Math.cos(a)*r,z=20+Math.sin(a)*r,h=sr(40,120),w=sr(8,18);
   // R8: never stand a skyline block on the Ring Causeway band or on any street rect (they were the black boxes on the deck)
-  const pad=w/2+2;if((x+pad>-84&&x-pad<-44)||[[44,100,-215,-40],[44,80,40,226]].some(q=>x+pad>q[0]&&x-pad<q[1]&&z+pad>q[2]&&z-pad<q[3])/* R11b: canal plazas + Harbor Rise roads */||out.walk.some(q=>x+pad>q[0]&&x-pad<q[1]&&z+pad>q[2]&&z-pad<q[3]))continue;sky.add(x,h/2,z,w,h,w,0x110f18);
-  for(let k=0;k<10;k++)skg.add(x+sr(-w/2,w/2),sr(4,h),z+(z>20?-1:1)*(w/2+.05),sr(.5,2),sr(.3,.8),.1,new THREE.Color(spick(winCols)).multiplyScalar(.5).getHex());if(srand()<.35)skg.add(x,h*.75,z+(z>20?-1:1)*(w/2+.1),w*.8,sr(1.5,4),.1,spick(NEON));}
+  const pad=w/2+2;// R16: the river valley / footbridge exclusions must not change the random stream (later districts draw from it), so hidden blocks still roll their dice into a throwaway batch
+  const hide=nearRiver(x,z,pad+2)||[[44,140,-215,-40],[64,118,40,62],[64,118,-62,-40]].some(q=>x+pad>q[0]&&x-pad<q[1]&&z+pad>q[2]&&z-pad<q[3]);const SK=hide?DUMMY:sky,SG=hide?DUMMY:skg;
+  if((x+pad>-84&&x-pad<-44)||[[44,100,-215,-40],[44,80,40,226]].some(q=>x+pad>q[0]&&x-pad<q[1]&&z+pad>q[2]&&z-pad<q[3])/* R11b: canal plazas + Harbor Rise roads */||out.walk.some(q=>x+pad>q[0]&&x-pad<q[1]&&z+pad>q[2]&&z-pad<q[3]))continue;SK.add(x,h/2,z,w,h,w,0x110f18);
+  for(let k=0;k<10;k++)SG.add(x+sr(-w/2,w/2),sr(4,h),z+(z>20?-1:1)*(w/2+.05),sr(.5,2),sr(.3,.8),.1,new THREE.Color(spick(winCols)).multiplyScalar(.5).getHex());if(srand()<.35)SG.add(x,h*.75,z+(z>20?-1:1)*(w/2+.1),w*.8,sr(1.5,4),.1,spick(NEON));}
  sky.build(scene);skg.build(scene);
  return out;}
 // dynamic light pool: a fixed number of PointLights follow the nearest candidates (keeps shader cost constant)
 export function makeLightPool(scene,cand,n){const pool=[];for(let i=0;i<n;i++){const l=new THREE.PointLight(0xffffff,0,8,1.5);scene.add(l);pool.push({l,c:null,tI:0});}
  let t=0;return {pool,mul:1,update(dt,cam){const M=this.mul;t-=dt;if(t<=0){t=.35;const p=cam.position;const ranked=cand.map(c=>({c,d:(c.x-p.x)**2+(c.y-p.y)**2+(c.z-p.z)**2-(c.pri?400:0)})).sort((a,b)=>a.d-b.d).slice(0,n).map(r=>r.c);
    const free=pool.filter(s=>!ranked.includes(s.c));const want=ranked.filter(c=>!pool.some(s=>s.c===c));for(const s of free){const c=want.shift();if(!c){s.c=null;continue;}s.c=c;s.l.intensity=0;s.l.position.set(c.x,c.y,c.z);s.l.color.setHex(c.col);s.l.distance=c.dist*1.3;}}
-  for(const s of pool){const target=s.c?s.c.int*1.4*M:0;s.l.intensity+=(target-s.l.intensity)*Math.min(1,dt*4);}}};}
+  for(const s of pool){if(s.c)s.l.position.y=s.c.abs?s.c.y-TH(cam.position.x,cam.position.z):s.c.y+TW(s.c.x,s.c.z);const target=s.c?s.c.int*1.4*M:0;s.l.intensity+=(target-s.l.intensity)*Math.min(1,dt*4);}}};}
 const streakTex=(()=>{const c=document.createElement('canvas');c.width=16;c.height=128;const g=c.getContext('2d');const gr=g.createLinearGradient(0,0,0,128);gr.addColorStop(0,'rgba(255,255,255,0)');gr.addColorStop(.75,'rgba(255,255,255,.55)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,16,128);const h=g.createLinearGradient(0,0,16,0);h.addColorStop(0,'rgba(0,0,0,1)');h.addColorStop(.5,'rgba(0,0,0,0)');h.addColorStop(1,'rgba(0,0,0,1)');g.globalCompositeOperation='destination-out';g.fillStyle=h;g.fillRect(0,0,16,128);return new THREE.CanvasTexture(c);})();
 function streakMat(col){return new THREE.MeshBasicMaterial({map:streakTex,color:new THREE.Color(col).multiplyScalar(.9),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false});}
 // ---- rain ----
